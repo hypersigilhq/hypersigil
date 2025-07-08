@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 
 // Prompt response schema
-const PromptResponseSchema = z.object({
+export const PromptResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
     prompt: z.string(),
@@ -12,21 +12,21 @@ const PromptResponseSchema = z.object({
 });
 
 // Create prompt request schema
-const CreatePromptRequestSchema = z.object({
+export const CreatePromptRequestSchema = z.object({
     name: z.string().min(1).max(255),
     prompt: z.string().min(1),
     json_schema_response: z.object({}).passthrough()
 });
 
 // Update prompt request schema
-const UpdatePromptRequestSchema = z.object({
+export const UpdatePromptRequestSchema = z.object({
     name: z.string().min(1).max(255).optional(),
     prompt: z.string().min(1).optional(),
     json_schema_response: z.object({}).passthrough().optional()
 });
 
 // Pagination response schema
-const PaginatedPromptsResponseSchema = z.object({
+export const PaginatedPromptsResponseSchema = z.object({
     data: z.array(PromptResponseSchema),
     total: z.number(),
     page: z.number(),
@@ -37,13 +37,12 @@ const PaginatedPromptsResponseSchema = z.object({
 });
 
 // Error response schema
-const ErrorResponseSchema = z.object({
+export const ErrorResponseSchema = z.object({
     error: z.string(),
     message: z.string().optional(),
     details: z.any().optional()
 });
 
-// Export types
 export type PromptResponse = z.infer<typeof PromptResponseSchema>;
 export type CreatePromptRequest = z.infer<typeof CreatePromptRequestSchema>;
 export type UpdatePromptRequest = z.infer<typeof UpdatePromptRequestSchema>;

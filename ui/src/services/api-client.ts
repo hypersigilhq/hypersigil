@@ -1,6 +1,6 @@
 import { ApiClient } from 'ts-typed-api/client';
-import { PromptApiDefinition } from './prompt-definitions';
-import { ExecutionApiDefinition } from './execution-definitions';
+import { PromptApiDefinition } from '../../../shared/prompt-definitions';
+import { ExecutionApiDefinition } from '../../../shared/execution-definitions';
 
 // Create the API client with the base URL
 export const apiClient = new ApiClient(

@@ -2,7 +2,7 @@ import { RegisterHandlers, EndpointMiddleware } from 'ts-typed-api';
 import app from '../app';
 import { Prompt, promptModel } from '../models/prompt';
 import { z } from 'zod';
-import { PromptApiDefinition } from './prompt-definitions';
+import { PromptApiDefinition } from '@prompt-bench/shared';
 
 // Helper function to format prompt for API response
 function formatPromptForResponse(prompt: any) {

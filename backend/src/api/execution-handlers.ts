@@ -1,5 +1,5 @@
 import { RegisterHandlers } from 'ts-typed-api';
-import { ExecutionApiDefinition } from './execution-definitions';
+import { ExecutionApiDefinition } from '@prompt-bench/shared';
 import { executionService } from '../services/execution-service';
 import { providerRegistry } from '../providers/provider-registry';
 import { loggingMiddleware, timingMiddleware } from '../app';
