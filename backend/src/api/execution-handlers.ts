@@ -4,6 +4,7 @@ import { executionService } from '../services/execution-service';
 import { providerRegistry } from '../providers/provider-registry';
 import { loggingMiddleware, timingMiddleware } from '../app';
 import app from '../app';
+import { ExecutionOptions } from '../providers/base-provider';
 
 // Register execution API handlers
 RegisterHandlers(app, ExecutionApiDefinition, {
@@ -17,6 +18,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     promptId,
                     userInput,
                     providerModel,
+                    options: options as ExecutionOptions
                 });
 
                 const response = {
@@ -31,7 +33,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     started_at: execution.started_at?.toISOString(),
                     completed_at: execution.completed_at?.toISOString(),
                     created_at: execution.created_at!.toISOString(),
-                    updated_at: execution.updated_at!.toISOString()
+                    updated_at: execution.updated_at!.toISOString(),
+                    options: execution.options
                 };
 
                 res.respond(201, response);
@@ -90,7 +93,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                         started_at: execution.started_at?.toISOString(),
                         completed_at: execution.completed_at?.toISOString(),
                         created_at: execution.created_at!.toISOString(),
-                        updated_at: execution.updated_at!.toISOString()
+                        updated_at: execution.updated_at!.toISOString(),
+                        options: execution.options
                     }))
                 };
 
@@ -129,7 +133,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     started_at: execution.started_at?.toISOString(),
                     completed_at: execution.completed_at?.toISOString(),
                     created_at: execution.created_at!.toISOString(),
-                    updated_at: execution.updated_at!.toISOString()
+                    updated_at: execution.updated_at!.toISOString(),
+                    options: execution.options
                 };
 
                 res.respond(200, response);
