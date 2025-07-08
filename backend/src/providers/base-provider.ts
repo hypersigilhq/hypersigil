@@ -1,9 +1,38 @@
+// JSON Schema type definition for structured responses
+export interface JSONSchema {
+    type: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null';
+    properties?: Record<string, JSONSchema>;
+    items?: JSONSchema;
+    required?: string[];
+    description?: string;
+    enum?: any[];
+    format?: string;
+    minimum?: number;
+    maximum?: number;
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+    additionalProperties?: boolean | JSONSchema;
+    [key: string]: any;
+}
+
+// Execution options for AI providers
+export interface ExecutionOptions {
+    schema?: JSONSchema;
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    topK?: number;
+    [key: string]: any;
+}
+
 // Base interface for AI providers
 export interface AIProvider {
     name: string;
-    execute(prompt: string, userInput: string, model: string): Promise<string>;
+    execute(prompt: string, userInput: string, model: string, options?: ExecutionOptions): Promise<string>;
     isAvailable(): Promise<boolean>;
     getSupportedModels(): Promise<string[]>;
+    supportsStructuredOutput?(): boolean;
 }
 
 // Provider configuration interface

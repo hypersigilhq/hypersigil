@@ -11,12 +11,12 @@ RegisterHandlers(app, ExecutionApiDefinition, {
         // POST /api/v1/executions - Create a new execution
         create: async (req, res) => {
             try {
-                const { promptId, userInput, providerModel } = req.body;
+                const { promptId, userInput, providerModel, options } = req.body;
 
                 const execution = await executionService.createExecution({
                     promptId,
                     userInput,
-                    providerModel
+                    providerModel,
                 });
 
                 const response = {

@@ -1,6 +1,32 @@
 import { z } from 'zod';
 import { CreateApiDefinition, CreateResponses } from 'ts-typed-api';
 
+// JSON Schema definition for structured responses
+const JSONSchemaSchema: z.ZodType<any> = z.lazy(() => z.object({
+    type: z.enum(['object', 'array', 'string', 'number', 'boolean', 'null']),
+    properties: z.record(z.string(), JSONSchemaSchema).optional(),
+    items: JSONSchemaSchema.optional(),
+    required: z.array(z.string()).optional(),
+    description: z.string().optional(),
+    enum: z.array(z.any()).optional(),
+    format: z.string().optional(),
+    minimum: z.number().optional(),
+    maximum: z.number().optional(),
+    minLength: z.number().optional(),
+    maxLength: z.number().optional(),
+    pattern: z.string().optional(),
+    additionalProperties: z.union([z.boolean(), JSONSchemaSchema]).optional()
+}).catchall(z.any()));
+
+// Execution options schema
+const ExecutionOptionsSchema = z.object({
+    schema: JSONSchemaSchema.optional(),
+    temperature: z.number().min(0).max(2).optional(),
+    maxTokens: z.number().min(1).optional(),
+    topP: z.number().min(0).max(1).optional(),
+    topK: z.number().min(1).optional()
+}).catchall(z.any());
+
 // Execution response schema
 const ExecutionResponseSchema = z.object({
     id: z.string(),
@@ -14,14 +40,16 @@ const ExecutionResponseSchema = z.object({
     started_at: z.string().optional(),
     completed_at: z.string().optional(),
     created_at: z.string(),
-    updated_at: z.string()
+    updated_at: z.string(),
+    options: ExecutionOptionsSchema.optional()
 });
 
 // Create execution request schema
 const CreateExecutionRequestSchema = z.object({
     promptId: z.string().uuid(),
     userInput: z.string().min(1),
-    providerModel: z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model')
+    providerModel: z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model'),
+    options: ExecutionOptionsSchema.optional()
 });
 
 // Pagination response schema for executions

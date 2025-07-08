@@ -1,12 +1,13 @@
 import { executionModel, Execution } from '../models/execution';
 import { promptModel } from '../models/prompt';
 import { providerRegistry } from '../providers/provider-registry';
-import { ProviderError } from '../providers/base-provider';
+import { ProviderError, ExecutionOptions, JSONSchema } from '../providers/base-provider';
 
 export interface CreateExecutionRequest {
     promptId: string;
     userInput: string;
     providerModel: string; // Format: "provider:model" e.g., "ollama:qwen2.5:6b"
+    options?: ExecutionOptions;
 }
 
 export class ExecutionService {
@@ -36,13 +37,19 @@ export class ExecutionService {
         const { provider: providerName, model } = providerRegistry.parseProviderModel(request.providerModel);
 
         // Create execution record
-        const execution = await executionModel.create({
+        const executionData: Omit<Execution, 'id' | 'created_at' | 'updated_at'> = {
             prompt_id: request.promptId,
             user_input: request.userInput,
             provider: providerName,
             model: model,
             status: 'pending'
-        });
+        };
+
+        if (request.options) {
+            executionData.options = request.options;
+        }
+
+        const execution = await executionModel.create(executionData);
 
         // Queue for processing (fire and forget)
         this.queueExecution(execution.id!);
@@ -160,7 +167,8 @@ export class ExecutionService {
             const result = await provider.execute(
                 prompt.prompt,
                 execution.user_input,
-                execution.model
+                execution.model,
+                { schema: prompt.json_schema_response as JSONSchema, ...execution.options }
             );
 
             // Update with result

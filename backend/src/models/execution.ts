@@ -1,6 +1,7 @@
 import { Model } from '../database/base-model';
 import { BaseDocument } from '../database/types';
 import { db } from '../database/manager';
+import { ExecutionOptions } from '../providers/base-provider';
 
 // Execution interface extending BaseDocument
 export interface Execution extends BaseDocument {
@@ -13,6 +14,7 @@ export interface Execution extends BaseDocument {
     error_message?: string;
     started_at?: Date;
     completed_at?: Date;
+    options?: ExecutionOptions;
 }
 
 export class ExecutionModel extends Model<Execution> {

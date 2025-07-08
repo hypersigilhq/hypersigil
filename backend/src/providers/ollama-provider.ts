@@ -1,4 +1,4 @@
-import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError } from './base-provider';
+import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema } from './base-provider';
 
 export interface OllamaConfig extends ProviderConfig {
     baseUrl: string;
@@ -19,7 +19,7 @@ export class OllamaProvider implements AIProvider {
         };
     }
 
-    async execute(prompt: string, userInput: string, model: string): Promise<string> {
+    async execute(prompt: string, userInput: string, model: string, options?: ExecutionOptions): Promise<string> {
         // Validate model is available
         const availableModels = await this.getSupportedModels();
         if (!availableModels.includes(model)) {
@@ -27,16 +27,23 @@ export class OllamaProvider implements AIProvider {
         }
 
         // Combine prompt and user input
-        const fullPrompt = this.buildFullPrompt(prompt, userInput);
+        let fullPrompt = this.buildFullPrompt(prompt, userInput);
+
+        // Add JSON schema instructions if provided
+        if (options?.schema) {
+            fullPrompt = this.buildPromptWithSchema(fullPrompt, options.schema);
+        }
 
         const requestBody = {
             model,
             prompt: fullPrompt,
             stream: false,
+            format: options?.schema,
             options: {
-                temperature: 0.7,
-                top_p: 0.9,
-                top_k: 40
+                temperature: options?.temperature ?? 0.7,
+                top_p: options?.topP ?? 0.9,
+                top_k: options?.topK ?? 40,
+                ...(options?.maxTokens && { num_predict: options.maxTokens })
             }
         };
 
@@ -136,9 +143,19 @@ export class OllamaProvider implements AIProvider {
         }
     }
 
+    supportsStructuredOutput(): boolean {
+        return true; // Ollama supports structured output through prompt engineering
+    }
+
     private buildFullPrompt(prompt: string, userInput: string): string {
         // Simple template for now - can be enhanced later
         return prompt.replace(/\{user_input\}/g, userInput) || `${prompt}\n\nUser Input: ${userInput}`;
+    }
+
+    private buildPromptWithSchema(prompt: string, schema: JSONSchema): string {
+        const schemaString = JSON.stringify(schema, null, 2);
+
+        return `${prompt}`
     }
 
     private async makeRequest(endpoint: string, options: RequestInit): Promise<Response> {
