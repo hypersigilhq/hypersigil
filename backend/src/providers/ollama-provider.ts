@@ -33,7 +33,7 @@ export class OllamaProvider implements AIProvider {
         if (options?.schema) {
             fullPrompt = this.buildPromptWithSchema(fullPrompt, options.schema);
         }
-
+        console.log('fullPrompt', fullPrompt)
         const requestBody = {
             model,
             prompt: fullPrompt,
@@ -149,7 +149,8 @@ export class OllamaProvider implements AIProvider {
 
     private buildFullPrompt(prompt: string, userInput: string): string {
         // Simple template for now - can be enhanced later
-        return prompt.replace(/\{user_input\}/g, userInput) || `${prompt}\n\nUser Input: ${userInput}`;
+        return `Context of your task: ${prompt}\n Your task: ${userInput}`
+        // return prompt.replace(/\{user_input\}/g, userInput) || `${prompt}\n\nUser Input: ${userInput}`;
     }
 
     private buildPromptWithSchema(prompt: string, schema: JSONSchema): string {

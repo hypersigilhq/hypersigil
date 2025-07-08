@@ -135,6 +135,9 @@
                                 <Button variant="ghost" size="sm" @click="viewExecution(execution)">
                                     <Eye class="w-4 h-4" />
                                 </Button>
+                                <Button variant="ghost" size="sm" @click="cloneExecution(execution)">
+                                    <Copy class="w-4 h-4" />
+                                </Button>
                                 <Button v-if="execution.status === 'pending' || execution.status === 'running'"
                                     variant="ghost" size="sm" @click="cancelExecution(execution)"
                                     class="text-destructive hover:text-destructive">
@@ -168,6 +171,10 @@
                 </Button>
             </div>
         </div>
+
+        <!-- Clone Execution Dialog -->
+        <ScheduleExecutionDialog v-model:open="showCloneDialog" :prompt-id="cloningExecution?.prompt_id"
+            :initial-data="cloneInitialData" :source-execution-id="cloningExecution?.id" @success="onCloneSuccess" />
 
         <!-- View Dialog -->
         <Dialog v-model:open="showViewDialog">
@@ -258,7 +265,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch, onUnmounted } from 'vue'
 import { debounce } from 'lodash-es'
-import { RefreshCw, Eye, X } from 'lucide-vue-next'
+import { RefreshCw, Eye, X, Copy } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -289,6 +296,7 @@ import {
 } from '@/components/ui/select'
 
 import { executionsApi } from '@/services/api-client'
+import ScheduleExecutionDialog from './ScheduleExecutionDialog.vue'
 
 // Types based on execution-definitions.ts
 interface ExecutionResponse {
@@ -339,7 +347,19 @@ const pagination = ref<{
 
 // Dialog state
 const showViewDialog = ref(false)
+const showCloneDialog = ref(false)
 const viewingExecution = ref<ExecutionResponse | null>(null)
+const cloningExecution = ref<ExecutionResponse | null>(null)
+const cloneInitialData = ref<{
+    userInput: string
+    providerModel: string
+    options?: {
+        temperature?: number
+        maxTokens?: number
+        topP?: number
+        topK?: number
+    }
+} | undefined>(undefined)
 
 // Auto-refresh interval
 let refreshInterval: number | null = null
@@ -407,6 +427,27 @@ const goToPage = (page: number) => {
 const viewExecution = (execution: ExecutionResponse) => {
     viewingExecution.value = execution
     showViewDialog.value = true
+}
+
+// Clone execution
+const cloneExecution = (execution: ExecutionResponse) => {
+    cloningExecution.value = execution
+    cloneInitialData.value = {
+        userInput: execution.user_input,
+        providerModel: `${execution.provider}:${execution.model}`,
+        options: execution.options
+    }
+    showCloneDialog.value = true
+}
+
+// Handle clone success
+const onCloneSuccess = (executionId: string) => {
+    console.log('Execution cloned successfully:', executionId)
+    showCloneDialog.value = false
+    cloningExecution.value = null
+    cloneInitialData.value = undefined
+    loadExecutions()
+    loadStats()
 }
 
 // Cancel execution
