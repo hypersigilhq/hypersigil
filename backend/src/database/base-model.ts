@@ -1,0 +1,331 @@
+import { randomUUID } from 'crypto';
+import { db } from './manager';
+import { BaseDocument, QueryOptions, PaginationResult, WhereClause } from './types';
+
+export abstract class Model<T extends BaseDocument> {
+    protected abstract tableName: string;
+
+    constructor() {
+        // Ensure table exists on first instantiation - delay until after construction
+        setTimeout(() => {
+            db.ensureTable(this.tableName);
+        }, 0);
+    }
+
+    protected serializeDocument(doc: T): string {
+        // Remove id, created_at, updated_at from the data field since they're stored separately
+        const { id, created_at, updated_at, ...data } = doc;
+        return JSON.stringify(data);
+    }
+
+    protected deserializeDocument(row: any): T {
+        const data = JSON.parse(row.data);
+        return {
+            id: row.id,
+            created_at: new Date(row.created_at),
+            updated_at: new Date(row.updated_at),
+            ...data
+        } as T;
+    }
+
+    protected buildWhereClause(where: WhereClause): { clause: string; params: any[] } {
+        if (!where || Object.keys(where).length === 0) {
+            return { clause: '', params: [] };
+        }
+
+        const conditions: string[] = [];
+        const params: any[] = [];
+
+        for (const [key, value] of Object.entries(where)) {
+            if (key === 'id') {
+                // Direct column access for id
+                if (Array.isArray(value)) {
+                    const placeholders = value.map(() => '?').join(', ');
+                    conditions.push(`id IN (${placeholders})`);
+                    params.push(...value);
+                } else {
+                    conditions.push('id = ?');
+                    params.push(value);
+                }
+            } else if (key === 'created_at' || key === 'updated_at') {
+                // Direct column access for timestamps
+                conditions.push(`${key} = ?`);
+                params.push(value instanceof Date ? value.toISOString() : value);
+            } else {
+                // JSON path query for nested properties
+                if (Array.isArray(value)) {
+                    const placeholders = value.map(() => 'JSON_EXTRACT(data, ?) = ?').join(' OR ');
+                    conditions.push(`(${placeholders})`);
+                    for (const v of value) {
+                        params.push(`$.${key}`, v);
+                    }
+                } else {
+                    conditions.push('JSON_EXTRACT(data, ?) = ?');
+                    params.push(`$.${key}`, value);
+                }
+            }
+        }
+
+        return {
+            clause: `WHERE ${conditions.join(' AND ')}`,
+            params
+        };
+    }
+
+    public async create(data: Omit<T, 'id' | 'created_at' | 'updated_at'>): Promise<T> {
+        const now = new Date();
+        const id = randomUUID();
+
+        const fullDoc = {
+            ...data,
+            id,
+            created_at: now,
+            updated_at: now
+        } as T;
+
+        const serializedData = this.serializeDocument(fullDoc);
+
+        const sql = `INSERT INTO ${this.tableName} (id, data, created_at, updated_at) VALUES (?, ?, ?, ?)`;
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            stmt.run(id, serializedData, now.toISOString(), now.toISOString());
+
+            return this.findById(id) as Promise<T>;
+        } catch (error) {
+            console.error(`Error creating document in ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    public async findById(id: string): Promise<T | null> {
+        const sql = `SELECT * FROM ${this.tableName} WHERE id = ?`;
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const row = stmt.get(id);
+
+            return row ? this.deserializeDocument(row) : null;
+        } catch (error) {
+            console.error(`Error finding document by id in ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    public async findOne(where: WhereClause): Promise<T | null> {
+        const { clause, params } = this.buildWhereClause(where);
+        const sql = `SELECT * FROM ${this.tableName} ${clause} LIMIT 1`;
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const row = stmt.get(...params);
+
+            return row ? this.deserializeDocument(row) : null;
+        } catch (error) {
+            console.error(`Error finding document in ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    public async findMany(options: QueryOptions & { where?: WhereClause } = {}): Promise<T[]> {
+        const { where, orderBy = 'created_at', orderDirection = 'DESC', limit, offset } = options;
+
+        let sql = `SELECT * FROM ${this.tableName}`;
+        const params: any[] = [];
+
+        if (where) {
+            const { clause, params: whereParams } = this.buildWhereClause(where);
+            sql += ` ${clause}`;
+            params.push(...whereParams);
+        }
+
+        // Handle ordering - if it's a JSON field, use JSON_EXTRACT
+        if (orderBy === 'id' || orderBy === 'created_at' || orderBy === 'updated_at') {
+            sql += ` ORDER BY ${orderBy} ${orderDirection}`;
+        } else {
+            sql += ` ORDER BY JSON_EXTRACT(data, '$.${orderBy}') ${orderDirection}`;
+        }
+
+        if (limit) {
+            sql += ` LIMIT ?`;
+            params.push(limit);
+        }
+
+        if (offset) {
+            sql += ` OFFSET ?`;
+            params.push(offset);
+        }
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const rows = stmt.all(...params);
+
+            return rows.map(row => this.deserializeDocument(row));
+        } catch (error) {
+            console.error(`Error finding documents in ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    public async findWithPagination(options: QueryOptions & { page: number; limit: number; where?: WhereClause }): Promise<PaginationResult<T>> {
+        const { page, limit, where, orderBy = 'created_at', orderDirection = 'DESC' } = options;
+        const offset = (page - 1) * limit;
+
+        // Get total count
+        let countSql = `SELECT COUNT(*) as total FROM ${this.tableName}`;
+        const countParams: any[] = [];
+
+        if (where) {
+            const { clause, params: whereParams } = this.buildWhereClause(where);
+            countSql += ` ${clause}`;
+            countParams.push(...whereParams);
+        }
+
+        const countStmt = db.getDatabase().prepare(countSql);
+        const { total } = countStmt.get(...countParams) as { total: number };
+
+        // Get data
+        const findOptions: QueryOptions & { where?: WhereClause } = {
+            orderBy,
+            orderDirection,
+            limit,
+            offset
+        };
+
+        if (where) {
+            findOptions.where = where;
+        }
+
+        const data = await this.findMany(findOptions);
+
+        const totalPages = Math.ceil(total / limit);
+
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1
+        };
+    }
+
+    public async update(id: string, data: Partial<Omit<T, 'id' | 'created_at'>>): Promise<T | null> {
+        // First get the existing document
+        const existing = await this.findById(id);
+        if (!existing) {
+            return null;
+        }
+
+        // Merge the updates with existing data
+        const updatedDoc = {
+            ...existing,
+            ...data,
+            updated_at: new Date()
+        } as T;
+
+        const serializedData = this.serializeDocument(updatedDoc);
+
+        const sql = `UPDATE ${this.tableName} SET data = ?, updated_at = ? WHERE id = ?`;
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const result = stmt.run(serializedData, updatedDoc.updated_at!.toISOString(), id);
+
+            if (result.changes === 0) {
+                return null;
+            }
+
+            return this.findById(id);
+        } catch (error) {
+            console.error(`Error updating document in ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    public async delete(id: string): Promise<boolean> {
+        const sql = `DELETE FROM ${this.tableName} WHERE id = ?`;
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const result = stmt.run(id);
+
+            return result.changes > 0;
+        } catch (error) {
+            console.error(`Error deleting document from ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    public async deleteMany(where: WhereClause): Promise<number> {
+        const { clause, params } = this.buildWhereClause(where);
+        const sql = `DELETE FROM ${this.tableName} ${clause}`;
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const result = stmt.run(...params);
+
+            return result.changes;
+        } catch (error) {
+            console.error(`Error deleting documents from ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    public async count(where?: WhereClause): Promise<number> {
+        let sql = `SELECT COUNT(*) as total FROM ${this.tableName}`;
+        const params: any[] = [];
+
+        if (where) {
+            const { clause, params: whereParams } = this.buildWhereClause(where);
+            sql += ` ${clause}`;
+            params.push(...whereParams);
+        }
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const { total } = stmt.get(...params) as { total: number };
+
+            return total;
+        } catch (error) {
+            console.error(`Error counting documents in ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    // New method for finding by any property
+    public async findByProperty(property: string, value: any): Promise<T[]> {
+        return this.findMany({ where: { [property]: value } });
+    }
+
+    // New method for searching with LIKE operator (for text fields)
+    public async search(property: string, pattern: string): Promise<T[]> {
+        const sql = `SELECT * FROM ${this.tableName} WHERE JSON_EXTRACT(data, ?) LIKE ? ORDER BY created_at DESC`;
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const rows = stmt.all(`$.${property}`, `%${pattern}%`);
+
+            return rows.map(row => this.deserializeDocument(row));
+        } catch (error) {
+            console.error(`Error searching documents in ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    // New method for complex JSON queries
+    public async findByJsonPath(jsonPath: string, value: any): Promise<T[]> {
+        const sql = `SELECT * FROM ${this.tableName} WHERE JSON_EXTRACT(data, ?) = ? ORDER BY created_at DESC`;
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const rows = stmt.all(jsonPath, value);
+
+            return rows.map(row => this.deserializeDocument(row));
+        } catch (error) {
+            console.error(`Error finding documents by JSON path in ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+}
