@@ -1,0 +1,218 @@
+import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError } from './base-provider';
+
+export interface OllamaConfig extends ProviderConfig {
+    baseUrl: string;
+    timeout: number;
+}
+
+export class OllamaProvider implements AIProvider {
+    public readonly name = 'ollama';
+    private config: OllamaConfig;
+
+    constructor(config: Partial<OllamaConfig> = {}) {
+        this.config = {
+            name: 'ollama',
+            baseUrl: config.baseUrl || 'http://localhost:11434',
+            timeout: config.timeout || 30000, // 30 seconds
+            maxRetries: config.maxRetries || 3,
+            ...config
+        };
+    }
+
+    async execute(prompt: string, userInput: string, model: string): Promise<string> {
+        // Validate model is available
+        const availableModels = await this.getSupportedModels();
+        if (!availableModels.includes(model)) {
+            throw new ModelNotSupportedError(this.name, model);
+        }
+
+        // Combine prompt and user input
+        const fullPrompt = this.buildFullPrompt(prompt, userInput);
+
+        const requestBody = {
+            model,
+            prompt: fullPrompt,
+            stream: false,
+            options: {
+                temperature: 0.7,
+                top_p: 0.9,
+                top_k: 40
+            }
+        };
+
+        try {
+            const response = await this.makeRequest('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new ProviderError(
+                    `Ollama API error: ${response.status} ${response.statusText} - ${errorText}`,
+                    this.name,
+                    'API_ERROR',
+                    response.status
+                );
+            }
+
+            const result = await response.json() as {
+                response?: string;
+                error?: string;
+                done?: boolean;
+            };
+
+            if (result.error) {
+                throw new ProviderError(
+                    `Ollama execution error: ${result.error}`,
+                    this.name,
+                    'EXECUTION_ERROR'
+                );
+            }
+
+            return result.response || '';
+        } catch (error) {
+            if (error instanceof ProviderError) {
+                throw error;
+            }
+
+            if (error instanceof Error) {
+                if (error.name === 'AbortError') {
+                    throw new ProviderTimeoutError(this.name, this.config.timeout);
+                }
+
+                if (error.message.includes('ECONNREFUSED') || error.message.includes('fetch failed')) {
+                    throw new ProviderUnavailableError(this.name, 'Cannot connect to Ollama service');
+                }
+            }
+
+            throw new ProviderError(
+                `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
+                this.name,
+                'UNEXPECTED_ERROR'
+            );
+        }
+    }
+
+    async isAvailable(): Promise<boolean> {
+        try {
+            const response = await this.makeRequest('/api/tags', {
+                method: 'GET',
+            });
+            return response.ok;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    async getSupportedModels(): Promise<string[]> {
+        try {
+            const response = await this.makeRequest('/api/tags', {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                throw new ProviderError(
+                    `Failed to fetch models: ${response.status} ${response.statusText}`,
+                    this.name,
+                    'MODELS_FETCH_ERROR',
+                    response.status
+                );
+            }
+
+            const data = await response.json() as {
+                models?: Array<{ name: string;[key: string]: any }>;
+            };
+            return data.models?.map((model) => model.name) || [];
+        } catch (error) {
+            if (error instanceof ProviderError) {
+                throw error;
+            }
+
+            throw new ProviderUnavailableError(this.name, 'Cannot fetch available models');
+        }
+    }
+
+    private buildFullPrompt(prompt: string, userInput: string): string {
+        // Simple template for now - can be enhanced later
+        return prompt.replace(/\{user_input\}/g, userInput) || `${prompt}\n\nUser Input: ${userInput}`;
+    }
+
+    private async makeRequest(endpoint: string, options: RequestInit): Promise<Response> {
+        const url = `${this.config.baseUrl}${endpoint}`;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+
+        try {
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+            return response;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+        }
+    }
+
+    // Health check method
+    async healthCheck(): Promise<{
+        available: boolean;
+        models: string[];
+        version?: string;
+        error?: string;
+    }> {
+        try {
+            const available = await this.isAvailable();
+            if (!available) {
+                return {
+                    available: false,
+                    models: [],
+                    error: 'Ollama service is not available'
+                };
+            }
+
+            const models = await this.getSupportedModels();
+
+            // Try to get version info
+            let version: string | undefined;
+            try {
+                const versionResponse = await this.makeRequest('/api/version', { method: 'GET' });
+                if (versionResponse.ok) {
+                    const versionData = await versionResponse.json() as { version?: string };
+                    version = versionData.version;
+                }
+            } catch {
+                // Version endpoint might not be available in all Ollama versions
+            }
+
+            const result: {
+                available: boolean;
+                models: string[];
+                version?: string;
+                error?: string;
+            } = {
+                available: true,
+                models
+            };
+
+            if (version) {
+                result.version = version;
+            }
+
+            return result;
+        } catch (error) {
+            return {
+                available: false,
+                models: [],
+                error: error instanceof Error ? error.message : String(error)
+            };
+        }
+    }
+}

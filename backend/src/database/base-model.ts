@@ -20,12 +20,50 @@ export abstract class Model<T extends BaseDocument> {
 
     protected deserializeDocument(row: any): T {
         const data = JSON.parse(row.data);
-        return {
+        const document = {
             id: row.id,
             created_at: new Date(row.created_at),
             updated_at: new Date(row.updated_at),
             ...data
         } as T;
+
+        // Auto-convert date fields based on common naming patterns
+        this.convertDateFields(document);
+
+        return document;
+    }
+
+    /**
+     * Automatically converts string date fields to Date objects based on field names
+     * Override this method in subclasses to specify custom date field patterns
+     */
+    protected convertDateFields(document: T): void {
+        const dateFieldPatterns = [
+            /_at$/,     // ends with _at (started_at, completed_at, etc.)
+            /_date$/,   // ends with _date
+            /^date_/,   // starts with date_
+            /timestamp/ // contains timestamp
+        ];
+
+        for (const [key, value] of Object.entries(document)) {
+            if (value && typeof value === 'string' && this.isDateField(key, dateFieldPatterns)) {
+                try {
+                    const dateValue = new Date(value);
+                    if (!isNaN(dateValue.getTime())) {
+                        (document as any)[key] = dateValue;
+                    }
+                } catch (error) {
+                    // Ignore conversion errors, keep original value
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks if a field name matches date field patterns
+     */
+    private isDateField(fieldName: string, patterns: RegExp[]): boolean {
+        return patterns.some(pattern => pattern.test(fieldName));
     }
 
     protected buildWhereClause(where: WhereClause): { clause: string; params: any[] } {
