@@ -1,0 +1,4 @@
+ui/package-lock.json
+ui/node_modules
+backend/package-lock.json
+backend/node_modules

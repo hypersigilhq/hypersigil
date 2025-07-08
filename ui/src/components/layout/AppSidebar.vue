@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Home, Settings, Info, User, FileText } from 'lucide-vue-next'
+import { Home, Settings, Info, User, FileText, Play } from 'lucide-vue-next'
 import NavigationItem from './NavigationItem.vue'
 
 interface NavigationItemType {
@@ -50,6 +50,11 @@ const navigationItems = computed<NavigationItemType[]>(() => [
         name: 'Prompts',
         path: '/prompts',
         icon: FileText,
+    },
+    {
+        name: 'Executions',
+        path: '/executions',
+        icon: Play,
     },
     {
         name: 'About',

@@ -17,7 +17,7 @@
 - [done] Create provider health checking and failover mechanisms
 
 ## Future Tasks
-- [todo] Connect frontend to backend API
+- [done] Connect frontend to backend API - Executions view implemented
 - [todo] Add authentication and authorization
 - [todo] Implement database integration
 - [todo] Add API documentation
