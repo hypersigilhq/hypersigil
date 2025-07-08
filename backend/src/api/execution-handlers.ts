@@ -229,6 +229,20 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     message: 'Failed to list providers'
                 });
             }
+        },
+
+        // GET /api/v1/executions/providers/models - Get available models for all providers
+        getAvailableModels: async (req, res) => {
+            try {
+                const models = await providerRegistry.getAvailableModels();
+                res.respond(200, models);
+            } catch (error) {
+                console.error('Error getting available models:', error);
+                res.respond(500, {
+                    error: 'Internal server error',
+                    message: 'Failed to get available models'
+                });
+            }
         }
     }
 }, [loggingMiddleware, timingMiddleware]);

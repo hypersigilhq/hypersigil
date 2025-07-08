@@ -16,8 +16,11 @@
 - [done] Add execution monitoring and logging capabilities
 - [done] Create provider health checking and failover mechanisms
 
-## Future Tasks
+## Frontend Features
 - [done] Connect frontend to backend API - Executions view implemented
+- [done] Add schedule execution action to prompts table with execution creation dialog
+
+## Future Tasks
 - [todo] Add authentication and authorization
 - [todo] Implement database integration
 - [todo] Add API documentation

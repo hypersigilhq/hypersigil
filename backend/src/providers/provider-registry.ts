@@ -90,6 +90,25 @@ export class ProviderRegistry {
         return health;
     }
 
+    public async getAvailableModels(): Promise<Record<string, string[]>> {
+        const models: Record<string, string[]> = {};
+
+        for (const [name, provider] of this.providers.entries()) {
+            try {
+                const isAvailable = await provider.isAvailable();
+                if (isAvailable) {
+                    const supportedModels = await provider.getSupportedModels();
+                    models[name] = supportedModels;
+                }
+            } catch (error) {
+                console.warn(`Failed to get models for provider ${name}:`, error);
+                // Skip providers that fail - don't include them in the response
+            }
+        }
+
+        return models;
+    }
+
     public parseProviderModel(providerModel: string): { provider: string; model: string } {
         const parts = providerModel.split(':');
         if (parts.length < 2) {

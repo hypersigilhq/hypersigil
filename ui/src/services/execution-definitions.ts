@@ -18,16 +18,6 @@ const JSONSchemaSchema: z.ZodType<any> = z.lazy(() => z.object({
     additionalProperties: z.union([z.boolean(), JSONSchemaSchema]).optional()
 }).catchall(z.any()));
 
-export const ExecutionListQuery = z.object({
-    page: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).optional().default('1'),
-    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(100)).optional().default('10'),
-    status: z.enum(['pending', 'running', 'completed', 'failed']).optional(),
-    provider: z.string().optional(),
-    promptId: z.string().uuid().optional(),
-    orderBy: z.enum(['created_at', 'updated_at', 'started_at', 'completed_at']).optional().default('created_at'),
-    orderDirection: z.enum(['ASC', 'DESC']).optional().default('DESC')
-})
-
 // Execution options schema
 const ExecutionOptionsSchema = z.object({
     schema: JSONSchemaSchema.optional(),
@@ -128,7 +118,15 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/',
                 params: z.object({}),
-                query: ExecutionListQuery,
+                query: z.object({
+                    page: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).optional().default('1'),
+                    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(100)).optional().default('10'),
+                    status: z.enum(['pending', 'running', 'completed', 'failed']).optional(),
+                    provider: z.string().optional(),
+                    promptId: z.string().uuid().optional(),
+                    orderBy: z.enum(['created_at', 'updated_at', 'started_at', 'completed_at']).optional().default('created_at'),
+                    orderDirection: z.enum(['ASC', 'DESC']).optional().default('DESC')
+                }),
                 body: z.object({}),
                 responses: CreateResponses({
                     200: PaginatedExecutionsResponseSchema,
@@ -214,12 +212,25 @@ export const ExecutionApiDefinition = CreateApiDefinition({
             // GET /api/v1/executions/providers - List available providers
             listProviders: {
                 method: 'GET',
-                path: '/providers',
+                path: '/providers/list',
                 params: z.object({}),
                 query: z.object({}),
                 body: z.object({}),
                 responses: CreateResponses({
                     200: z.array(z.string()),
+                    500: ErrorResponseSchema
+                })
+            },
+
+            // GET /api/v1/executions/providers/models - Get available models for all providers
+            getAvailableModels: {
+                method: 'GET',
+                path: '/providers/models',
+                params: z.object({}),
+                query: z.object({}),
+                body: z.object({}),
+                responses: CreateResponses({
+                    200: z.record(z.string(), z.array(z.string())),
                     500: ErrorResponseSchema
                 })
             }

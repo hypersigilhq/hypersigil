@@ -43,6 +43,11 @@ const ErrorResponseSchema = z.object({
     details: z.any().optional()
 });
 
+// Export types
+export type PromptResponse = z.infer<typeof PromptResponseSchema>;
+export type CreatePromptRequest = z.infer<typeof CreatePromptRequestSchema>;
+export type UpdatePromptRequest = z.infer<typeof UpdatePromptRequestSchema>;
+
 export const PromptApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/prompts',
     endpoints: {

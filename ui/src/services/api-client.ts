@@ -154,5 +154,12 @@ export const executionsApi = {
             200: (payload) => payload.data,
             500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
             422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
+    getAvailableModels: () =>
+        executionApiClient.callApi('providers', 'getAvailableModels', {}, {
+            200: (payload) => payload.data,
+            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         })
 };

@@ -81,6 +81,9 @@
                                 <Button variant="ghost" size="sm" @click="viewPrompt(prompt)">
                                     <Eye class="w-4 h-4" />
                                 </Button>
+                                <Button variant="ghost" size="sm" @click="scheduleExecution(prompt)">
+                                    <Play class="w-4 h-4" />
+                                </Button>
                                 <Button variant="ghost" size="sm" @click="editPrompt(prompt)">
                                     <Edit class="w-4 h-4" />
                                 </Button>
@@ -195,13 +198,99 @@
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <!-- Schedule Execution Dialog -->
+        <Dialog v-model:open="showScheduleDialog">
+            <DialogContent class="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Schedule Execution</DialogTitle>
+                    <DialogDescription>
+                        Schedule execution for prompt: {{ schedulingPrompt?.name }}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div v-if="successMessage" class="p-3 bg-green-50 border border-green-200 rounded-md mb-4">
+                    <p class="text-sm text-green-800">{{ successMessage }}</p>
+                </div>
+
+                <form @submit.prevent="submitScheduleExecution" class="space-y-4">
+                    <div>
+                        <Label for="userInput">User Input</Label>
+                        <Textarea id="userInput" v-model="scheduleFormData.userInput"
+                            placeholder="Enter the input text to process with this prompt" rows="4" required />
+                    </div>
+
+                    <div>
+                        <Label for="providerModel">Provider/Model</Label>
+                        <Select v-model="scheduleFormData.providerModel" required>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select provider and model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem v-if="loadingProviders" value="loading" disabled>
+                                    Loading models...
+                                </SelectItem>
+                                <SelectItem v-else-if="modelOptions.length === 0" value="no-models" disabled>
+                                    No models available
+                                </SelectItem>
+                                <template v-else v-for="(models, provider) in availableModels" :key="provider">
+                                    <SelectItem v-for="model in models" :key="`${provider}:${model}`"
+                                        :value="`${provider}:${model}`">
+                                        {{ provider }}: {{ model }}
+                                    </SelectItem>
+                                </template>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div class="space-y-3">
+                        <Label>Execution Options (Optional)</Label>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <Label for="temperature" class="text-sm">Temperature</Label>
+                                <Input id="temperature" type="number" step="0.01" min="0" max="2"
+                                    v-model.number="scheduleFormData.options.temperature" placeholder="0.01" />
+                            </div>
+                            <div>
+                                <Label for="maxTokens" class="text-sm">Max Tokens</Label>
+                                <Input id="maxTokens" type="number" min="1"
+                                    v-model.number="scheduleFormData.options.maxTokens" placeholder="Auto" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <Label for="topP" class="text-sm">Top P</Label>
+                                <Input id="topP" type="number" step="0.01" min="0" max="1"
+                                    v-model.number="scheduleFormData.options.topP" placeholder="Auto" />
+                            </div>
+                            <div>
+                                <Label for="topK" class="text-sm">Top K</Label>
+                                <Input id="topK" type="number" min="1" v-model.number="scheduleFormData.options.topK"
+                                    placeholder="Auto" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" @click="closeScheduleDialog">
+                            Cancel
+                        </Button>
+                        <Button type="submit" :disabled="scheduling || loadingProviders">
+                            {{ scheduling ? 'Scheduling...' : 'Schedule Execution' }}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { debounce } from 'lodash-es'
-import { Plus, Eye, Edit, Trash2 } from 'lucide-vue-next'
+import { Plus, Eye, Edit, Trash2, Play } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -232,7 +321,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 
-import { promptsApi } from '@/services/api-client'
+import { promptsApi, executionsApi } from '@/services/api-client'
 import type { PromptResponse, CreatePromptRequest, UpdatePromptRequest } from '@/services/prompt-definitions'
 
 // Reactive state
@@ -257,9 +346,15 @@ const pagination = ref<{
 // Dialog state
 const showDialog = ref(false)
 const showViewDialog = ref(false)
+const showScheduleDialog = ref(false)
 const editingPrompt = ref<PromptResponse | null>(null)
 const viewingPrompt = ref<PromptResponse | null>(null)
+const schedulingPrompt = ref<PromptResponse | null>(null)
 const saving = ref(false)
+const scheduling = ref(false)
+const loadingProviders = ref(false)
+const availableModels = ref<Record<string, string[]>>({})
+const successMessage = ref<string | null>(null)
 
 // Form data
 const formData = reactive<CreatePromptRequest>({
@@ -268,7 +363,33 @@ const formData = reactive<CreatePromptRequest>({
     json_schema_response: {}
 })
 
+const scheduleFormData = reactive({
+    userInput: '',
+    providerModel: '',
+    options: {
+        temperature: 0.01,
+        maxTokens: undefined as number | undefined,
+        topP: undefined as number | undefined,
+        topK: undefined as number | undefined
+    }
+})
+
 const schemaText = ref('')
+
+// Computed properties
+const modelOptions = computed(() => {
+    const options: Array<{ value: string; label: string; provider: string }> = []
+    for (const [provider, models] of Object.entries(availableModels.value)) {
+        for (const model of models) {
+            options.push({
+                value: `${provider}:${model}`,
+                label: `${provider}: ${model}`,
+                provider
+            })
+        }
+    }
+    return options
+})
 
 // Debounced search
 const debouncedSearch = debounce(() => {
@@ -374,6 +495,73 @@ const savePrompt = async () => {
         error.value = err instanceof Error ? err.message : 'Failed to save prompt'
     } finally {
         saving.value = false
+    }
+}
+
+// Schedule execution
+const scheduleExecution = async (prompt: PromptResponse) => {
+    schedulingPrompt.value = prompt
+    scheduleFormData.userInput = ''
+    scheduleFormData.providerModel = ''
+    scheduleFormData.options.temperature = 0.01
+    scheduleFormData.options.maxTokens = undefined
+    scheduleFormData.options.topP = undefined
+    scheduleFormData.options.topK = undefined
+    successMessage.value = null
+    showScheduleDialog.value = true
+    await loadProviders()
+}
+
+const loadProviders = async () => {
+    loadingProviders.value = true
+    try {
+        availableModels.value = await executionsApi.getAvailableModels()
+    } catch (err) {
+        error.value = err instanceof Error ? err.message : 'Failed to load models'
+    } finally {
+        loadingProviders.value = false
+    }
+}
+
+const closeScheduleDialog = () => {
+    showScheduleDialog.value = false
+    schedulingPrompt.value = null
+    successMessage.value = null
+}
+
+const submitScheduleExecution = async () => {
+    if (!schedulingPrompt.value) return
+
+    scheduling.value = true
+    successMessage.value = null
+
+    try {
+        const options: Record<string, any> = {}
+        if (scheduleFormData.options.temperature !== undefined) {
+            options.temperature = scheduleFormData.options.temperature
+        }
+        if (scheduleFormData.options.maxTokens !== undefined) {
+            options.maxTokens = scheduleFormData.options.maxTokens
+        }
+        if (scheduleFormData.options.topP !== undefined) {
+            options.topP = scheduleFormData.options.topP
+        }
+        if (scheduleFormData.options.topK !== undefined) {
+            options.topK = scheduleFormData.options.topK
+        }
+
+        const execution = await executionsApi.create({
+            promptId: schedulingPrompt.value.id,
+            userInput: scheduleFormData.userInput,
+            providerModel: scheduleFormData.providerModel,
+            options: Object.keys(options).length > 0 ? options : undefined
+        })
+
+        successMessage.value = `Execution scheduled successfully! Execution ID: ${execution.id}`
+    } catch (err) {
+        error.value = err instanceof Error ? err.message : 'Failed to schedule execution'
+    } finally {
+        scheduling.value = false
     }
 }
 

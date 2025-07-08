@@ -212,12 +212,25 @@ export const ExecutionApiDefinition = CreateApiDefinition({
             // GET /api/v1/executions/providers - List available providers
             listProviders: {
                 method: 'GET',
-                path: '/providers',
+                path: '/providers/list',
                 params: z.object({}),
                 query: z.object({}),
                 body: z.object({}),
                 responses: CreateResponses({
                     200: z.array(z.string()),
+                    500: ErrorResponseSchema
+                })
+            },
+
+            // GET /api/v1/executions/providers/models - Get available models for all providers
+            getAvailableModels: {
+                method: 'GET',
+                path: '/providers/models',
+                params: z.object({}),
+                query: z.object({}),
+                body: z.object({}),
+                responses: CreateResponses({
+                    200: z.record(z.string(), z.array(z.string())),
                     500: ErrorResponseSchema
                 })
             }
