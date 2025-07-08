@@ -22,6 +22,11 @@ const router = createRouter({
       name: 'settings',
       component: () => import('../views/SettingsView.vue'),
     },
+    {
+      path: '/prompts',
+      name: 'prompts',
+      component: () => import('../views/PromptsView.vue'),
+    },
   ],
 })
 

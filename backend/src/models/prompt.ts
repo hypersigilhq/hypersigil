@@ -40,7 +40,7 @@ export class PromptModel extends Model<Prompt> {
     public async findWithSearch(options: {
         page: number;
         limit: number;
-        search?: string;
+        search?: string | undefined;
         orderBy?: string;
         orderDirection?: 'ASC' | 'DESC';
     }): Promise<{

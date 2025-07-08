@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CreateApiDefinition, CreateResponses } from 'ts-typed-api';
+import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 
 // Prompt response schema
 const PromptResponseSchema = z.object({
@@ -164,3 +164,10 @@ export const PromptApiDefinition = CreateApiDefinition({
         }
     }
 });
+
+// Export types for use in components
+export type PromptResponse = z.infer<typeof PromptResponseSchema>;
+export type CreatePromptRequest = z.infer<typeof CreatePromptRequestSchema>;
+export type UpdatePromptRequest = z.infer<typeof UpdatePromptRequestSchema>;
+export type PaginatedPromptsResponse = z.infer<typeof PaginatedPromptsResponseSchema>;
+export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
