@@ -1,6 +1,6 @@
 <template>
     <Dialog v-model:open="isOpen">
-        <DialogContent class="max-w-2xl">
+        <DialogContent class="max-w-7xl">
             <DialogHeader>
                 <DialogTitle>
                     {{ isCloning ? 'Clone Execution' : 'Schedule Execution' }}
@@ -26,7 +26,7 @@
                 <div>
                     <Label for="userInput">User Input</Label>
                     <Textarea id="userInput" v-model="formData.userInput"
-                        placeholder="Enter the input text to process with this prompt" rows="4" required />
+                        placeholder="Enter the input text to process with this prompt" rows="12" required />
                 </div>
 
                 <div>

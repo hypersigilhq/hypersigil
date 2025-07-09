@@ -162,7 +162,7 @@
 
         <!-- View Dialog -->
         <Dialog v-model:open="showViewDialog">
-            <DialogContent class="max-w-4xl">
+            <DialogContent class="max-w-4xl w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
                 <DialogHeader>
                     <DialogTitle>{{ viewingPrompt?.name }}</DialogTitle>
                     <DialogDescription>
@@ -171,18 +171,21 @@
                     </DialogDescription>
                 </DialogHeader>
 
-                <div v-if="viewingPrompt" class="space-y-4">
-                    <div>
-                        <Label>Prompt</Label>
-                        <div class="mt-1 p-3 bg-muted rounded-md">
-                            <pre class="whitespace-pre-wrap text-sm">{{ viewingPrompt.prompt }}</pre>
+                <div v-if="viewingPrompt" class="flex-1 overflow-hidden flex flex-col space-y-4 p-4">
+                    <div class="flex-shrink-0 grid grid-cols-2 gap-4 h-full">
+                        <div class="flex flex-col min-h-0">
+                            <Label>Prompt</Label>
+                            <div class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
+                                <pre class="whitespace-pre-wrap text-sm">{{ viewingPrompt.prompt }}</pre>
+                            </div>
                         </div>
-                    </div>
 
-                    <div>
-                        <Label>JSON Schema Response</Label>
-                        <div class="mt-1 p-3 bg-muted rounded-md">
-                            <pre class="text-sm">{{ JSON.stringify(viewingPrompt.json_schema_response, null, 2) }}</pre>
+                        <div class="flex flex-col min-h-0">
+                            <Label>JSON Schema Response</Label>
+                            <div class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
+                                <pre
+                                    class="whitespace-pre-wrap text-sm">{{ JSON.stringify(viewingPrompt.json_schema_response, null, 2) }}</pre>
+                            </div>
                         </div>
                     </div>
                 </div>
