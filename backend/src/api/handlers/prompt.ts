@@ -10,6 +10,14 @@ function formatPromptForResponse(prompt: any) {
         name: prompt.name,
         prompt: prompt.prompt,
         json_schema_response: prompt.json_schema_response,
+        current_version: prompt.current_version,
+        versions: prompt.versions.map((v: any) => ({
+            version: v.version,
+            name: v.name,
+            prompt: v.prompt,
+            json_schema_response: v.json_schema_response,
+            created_at: v.created_at instanceof Date ? v.created_at.toISOString() : v.created_at
+        })),
         created_at: prompt.created_at instanceof Date ? prompt.created_at.toISOString() : prompt.created_at,
         updated_at: prompt.updated_at instanceof Date ? prompt.updated_at.toISOString() : prompt.updated_at
     };

@@ -3,6 +3,7 @@ import "./api/handlers/prompt"
 import "./api/handlers/execution"
 import { config } from "./config";
 import { executionService } from "./services/execution-service";
+import './database/index'
 
 // Initialize execution service
 const initializeServices = async () => {

@@ -17,6 +17,7 @@
 - [done] Create provider health checking and failover mechanisms
 - [done] Simplify execution service by replacing in-memory queue with database polling
 - [done] Implement prompt data retrieval in execution API endpoints
+- [done] Implement prompt versioning system with automatic version creation and version-specific execution
 
 ## Frontend Features
 - [done] Connect frontend to backend API - Executions view implemented

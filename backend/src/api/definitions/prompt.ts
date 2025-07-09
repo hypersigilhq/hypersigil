@@ -5,12 +5,25 @@ import { ErrorResponseSchema, createPaginationResponseSchema, PaginationQuerySch
 // JSON Schema validation - improved type safety
 const JSONSchemaSchema: z.ZodType<Record<string, unknown>> = z.record(z.unknown());
 
+// Prompt version schema
+export const PromptVersionSchema = z.object({
+    version: z.number(),
+    name: z.string(),
+    prompt: z.string(),
+    json_schema_response: JSONSchemaSchema,
+    created_at: z.string()
+});
+
+export type PromptVersion = z.infer<typeof PromptVersionSchema>;
+
 // Response schemas
 export const PromptResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
     prompt: z.string(),
     json_schema_response: JSONSchemaSchema,
+    current_version: z.number(),
+    versions: z.array(PromptVersionSchema),
     created_at: z.string(),
     updated_at: z.string()
 });

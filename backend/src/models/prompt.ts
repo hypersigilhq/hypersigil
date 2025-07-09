@@ -2,15 +2,89 @@ import { Model } from '../database/base-model';
 import { BaseDocument } from '../database/types';
 import { db } from '../database/manager';
 
+// Prompt version interface
+export interface PromptVersion {
+    version: number;
+    name: string;
+    prompt: string;
+    json_schema_response: object;
+    created_at: Date;
+}
+
 // Prompt interface extending BaseDocument
 export interface Prompt extends BaseDocument {
     name: string;
     prompt: string;
     json_schema_response: object;
+    current_version: number;
+    versions: PromptVersion[];
 }
 
 export class PromptModel extends Model<Prompt> {
     protected tableName = 'prompts';
+
+    // Override create to initialize versioning
+    public override async create(data: Omit<Prompt, 'id' | 'created_at' | 'updated_at' | 'current_version' | 'versions'>): Promise<Prompt> {
+        const now = new Date();
+        const initialVersion: PromptVersion = {
+            version: 1,
+            name: data.name,
+            prompt: data.prompt,
+            json_schema_response: data.json_schema_response,
+            created_at: now
+        };
+
+        const promptData = {
+            ...data,
+            current_version: 1,
+            versions: [initialVersion]
+        };
+
+        return super.create(promptData);
+    }
+
+    // Override update to handle versioning
+    public override async update(id: string, data: Partial<Omit<Prompt, 'id' | 'created_at' | 'current_version' | 'versions'>>): Promise<Prompt | null> {
+        const existing = await this.findById(id);
+        if (!existing) {
+            return null;
+        }
+
+        // Check if any versionable content changed
+        const hasContentChanges =
+            (data.name && data.name !== existing.name) ||
+            (data.prompt && data.prompt !== existing.prompt) ||
+            (data.json_schema_response && JSON.stringify(data.json_schema_response) !== JSON.stringify(existing.json_schema_response));
+
+        if (hasContentChanges) {
+            // Create new version
+            const newVersion = existing.current_version + 1;
+            const newVersionEntry: PromptVersion = {
+                version: newVersion,
+                name: data.name || existing.name,
+                prompt: data.prompt || existing.prompt,
+                json_schema_response: data.json_schema_response || existing.json_schema_response,
+                created_at: new Date()
+            };
+
+            // Update with new version
+            const updateData = {
+                ...data,
+                current_version: newVersion,
+                versions: [...existing.versions, newVersionEntry]
+            };
+
+            return super.update(id, updateData);
+        } else {
+            // No content changes, just update metadata
+            return super.update(id, data);
+        }
+    }
+
+    // Helper method to get a specific version
+    public getVersion(prompt: Prompt, version: number): PromptVersion | null {
+        return prompt.versions.find(v => v.version === version) || null;
+    }
 
     // Custom method to find prompts by name
     public async findByName(name: string): Promise<Prompt | null> {

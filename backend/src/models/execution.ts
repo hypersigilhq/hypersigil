@@ -6,6 +6,7 @@ import { ExecutionOptions } from '../providers/base-provider';
 // Execution interface extending BaseDocument
 export interface Execution extends BaseDocument {
     prompt_id: string;
+    prompt_version: number;
     user_input: string;
     provider: string;  // e.g., "ollama"
     model: string;     // e.g., "qwen2.5:6b"

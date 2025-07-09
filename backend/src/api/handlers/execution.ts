@@ -11,10 +11,11 @@ RegisterHandlers(app, ExecutionApiDefinition, {
     executions: {
         create: async (req, res) => {
             try {
-                const { promptId, userInput, providerModel, options } = req.body;
+                const { promptId, promptVersion, userInput, providerModel, options } = req.body;
 
                 const execution = await executionService.createExecution({
                     promptId,
+                    ...(promptVersion !== undefined && { promptVersion }),
                     userInput,
                     providerModel,
                     options: options as ExecutionOptions
@@ -23,6 +24,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                 const response = {
                     id: execution.id!,
                     prompt_id: execution.prompt_id,
+                    prompt_version: execution.prompt_version,
                     user_input: execution.user_input,
                     provider: execution.provider,
                     model: execution.model,
@@ -101,9 +103,12 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
                         let prompt = promptsMap.get(execution.prompt_id)
 
+                        let pv = prompt.versions.find((v: any) => v.version === execution.prompt_version)
+
                         return {
                             id: execution.id!,
                             prompt_id: execution.prompt_id,
+                            prompt_version: execution.prompt_version,
                             user_input: execution.user_input,
                             provider: execution.provider,
                             model: execution.model,
@@ -115,13 +120,9 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             created_at: execution.created_at!.toISOString(),
                             updated_at: execution.updated_at!.toISOString(),
                             options: execution.options,
-                            prompt: {
-                                id: prompt.id!,
-                                name: prompt.name!,
-                                prompt: prompt.prompt!,
-                                json_schema_response: { ...prompt.json_schema_response },
-                                created_at: prompt.created_at!.toISOString()!,
-                                updated_at: prompt.updated_at!.toISOString()!
+                            prompt: prompt && {
+                                name: pv.name!,
+                                version: pv.version
                             }
                         }
                     })
@@ -151,16 +152,14 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
                 const prompt = await promptModel.findById(execution.prompt_id);
 
+                let pv = prompt!.versions.find((v: any) => v.version === execution.prompt_version)
                 const response = {
                     id: execution.id!,
                     prompt_id: execution.prompt_id,
+                    prompt_version: execution.prompt_version,
                     prompt: prompt && {
-                        id: prompt.id!,
-                        name: prompt.name!,
-                        prompt: prompt.prompt!,
-                        json_schema_response: { ...prompt.json_schema_response },
-                        created_at: prompt.created_at!.toISOString()!,
-                        updated_at: prompt.updated_at!.toISOString()!
+                        name: pv!.name!,
+                        version: pv!.version
                     } || undefined,
                     user_input: execution.user_input,
                     provider: execution.provider,

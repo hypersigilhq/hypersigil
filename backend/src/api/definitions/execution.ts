@@ -40,7 +40,8 @@ export type ExecutionStatus = z.infer<typeof ExecutionStatusSchema>;
 export const ExecutionResponseSchema = z.object({
     id: z.string(),
     prompt_id: z.string(),
-    prompt: PromptResponseSchema.optional(),
+    prompt_version: z.number(),
+    prompt: z.object({ name: z.string(), version: z.number() }).optional(),
     user_input: z.string(),
     provider: z.string(),
     model: z.string(),
@@ -59,6 +60,7 @@ export type ExecutionResponse = z.infer<typeof ExecutionResponseSchema>;
 // Request schemas
 export const CreateExecutionRequestSchema = z.object({
     promptId: z.string().uuid(),
+    promptVersion: z.number().optional(),
     userInput: z.string().min(1),
     providerModel: z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model'),
     options: ExecutionOptionsSchema.optional()

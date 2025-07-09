@@ -5,6 +5,7 @@ import { ProviderError, ExecutionOptions, JSONSchema } from '../providers/base-p
 
 export interface CreateExecutionRequest {
     promptId: string;
+    promptVersion?: number;
     userInput: string;
     providerModel: string; // Format: "provider:model" e.g., "ollama:qwen2.5:6b"
     options?: ExecutionOptions;
@@ -164,12 +165,22 @@ export class ExecutionService {
             throw new Error(`Prompt not found: ${request.promptId}`);
         }
 
+        // Determine version to execute
+        const versionToExecute = request.promptVersion || prompt.current_version || 1;
+
+        // Validate version exists
+        const promptVersion = promptModel.getVersion(prompt, versionToExecute);
+        if (!promptVersion) {
+            throw new Error(`Prompt version ${versionToExecute} not found`);
+        }
+
         // Parse and validate provider:model format
         const { provider: providerName, model } = providerRegistry.parseProviderModel(request.providerModel);
 
         // Create execution record
         const executionData: Omit<Execution, 'id' | 'created_at' | 'updated_at'> = {
             prompt_id: request.promptId,
+            prompt_version: versionToExecute,
             user_input: request.userInput,
             provider: providerName,
             model: model,
@@ -183,7 +194,7 @@ export class ExecutionService {
         const execution = await executionModel.create(executionData);
 
         // Execution will be picked up by the polling mechanism
-        console.log(`Created execution ${execution.id} - will be processed by polling`);
+        console.log(`Created execution ${execution.id} for prompt version ${versionToExecute} - will be processed by polling`);
 
         return execution;
     }
@@ -272,6 +283,15 @@ export class ExecutionService {
                 return;
             }
 
+            // Get the specific version to execute
+            const promptVersion = promptModel.getVersion(prompt, execution.prompt_version);
+            if (!promptVersion) {
+                await executionModel.updateStatus(executionId, 'failed', {
+                    error_message: `Prompt version ${execution.prompt_version} not found`
+                });
+                return;
+            }
+
             // Get provider
             const provider = providerRegistry.getProvider(execution.provider);
             if (!provider) {
@@ -281,12 +301,12 @@ export class ExecutionService {
                 return;
             }
 
-            // Execute the prompt
+            // Execute the prompt using the specific version
             const result = await provider.execute(
-                prompt.prompt,
+                promptVersion.prompt,
                 execution.user_input,
                 execution.model,
-                { schema: prompt.json_schema_response as JSONSchema, ...execution.options }
+                { schema: promptVersion.json_schema_response as JSONSchema, ...execution.options }
             );
 
             // Update with result

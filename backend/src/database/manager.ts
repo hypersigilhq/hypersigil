@@ -21,7 +21,7 @@ export class DatabaseManager {
         // Enable WAL mode for better concurrency
         this.db.pragma('journal_mode = WAL');
         this.db.pragma('synchronous = NORMAL');
-        this.db.pragma('cache_size = 1000');
+        this.db.pragma('cache_size = 1000000');
         this.db.pragma('temp_store = memory');
 
         console.log(`📁 Database initialized at: ${this.dbPath}`);

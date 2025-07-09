@@ -109,7 +109,7 @@
                         </TableCell>
                         <TableCell class="max-w-xs">
                             <div class="truncate" :title="execution.user_input">
-                                {{ execution.prompt?.name }}
+                                {{ execution.prompt?.name }} (#{{ execution.prompt?.version }})
                             </div>
                         </TableCell>
                         <TableCell class="max-w-xs">
@@ -308,7 +308,7 @@ import {
 
 import { executionsApi } from '@/services/api-client'
 import ScheduleExecutionDialog from './ScheduleExecutionDialog.vue'
-import { ExecutionResponseSchema as ExecutionResponse } from '../../services/definitions/execution'
+import type { ExecutionResponse } from '../../services/definitions/execution'
 
 interface ExecutionStats {
     total: number
