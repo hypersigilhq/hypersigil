@@ -6,3 +6,35 @@ For every work, plan it first and act as a Software Architect with 15 years of e
 For implementation think like UX/UI designer first, then when writing code act as a Senior Software Engineer with 15 years of experience, you value maintainability and readability (only use comments in complex cases when the code is not very readable).
 
 After every implementation, add high-level documentation in ./product-documentation/implemented-features
+
+# API Definitions Architecture Rules
+
+## Central API Definitions System
+- All API contracts MUST be defined in `backend/src/api/definitions/` using ts-typed-api package
+- These definitions are the single source of truth for API contracts between backend and frontend
+- Definitions are symlinked to `ui/src/services/definitions/` - both directories must stay in sync
+
+## Self-Contained Definitions Rule
+- API definition files in `backend/src/api/definitions/` MUST be completely self-contained
+- Only import from external packages (zod, ts-typed-api) or other definition files
+- NEVER import from internal backend modules (models, services, etc.) or UI modules
+- All types, schemas, and interfaces needed by both backend and UI must be defined within these files
+
+## Type Safety in Handlers
+- Backend API handlers in `backend/src/api/*-handlers.ts` MUST use types from the definitions
+- NEVER use `any` or `unknown` types in handler implementations
+- Use proper type imports from definition files for request/response handling
+- Leverage ts-typed-api's type safety features rather than manual type casting
+
+## API Changes Workflow
+- When adding new endpoints or modifying existing ones:
+  1. First update the relevant definition file in `backend/src/api/definitions/`
+  2. Implement the backend handler using the defined types
+  3. Update the UI API client to use the new definitions
+  4. Test both backend and frontend to ensure type safety
+
+## Definition File Organization
+- Group related endpoints in the same definition file (e.g., all prompt operations in prompt.ts)
+- Export both schemas and inferred types for use in handlers and UI
+- Use consistent naming conventions for schemas and types
+- You can reuse types within `backend/src/api/definitions/` folder from different files

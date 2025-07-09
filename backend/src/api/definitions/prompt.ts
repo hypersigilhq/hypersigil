@@ -52,7 +52,6 @@ export const PromptApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/prompts',
     endpoints: {
         prompts: {
-            // GET /api/v1/prompts - List prompts with pagination and search
             list: {
                 method: 'GET',
                 path: '/list/blahblah',
@@ -72,7 +71,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // POST /api/v1/prompts - Create a new prompt
             create: {
                 method: 'POST',
                 path: '/',
@@ -86,7 +84,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // GET /api/v1/prompts/:id - Get a specific prompt
             getById: {
                 method: 'GET',
                 path: '/:id',
@@ -135,7 +132,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // GET /api/v1/prompts/search/:pattern - Search prompts by name pattern
             searchByName: {
                 method: 'GET',
                 path: '/search/:pattern',
@@ -151,7 +147,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // GET /api/v1/prompts/recent - Get recent prompts
             getRecent: {
                 method: 'GET',
                 path: '/recent',

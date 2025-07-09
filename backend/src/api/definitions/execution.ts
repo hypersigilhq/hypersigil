@@ -103,7 +103,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/executions',
     endpoints: {
         executions: {
-            // POST /api/v1/executions - Create a new execution
             create: {
                 method: 'POST',
                 path: '/',
@@ -117,8 +116,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                     500: ErrorResponseSchema
                 })
             },
-
-            // GET /api/v1/executions - List executions with pagination and filtering
             list: {
                 method: 'GET',
                 path: '/',
@@ -140,7 +137,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // GET /api/v1/executions/:id - Get a specific execution
             getById: {
                 method: 'GET',
                 path: '/:id',
@@ -173,7 +169,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // GET /api/v1/executions/stats - Get execution statistics
             getStats: {
                 method: 'GET',
                 path: '/stats/all',
@@ -186,7 +181,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // GET /api/v1/executions/queue/status - Get queue processing status
             getQueueStatus: {
                 method: 'GET',
                 path: '/queue/status',
@@ -201,7 +195,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
         },
 
         providers: {
-            // GET /api/v1/executions/providers/health - Get provider health status
             getProviderHealth: {
                 method: 'GET',
                 path: '/providers/health',
@@ -214,7 +207,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // GET /api/v1/executions/providers - List available providers
             listProviders: {
                 method: 'GET',
                 path: '/providers/list',
@@ -227,7 +219,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // GET /api/v1/executions/providers/models - Get available models for all providers
             getAvailableModels: {
                 method: 'GET',
                 path: '/providers/models',
