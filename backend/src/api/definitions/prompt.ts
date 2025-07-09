@@ -1,47 +1,71 @@
 import { z } from 'zod';
 import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
+import { ErrorResponseSchema, createPaginationResponseSchema, PaginationQuerySchema, OrderDirectionSchema } from './common';
 
+// JSON Schema validation - improved type safety
+const JSONSchemaSchema: z.ZodType<Record<string, unknown>> = z.record(z.unknown());
+
+// Response schemas
 export const PromptResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
     prompt: z.string(),
-    json_schema_response: z.object({}).passthrough(),
+    json_schema_response: JSONSchemaSchema,
     created_at: z.string(),
     updated_at: z.string()
 });
-export type PromptResponseSchema = z.infer<typeof PromptResponseSchema>;
 
+export type PromptResponse = z.infer<typeof PromptResponseSchema>;
+
+// Request schemas
 export const CreatePromptRequestSchema = z.object({
     name: z.string().min(1).max(255),
     prompt: z.string().min(1),
-    json_schema_response: z.object({}).passthrough()
+    json_schema_response: JSONSchemaSchema
 });
+
+export type CreatePromptRequest = z.infer<typeof CreatePromptRequestSchema>;
 
 export const UpdatePromptRequestSchema = z.object({
     name: z.string().min(1).max(255).optional(),
     prompt: z.string().min(1).optional(),
-    json_schema_response: z.object({}).passthrough().optional()
+    json_schema_response: JSONSchemaSchema.optional()
 });
 
-export const PaginatedPromptsResponseSchema = z.object({
-    data: z.array(PromptResponseSchema),
-    total: z.number(),
-    page: z.number(),
-    limit: z.number(),
-    totalPages: z.number(),
-    hasNext: z.boolean(),
-    hasPrev: z.boolean()
-});
-
-export const ErrorResponseSchema = z.object({
-    error: z.string(),
-    message: z.string().optional(),
-    details: z.any().optional()
-});
-
-export type PromptResponse = z.infer<typeof PromptResponseSchema>;
-export type CreatePromptRequest = z.infer<typeof CreatePromptRequestSchema>;
 export type UpdatePromptRequest = z.infer<typeof UpdatePromptRequestSchema>;
+
+// Paginated response schema
+export const PaginatedPromptsResponseSchema = createPaginationResponseSchema(PromptResponseSchema);
+
+export type PaginatedPromptsResponse = z.infer<typeof PaginatedPromptsResponseSchema>;
+
+// Query schemas
+export const PromptListQuerySchema = PaginationQuerySchema.extend({
+    search: z.string().optional(),
+    orderBy: z.enum(['name', 'created_at', 'updated_at']).optional().default('created_at'),
+    orderDirection: OrderDirectionSchema.optional().default('DESC')
+});
+
+export type PromptListQuery = z.infer<typeof PromptListQuerySchema>;
+
+export const PromptRecentQuerySchema = z.object({
+    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(50)).optional().default('10')
+});
+
+export type PromptRecentQuery = z.infer<typeof PromptRecentQuerySchema>;
+
+// Parameter schemas
+export const PromptParamsSchema = z.object({
+    id: z.string().uuid()
+});
+
+export type PromptParams = z.infer<typeof PromptParamsSchema>;
+
+export const PromptSearchParamsSchema = z.object({
+    pattern: z.string().min(1)
+});
+
+export type PromptSearchParams = z.infer<typeof PromptSearchParamsSchema>;
 
 export const PromptApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/prompts',
@@ -49,15 +73,9 @@ export const PromptApiDefinition = CreateApiDefinition({
         prompts: {
             list: {
                 method: 'GET',
-                path: '/list/blahblah',
+                path: '/',
                 params: z.object({}),
-                query: z.object({
-                    page: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).optional().default('1'),
-                    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(100)).optional().default('10'),
-                    search: z.string().optional(),
-                    orderBy: z.enum(['name', 'created_at', 'updated_at']).optional().default('created_at'),
-                    orderDirection: z.enum(['ASC', 'DESC']).optional().default('DESC')
-                }),
+                query: PromptListQuerySchema,
                 body: z.object({}),
                 responses: CreateResponses({
                     200: PaginatedPromptsResponseSchema,
@@ -82,9 +100,7 @@ export const PromptApiDefinition = CreateApiDefinition({
             getById: {
                 method: 'GET',
                 path: '/:id',
-                params: z.object({
-                    id: z.string().uuid()
-                }),
+                params: PromptParamsSchema,
                 query: z.object({}),
                 body: z.object({}),
                 responses: CreateResponses({
@@ -97,9 +113,7 @@ export const PromptApiDefinition = CreateApiDefinition({
             update: {
                 method: 'PUT',
                 path: '/:id',
-                params: z.object({
-                    id: z.string().uuid()
-                }),
+                params: PromptParamsSchema,
                 query: z.object({}),
                 body: UpdatePromptRequestSchema,
                 responses: CreateResponses({
@@ -113,9 +127,7 @@ export const PromptApiDefinition = CreateApiDefinition({
             delete: {
                 method: 'DELETE',
                 path: '/:id',
-                params: z.object({
-                    id: z.string().uuid()
-                }),
+                params: PromptParamsSchema,
                 query: z.object({}),
                 body: z.object({}),
                 responses: CreateResponses({
@@ -128,9 +140,7 @@ export const PromptApiDefinition = CreateApiDefinition({
             searchByName: {
                 method: 'GET',
                 path: '/search/:pattern',
-                params: z.object({
-                    pattern: z.string().min(1)
-                }),
+                params: PromptSearchParamsSchema,
                 query: z.object({}),
                 body: z.object({}),
                 responses: CreateResponses({
@@ -144,9 +154,7 @@ export const PromptApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/recent',
                 params: z.object({}),
-                query: z.object({
-                    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(50)).optional().default('10')
-                }),
+                query: PromptRecentQuerySchema,
                 body: z.object({}),
                 responses: CreateResponses({
                     200: z.array(PromptResponseSchema),

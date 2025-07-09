@@ -1,14 +1,16 @@
 import { z } from 'zod';
 import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 import { PromptResponseSchema } from './prompt';
+import { ErrorResponseSchema, createPaginationResponseSchema, PaginationQuerySchema, OrderDirectionSchema } from './common';
 
-const JSONSchemaSchema: z.ZodType<any> = z.lazy(() => z.object({
+// JSON Schema validation - improved type safety
+const JSONSchemaSchema: z.ZodType<Record<string, unknown>> = z.lazy(() => z.object({
     type: z.enum(['object', 'array', 'string', 'number', 'boolean', 'null']),
     properties: z.record(z.string(), JSONSchemaSchema).optional(),
     items: JSONSchemaSchema.optional(),
     required: z.array(z.string()).optional(),
     description: z.string().optional(),
-    enum: z.array(z.any()).optional(),
+    enum: z.array(z.unknown()).optional(),
     format: z.string().optional(),
     minimum: z.number().optional(),
     maximum: z.number().optional(),
@@ -16,16 +18,25 @@ const JSONSchemaSchema: z.ZodType<any> = z.lazy(() => z.object({
     maxLength: z.number().optional(),
     pattern: z.string().optional(),
     additionalProperties: z.union([z.boolean(), JSONSchemaSchema]).optional()
-}).catchall(z.any()));
+}).catchall(z.unknown()));
 
-const ExecutionOptionsSchema = z.object({
+// Execution options schema
+export const ExecutionOptionsSchema = z.object({
     schema: JSONSchemaSchema.optional(),
     temperature: z.number().min(0).max(2).optional(),
     maxTokens: z.number().min(1).optional(),
     topP: z.number().min(0).max(1).optional(),
     topK: z.number().min(1).optional()
-}).catchall(z.any());
+}).catchall(z.unknown());
 
+export type ExecutionOptions = z.infer<typeof ExecutionOptionsSchema>;
+
+// Execution status enum
+export const ExecutionStatusSchema = z.enum(['pending', 'running', 'completed', 'failed']);
+
+export type ExecutionStatus = z.infer<typeof ExecutionStatusSchema>;
+
+// Response schemas
 export const ExecutionResponseSchema = z.object({
     id: z.string(),
     prompt_id: z.string(),
@@ -33,7 +44,7 @@ export const ExecutionResponseSchema = z.object({
     user_input: z.string(),
     provider: z.string(),
     model: z.string(),
-    status: z.enum(['pending', 'running', 'completed', 'failed']),
+    status: ExecutionStatusSchema,
     result: z.string().optional(),
     error_message: z.string().optional(),
     started_at: z.string().optional(),
@@ -41,28 +52,27 @@ export const ExecutionResponseSchema = z.object({
     created_at: z.string(),
     updated_at: z.string(),
     options: ExecutionOptionsSchema.optional()
-})
+});
 
-export type ExecutionResponseSchema = z.infer<typeof ExecutionResponseSchema>
+export type ExecutionResponse = z.infer<typeof ExecutionResponseSchema>;
 
-const CreateExecutionRequestSchema = z.object({
+// Request schemas
+export const CreateExecutionRequestSchema = z.object({
     promptId: z.string().uuid(),
     userInput: z.string().min(1),
     providerModel: z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model'),
     options: ExecutionOptionsSchema.optional()
 });
 
-const PaginatedExecutionsResponseSchema = z.object({
-    data: z.array(ExecutionResponseSchema),
-    total: z.number(),
-    page: z.number(),
-    limit: z.number(),
-    totalPages: z.number(),
-    hasNext: z.boolean(),
-    hasPrev: z.boolean()
-})
+export type CreateExecutionRequest = z.infer<typeof CreateExecutionRequestSchema>;
 
-const ExecutionStatsResponseSchema = z.object({
+// Paginated response schema
+export const PaginatedExecutionsResponseSchema = createPaginationResponseSchema(ExecutionResponseSchema);
+
+export type PaginatedExecutionsResponse = z.infer<typeof PaginatedExecutionsResponseSchema>;
+
+// Stats response schema
+export const ExecutionStatsResponseSchema = z.object({
     total: z.number(),
     pending: z.number(),
     running: z.number(),
@@ -71,23 +81,53 @@ const ExecutionStatsResponseSchema = z.object({
     byProvider: z.record(z.string(), z.number())
 });
 
-const ProviderHealthResponseSchema = z.record(z.string(), z.object({
+export type ExecutionStatsResponse = z.infer<typeof ExecutionStatsResponseSchema>;
+
+// Provider health response schema
+export const ProviderHealthResponseSchema = z.record(z.string(), z.object({
     available: z.boolean(),
     models: z.array(z.string()),
     version: z.string().optional(),
     error: z.string().optional()
 }));
 
-const QueueStatusResponseSchema = z.object({
+export type ProviderHealthResponse = z.infer<typeof ProviderHealthResponseSchema>;
+
+// Queue status response schema
+export const QueueStatusResponseSchema = z.object({
     processing: z.number(),
     queuedIds: z.array(z.string())
 });
 
-const ErrorResponseSchema = z.object({
-    error: z.string(),
-    message: z.string().optional(),
-    details: z.any().optional()
+export type QueueStatusResponse = z.infer<typeof QueueStatusResponseSchema>;
+
+// Provider models response schema
+export const ProviderModelsResponseSchema = z.record(z.string(), z.array(z.string()));
+
+export type ProviderModelsResponse = z.infer<typeof ProviderModelsResponseSchema>;
+
+// Providers list response schema
+export const ProvidersListResponseSchema = z.array(z.string());
+
+export type ProvidersListResponse = z.infer<typeof ProvidersListResponseSchema>;
+
+// Query schemas
+export const ExecutionListQuerySchema = PaginationQuerySchema.extend({
+    status: ExecutionStatusSchema.optional(),
+    provider: z.string().optional(),
+    promptId: z.string().uuid().optional(),
+    orderBy: z.enum(['created_at', 'updated_at', 'started_at', 'completed_at']).optional().default('created_at'),
+    orderDirection: OrderDirectionSchema.optional().default('DESC')
 });
+
+export type ExecutionListQuery = z.infer<typeof ExecutionListQuerySchema>;
+
+// Parameter schemas
+export const ExecutionParamsSchema = z.object({
+    id: z.string().uuid()
+});
+
+export type ExecutionParams = z.infer<typeof ExecutionParamsSchema>;
 
 export const ExecutionApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/executions',
@@ -110,15 +150,7 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/',
                 params: z.object({}),
-                query: z.object({
-                    page: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).optional().default('1'),
-                    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(100)).optional().default('10'),
-                    status: z.enum(['pending', 'running', 'completed', 'failed']).optional(),
-                    provider: z.string().optional(),
-                    promptId: z.string().uuid().optional(),
-                    orderBy: z.enum(['created_at', 'updated_at', 'started_at', 'completed_at']).optional().default('created_at'),
-                    orderDirection: z.enum(['ASC', 'DESC']).optional().default('DESC')
-                }),
+                query: ExecutionListQuerySchema,
                 body: z.object({}),
                 responses: CreateResponses({
                     200: PaginatedExecutionsResponseSchema,
@@ -130,9 +162,7 @@ export const ExecutionApiDefinition = CreateApiDefinition({
             getById: {
                 method: 'GET',
                 path: '/:id',
-                params: z.object({
-                    id: z.string().uuid()
-                }),
+                params: ExecutionParamsSchema,
                 query: z.object({}),
                 body: z.object({}),
                 responses: CreateResponses({
@@ -142,13 +172,10 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // DELETE /api/v1/executions/:id - Cancel a pending execution
             cancel: {
                 method: 'DELETE',
                 path: '/:id',
-                params: z.object({
-                    id: z.string().uuid()
-                }),
+                params: ExecutionParamsSchema,
                 query: z.object({}),
                 body: z.object({}),
                 responses: CreateResponses({
@@ -204,7 +231,7 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 query: z.object({}),
                 body: z.object({}),
                 responses: CreateResponses({
-                    200: z.array(z.string()),
+                    200: ProvidersListResponseSchema,
                     500: ErrorResponseSchema
                 })
             },
@@ -216,7 +243,7 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 query: z.object({}),
                 body: z.object({}),
                 responses: CreateResponses({
-                    200: z.record(z.string(), z.array(z.string())),
+                    200: ProviderModelsResponseSchema,
                     500: ErrorResponseSchema
                 })
             }

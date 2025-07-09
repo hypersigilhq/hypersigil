@@ -1,1 +1,0 @@
-../../../../backend/src/api/definitions/prompt.ts

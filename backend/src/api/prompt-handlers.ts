@@ -4,7 +4,6 @@ import { Prompt, promptModel } from '../models/prompt';
 import { z } from 'zod';
 import { PromptApiDefinition } from './definitions/prompt';
 
-// Helper function to format prompt for API response
 function formatPromptForResponse(prompt: any) {
     return {
         id: prompt.id,
@@ -17,7 +16,6 @@ function formatPromptForResponse(prompt: any) {
 }
 
 
-// Custom middleware for ts-typed-api
 const loggingMiddleware: EndpointMiddleware = (req, res, next, endpointInfo) => {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] ${req.method} ${req.path} - Endpoint: ${endpointInfo.domain}.${endpointInfo.routeKey}`);
@@ -37,7 +35,6 @@ const timingMiddleware: EndpointMiddleware = (req, res, next, endpointInfo) => {
 
 RegisterHandlers(app, PromptApiDefinition, {
     prompts: {
-        // GET /api/v1/prompts - List prompts with pagination and search
         list: async (req, res) => {
             try {
                 const { page, limit, search, orderBy, orderDirection } = req.query;
@@ -65,11 +62,9 @@ RegisterHandlers(app, PromptApiDefinition, {
             }
         },
 
-        // POST /api/v1/prompts - Create a new prompt
         create: async (req, res) => {
             try {
 
-                // Check if prompt with same name already exists
                 const existingPrompt = await promptModel.findByName(req.body.name);
                 if (existingPrompt) {
                     return res.respond(400, {
@@ -106,7 +101,6 @@ RegisterHandlers(app, PromptApiDefinition, {
             }
         },
 
-        // GET /api/v1/prompts/:id - Get a specific prompt
         getById: async (req, res) => {
             try {
                 const { id } = req.params;
@@ -129,13 +123,11 @@ RegisterHandlers(app, PromptApiDefinition, {
             }
         },
 
-        // PUT /api/v1/prompts/:id - Update a specific prompt
         update: async (req, res) => {
             try {
                 const { id } = req.params;
                 const updateData = req.body;
 
-                // Check if prompt exists
                 const existingPrompt = await promptModel.findById(id);
                 if (!existingPrompt) {
                     return res.respond(404, {
@@ -144,7 +136,6 @@ RegisterHandlers(app, PromptApiDefinition, {
                     });
                 }
 
-                // Check if name is being updated and if it conflicts with another prompt
                 if (updateData.name && updateData.name !== existingPrompt.name) {
                     const nameConflict = await promptModel.findByName(updateData.name);
                     if (nameConflict) {
@@ -155,7 +146,6 @@ RegisterHandlers(app, PromptApiDefinition, {
                     }
                 }
 
-                // Filter out undefined values to match the expected type
                 const filteredUpdateData = Object.fromEntries(
                     Object.entries(updateData).filter(([_, value]) => value !== undefined)
                 );
@@ -194,7 +184,6 @@ RegisterHandlers(app, PromptApiDefinition, {
             }
         },
 
-        // DELETE /api/v1/prompts/:id - Delete a specific prompt
         delete: async (req, res) => {
             try {
                 const { id } = req.params;
@@ -217,7 +206,6 @@ RegisterHandlers(app, PromptApiDefinition, {
             }
         },
 
-        // GET /api/v1/prompts/search/:pattern - Search prompts by name pattern
         searchByName: async (req, res) => {
             try {
                 const { pattern } = req.params;
@@ -235,7 +223,6 @@ RegisterHandlers(app, PromptApiDefinition, {
             }
         },
 
-        // GET /api/v1/prompts/recent - Get recent prompts
         getRecent: async (req, res) => {
             try {
                 const { limit } = req.query;

@@ -7,10 +7,8 @@ import { ExecutionOptions } from '../providers/base-provider';
 import { promptModel } from '../models/prompt';
 import { ExecutionApiDefinition } from './definitions/execution';
 
-// Register execution API handlers
 RegisterHandlers(app, ExecutionApiDefinition, {
     executions: {
-        // POST /api/v1/executions - Create a new execution
         create: async (req, res) => {
             try {
                 const { promptId, userInput, providerModel, options } = req.body;
@@ -65,7 +63,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
         },
 
-        // GET /api/v1/executions - List executions with pagination and filtering
         list: async (req, res) => {
             try {
                 const { page, limit, status, provider, promptId, orderBy, orderDirection } = req.query;
@@ -80,7 +77,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     orderDirection
                 });
 
-                // Batch fetch prompts for all executions
                 const promptIds = [...new Set(result.data.map(execution => execution.prompt_id))];
                 const promptsMap = new Map();
 
@@ -141,7 +137,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
         },
 
-        // GET /api/v1/executions/:id - Get a specific execution
         getById: async (req, res) => {
             try {
                 const { id } = req.params;
@@ -154,7 +149,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     });
                 }
 
-                // Fetch the associated prompt
                 const prompt = await promptModel.findById(execution.prompt_id);
 
                 const response = {
@@ -191,7 +185,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
         },
 
-        // DELETE /api/v1/executions/:id - Cancel a pending execution
         cancel: async (req, res) => {
             try {
                 const { id } = req.params;
@@ -222,7 +215,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
         },
 
-        // GET /api/v1/executions/stats - Get execution statistics
         getStats: async (req, res) => {
             try {
                 const stats = await executionService.getExecutionStats();
@@ -236,15 +228,12 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
         },
 
-        // GET /api/v1/executions/queue/status - Get processing status
         getQueueStatus: async (req, res) => {
             try {
                 const processingStatus = await executionService.getProcessingStatus();
 
-                // Adapt the response to match the expected API format
                 const queueStatus = {
                     processing: processingStatus.running,
-                    queuedIds: [] // No longer tracking individual IDs since we use database polling
                 };
 
                 res.respond(200, queueStatus);
@@ -259,7 +248,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
     },
 
     providers: {
-        // GET /api/v1/executions/providers/health - Get provider health status
         getProviderHealth: async (req, res) => {
             try {
                 const health = await providerRegistry.getProviderHealth();
@@ -273,7 +261,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
         },
 
-        // GET /api/v1/executions/providers - List available providers
         listProviders: async (req, res) => {
             try {
                 const providers = providerRegistry.getProviderNames();
@@ -287,7 +274,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
         },
 
-        // GET /api/v1/executions/providers/models - Get available models for all providers
         getAvailableModels: async (req, res) => {
             try {
                 const models = await providerRegistry.getAvailableModels();
