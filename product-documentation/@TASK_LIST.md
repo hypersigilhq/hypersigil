@@ -15,6 +15,7 @@
 - [done] Implement execution API endpoints with real-time status updates
 - [done] Add execution monitoring and logging capabilities
 - [done] Create provider health checking and failover mechanisms
+- [done] Simplify execution service by replacing in-memory queue with database polling
 
 ## Frontend Features
 - [done] Connect frontend to backend API - Executions view implemented

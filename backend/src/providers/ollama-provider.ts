@@ -13,7 +13,7 @@ export class OllamaProvider implements AIProvider {
         this.config = {
             name: 'ollama',
             baseUrl: config.baseUrl || 'http://localhost:11434',
-            timeout: config.timeout || 30000, // 30 seconds
+            timeout: config.timeout || 240_000,
             maxRetries: config.maxRetries || 3,
             ...config
         };
@@ -33,7 +33,7 @@ export class OllamaProvider implements AIProvider {
         if (options?.schema) {
             fullPrompt = this.buildPromptWithSchema(fullPrompt, options.schema);
         }
-        console.log('fullPrompt', fullPrompt)
+        // console.log('fullPrompt', fullPrompt)
         const requestBody = {
             model,
             prompt: fullPrompt,

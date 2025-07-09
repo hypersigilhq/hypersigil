@@ -192,16 +192,23 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
         },
 
-        // GET /api/v1/executions/queue/status - Get queue processing status
+        // GET /api/v1/executions/queue/status - Get processing status
         getQueueStatus: async (req, res) => {
             try {
-                const queueStatus = executionService.getQueueStatus();
+                const processingStatus = await executionService.getProcessingStatus();
+
+                // Adapt the response to match the expected API format
+                const queueStatus = {
+                    processing: processingStatus.running,
+                    queuedIds: [] // No longer tracking individual IDs since we use database polling
+                };
+
                 res.respond(200, queueStatus);
             } catch (error) {
-                console.error('Error getting queue status:', error);
+                console.error('Error getting processing status:', error);
                 res.respond(500, {
                     error: 'Internal server error',
-                    message: 'Failed to get queue status'
+                    message: 'Failed to get processing status'
                 });
             }
         }

@@ -12,7 +12,10 @@ export interface CreateExecutionRequest {
 
 export class ExecutionService {
     private static instance: ExecutionService;
-    private processingQueue: Set<string> = new Set();
+    private maxConcurrentExecutions: number = 1; // Adjustable concurrency limit
+    private isInitialized: boolean = false;
+    private pollingInterval: NodeJS.Timeout | null = null;
+    private readonly POLL_INTERVAL_MS = 2000; // Poll every 2 seconds
 
     private constructor() { }
 
@@ -24,7 +27,135 @@ export class ExecutionService {
     }
 
     /**
-     * Create a new execution and queue it for processing
+     * Initialize the service and start polling for work
+     */
+    public async initialize(): Promise<void> {
+        if (this.isInitialized) {
+            return;
+        }
+
+        console.log('Initializing ExecutionService...');
+
+        try {
+            // Handle any existing running executions that were interrupted
+            await this.handleInterruptedExecutions();
+
+            // Start polling for work
+            this.startPolling();
+
+            this.isInitialized = true;
+            console.log('ExecutionService initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize ExecutionService:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Handle executions that were running when the service was stopped
+     */
+    private async handleInterruptedExecutions(): Promise<void> {
+        const runningExecutions = await executionModel.findByStatus('running');
+
+        if (runningExecutions.length > 0) {
+            console.log(`Found ${runningExecutions.length} interrupted running executions, processing them first...`);
+
+            // Process interrupted executions up to concurrency limit
+            const toProcess = runningExecutions.slice(0, this.maxConcurrentExecutions);
+
+            for (const execution of toProcess) {
+                if (execution.id) {
+                    console.log(`Resuming interrupted execution: ${execution.id}`);
+                    // Process without changing status since it's already running
+                    this.processExecution(execution.id).catch(error => {
+                        console.error(`Error resuming execution ${execution.id}:`, error);
+                    });
+                }
+            }
+        }
+    }
+
+    /**
+     * Start polling the database for work
+     */
+    private startPolling(): void {
+        if (this.pollingInterval) {
+            return; // Already polling
+        }
+
+        this.pollingInterval = setInterval(async () => {
+            try {
+                await this.pollForWork();
+            } catch (error) {
+                console.error('Error during polling:', error);
+            }
+        }, this.POLL_INTERVAL_MS);
+
+        console.log(`Started polling for executions every ${this.POLL_INTERVAL_MS}ms`);
+    }
+
+    /**
+     * Stop polling for work
+     */
+    private stopPolling(): void {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+            console.log('Stopped polling for executions');
+        }
+    }
+
+    /**
+     * Poll the database for work and process executions
+     */
+    private async pollForWork(): Promise<void> {
+        // Check current running executions count
+        const runningCount = await executionModel.count({ status: 'running' });
+
+        if (runningCount >= this.maxConcurrentExecutions) {
+            return; // At capacity
+        }
+
+        // Get available slots
+        const availableSlots = this.maxConcurrentExecutions - runningCount;
+
+        // Get pending executions to fill available slots
+        const pendingExecutions = await executionModel.getPendingExecutions(availableSlots);
+
+        if (pendingExecutions.length > 0) {
+            console.log(`Processing ${pendingExecutions.length} pending executions (${runningCount} currently running)`);
+
+            // Process each pending execution
+            for (const execution of pendingExecutions) {
+                if (execution.id) {
+                    this.processExecution(execution.id).catch(error => {
+                        console.error(`Error processing execution ${execution.id}:`, error);
+                    });
+                }
+            }
+        }
+    }
+
+    /**
+     * Set the maximum number of concurrent executions
+     */
+    public setMaxConcurrentExecutions(max: number): void {
+        if (max < 1) {
+            throw new Error('Maximum concurrent executions must be at least 1');
+        }
+        this.maxConcurrentExecutions = max;
+        console.log(`Set maximum concurrent executions to: ${max}`);
+    }
+
+    /**
+     * Get the current maximum concurrent executions setting
+     */
+    public getMaxConcurrentExecutions(): number {
+        return this.maxConcurrentExecutions;
+    }
+
+    /**
+     * Create a new execution (will be picked up by polling)
      */
     public async createExecution(request: CreateExecutionRequest): Promise<Execution> {
         // Validate prompt exists
@@ -51,8 +182,8 @@ export class ExecutionService {
 
         const execution = await executionModel.create(executionData);
 
-        // Queue for processing (fire and forget)
-        this.queueExecution(execution.id!);
+        // Execution will be picked up by the polling mechanism
+        console.log(`Created execution ${execution.id} - will be processed by polling`);
 
         return execution;
     }
@@ -106,23 +237,6 @@ export class ExecutionService {
         return updated !== null;
     }
 
-    /**
-     * Queue an execution for processing
-     */
-    private queueExecution(executionId: string): void {
-        if (this.processingQueue.has(executionId)) {
-            return; // Already queued
-        }
-
-        this.processingQueue.add(executionId);
-
-        // Process asynchronously
-        setImmediate(() => {
-            this.processExecution(executionId).finally(() => {
-                this.processingQueue.delete(executionId);
-            });
-        });
-    }
 
     /**
      * Process a single execution
@@ -136,14 +250,18 @@ export class ExecutionService {
                 return;
             }
 
-            // Skip if not pending
-            if (execution.status !== 'pending') {
-                console.warn(`Execution ${executionId} is not pending, current status: ${execution.status}`);
+            // Skip if not pending or running (interrupted executions)
+            if (execution.status !== 'pending' && execution.status !== 'running') {
+                console.warn(`Execution ${executionId} is not in processable state, current status: ${execution.status}`);
                 return;
             }
 
-            // Update status to running
-            await executionModel.updateStatus(executionId, 'running');
+            // Update status to running (if not already running)
+            if (execution.status === 'pending') {
+                await executionModel.updateStatus(executionId, 'running');
+            } else {
+                console.log(`Resuming interrupted execution ${executionId} with status: ${execution.status}`);
+            }
 
             // Get prompt
             const prompt = await promptModel.findById(execution.prompt_id);
@@ -195,33 +313,30 @@ export class ExecutionService {
     }
 
     /**
-     * Process pending executions (can be called by a background worker)
+     * Get current processing status
      */
-    public async processPendingExecutions(limit: number = 5): Promise<void> {
-        try {
-            const pendingExecutions = await executionModel.getPendingExecutions(limit);
+    public async getProcessingStatus(): Promise<{
+        running: number;
+        pending: number;
+        maxConcurrent: number;
+    }> {
+        const running = await executionModel.count({ status: 'running' });
+        const pending = await executionModel.count({ status: 'pending' });
 
-            for (const execution of pendingExecutions) {
-                if (execution.id && !this.processingQueue.has(execution.id)) {
-                    this.queueExecution(execution.id);
-                }
-            }
-        } catch (error) {
-            console.error('Error processing pending executions:', error);
-        }
+        return {
+            running,
+            pending,
+            maxConcurrent: this.maxConcurrentExecutions
+        };
     }
 
     /**
-     * Get processing queue status
+     * Shutdown the service and stop polling
      */
-    public getQueueStatus(): {
-        processing: number;
-        queuedIds: string[];
-    } {
-        return {
-            processing: this.processingQueue.size,
-            queuedIds: Array.from(this.processingQueue)
-        };
+    public shutdown(): void {
+        this.stopPolling();
+        this.isInitialized = false;
+        console.log('ExecutionService shutdown completed');
     }
 
     /**

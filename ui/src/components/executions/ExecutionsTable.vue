@@ -178,16 +178,16 @@
 
         <!-- View Dialog -->
         <Dialog v-model:open="showViewDialog">
-            <DialogContent class="max-w-4xl">
-                <DialogHeader>
+            <DialogContent class="w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
+                <DialogHeader class="flex-shrink-0 border-b pb-4">
                     <DialogTitle>Execution Details</DialogTitle>
                     <DialogDescription>
                         ID: {{ viewingExecution?.id }}
                     </DialogDescription>
                 </DialogHeader>
 
-                <div v-if="viewingExecution" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
+                <div v-if="viewingExecution" class="flex-1 overflow-hidden flex flex-col space-y-4 p-4">
+                    <div class="flex-shrink-0 grid grid-cols-2 gap-4">
                         <div>
                             <Label>Status</Label>
                             <div class="mt-1">
@@ -207,7 +207,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="flex-shrink-0 grid grid-cols-3 gap-4">
                         <div>
                             <Label>Created</Label>
                             <div class="mt-1 text-sm">{{ formatDate(viewingExecution.created_at) }}</div>
@@ -224,37 +224,42 @@
                         </div>
                     </div>
 
-                    <div>
-                        <Label>User Input</Label>
-                        <div class="mt-1 p-3 bg-muted rounded-md">
-                            <pre class="whitespace-pre-wrap text-sm">{{ viewingExecution.user_input }}</pre>
+                    <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+                        <div class="flex flex-col min-h-0">
+                            <Label class="mb-2">User Input</Label>
+                            <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
+                                <pre
+                                    class="whitespace-pre-wrap text-sm h-full overflow-auto">{{ viewingExecution.user_input }}</pre>
+                            </div>
+                        </div>
+
+                        <div v-if="viewingExecution.result" class="flex flex-col min-h-0">
+                            <Label class="mb-2">Result</Label>
+                            <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
+                                <pre
+                                    class="whitespace-pre-wrap text-sm h-full overflow-auto">{{ viewingExecution.result }}</pre>
+                            </div>
                         </div>
                     </div>
 
-                    <div v-if="viewingExecution.result">
-                        <Label>Result</Label>
-                        <div class="mt-1 p-3 bg-muted rounded-md">
-                            <pre class="whitespace-pre-wrap text-sm">{{ viewingExecution.result }}</pre>
-                        </div>
-                    </div>
-
-                    <div v-if="viewingExecution.error_message">
+                    <div v-if="viewingExecution.error_message" class="flex-shrink-0">
                         <Label>Error Message</Label>
-                        <div class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                        <div
+                            class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
                             <pre
                                 class="whitespace-pre-wrap text-sm text-destructive">{{ viewingExecution.error_message }}</pre>
                         </div>
                     </div>
 
-                    <div v-if="viewingExecution.options">
+                    <div v-if="viewingExecution.options" class="flex-shrink-0">
                         <Label>Execution Options</Label>
-                        <div class="mt-1 p-3 bg-muted rounded-md">
+                        <div class="mt-1 p-3 bg-muted rounded-md max-h-32 overflow-auto">
                             <pre class="text-sm">{{ JSON.stringify(viewingExecution.options, null, 2) }}</pre>
                         </div>
                     </div>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter class="flex-shrink-0 border-t pt-4">
                     <Button @click="showViewDialog = false">Close</Button>
                 </DialogFooter>
             </DialogContent>

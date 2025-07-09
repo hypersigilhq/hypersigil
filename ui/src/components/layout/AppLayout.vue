@@ -24,7 +24,7 @@
             </div>
 
             <!-- Main content -->
-            <div class="flex-1 lg:ml-64">
+            <div class="flex-1">
                 <main class="p-6">
                     <router-view />
                 </main>
