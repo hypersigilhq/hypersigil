@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 import { PromptResponseSchema } from './prompt';
 
-// JSON Schema definition for structured responses
 const JSONSchemaSchema: z.ZodType<any> = z.lazy(() => z.object({
     type: z.enum(['object', 'array', 'string', 'number', 'boolean', 'null']),
     properties: z.record(z.string(), JSONSchemaSchema).optional(),
@@ -19,7 +18,6 @@ const JSONSchemaSchema: z.ZodType<any> = z.lazy(() => z.object({
     additionalProperties: z.union([z.boolean(), JSONSchemaSchema]).optional()
 }).catchall(z.any()));
 
-// Execution options schema
 const ExecutionOptionsSchema = z.object({
     schema: JSONSchemaSchema.optional(),
     temperature: z.number().min(0).max(2).optional(),
@@ -28,7 +26,6 @@ const ExecutionOptionsSchema = z.object({
     topK: z.number().min(1).optional()
 }).catchall(z.any());
 
-// Execution response schema
 export const ExecutionResponseSchema = z.object({
     id: z.string(),
     prompt_id: z.string(),
@@ -48,7 +45,6 @@ export const ExecutionResponseSchema = z.object({
 
 export type ExecutionResponseSchema = z.infer<typeof ExecutionResponseSchema>
 
-// Create execution request schema
 const CreateExecutionRequestSchema = z.object({
     promptId: z.string().uuid(),
     userInput: z.string().min(1),
@@ -56,7 +52,6 @@ const CreateExecutionRequestSchema = z.object({
     options: ExecutionOptionsSchema.optional()
 });
 
-// Pagination response schema for executions
 const PaginatedExecutionsResponseSchema = z.object({
     data: z.array(ExecutionResponseSchema),
     total: z.number(),
@@ -66,9 +61,7 @@ const PaginatedExecutionsResponseSchema = z.object({
     hasNext: z.boolean(),
     hasPrev: z.boolean()
 })
-// export type PaginatedExecutionsResponseSchema = z.infer<typeof PaginatedExecutionsResponseSchema>
 
-// Execution statistics schema
 const ExecutionStatsResponseSchema = z.object({
     total: z.number(),
     pending: z.number(),
@@ -78,7 +71,6 @@ const ExecutionStatsResponseSchema = z.object({
     byProvider: z.record(z.string(), z.number())
 });
 
-// Provider health schema
 const ProviderHealthResponseSchema = z.record(z.string(), z.object({
     available: z.boolean(),
     models: z.array(z.string()),
@@ -86,13 +78,11 @@ const ProviderHealthResponseSchema = z.record(z.string(), z.object({
     error: z.string().optional()
 }));
 
-// Queue status schema
 const QueueStatusResponseSchema = z.object({
     processing: z.number(),
     queuedIds: z.array(z.string())
 });
 
-// Error response schema
 const ErrorResponseSchema = z.object({
     error: z.string(),
     message: z.string().optional(),

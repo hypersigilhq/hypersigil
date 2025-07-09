@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 
-// Prompt response schema
 export const PromptResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
@@ -12,21 +11,18 @@ export const PromptResponseSchema = z.object({
 });
 export type PromptResponseSchema = z.infer<typeof PromptResponseSchema>;
 
-// Create prompt request schema
 export const CreatePromptRequestSchema = z.object({
     name: z.string().min(1).max(255),
     prompt: z.string().min(1),
     json_schema_response: z.object({}).passthrough()
 });
 
-// Update prompt request schema
 export const UpdatePromptRequestSchema = z.object({
     name: z.string().min(1).max(255).optional(),
     prompt: z.string().min(1).optional(),
     json_schema_response: z.object({}).passthrough().optional()
 });
 
-// Pagination response schema
 export const PaginatedPromptsResponseSchema = z.object({
     data: z.array(PromptResponseSchema),
     total: z.number(),
@@ -37,7 +33,6 @@ export const PaginatedPromptsResponseSchema = z.object({
     hasPrev: z.boolean()
 });
 
-// Error response schema
 export const ErrorResponseSchema = z.object({
     error: z.string(),
     message: z.string().optional(),
@@ -99,7 +94,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // PUT /api/v1/prompts/:id - Update a specific prompt
             update: {
                 method: 'PUT',
                 path: '/:id',
@@ -116,7 +110,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 })
             },
 
-            // DELETE /api/v1/prompts/:id - Delete a specific prompt
             delete: {
                 method: 'DELETE',
                 path: '/:id',
