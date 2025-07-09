@@ -1,12 +1,11 @@
 import { RegisterHandlers } from 'ts-typed-api';
-import { ExecutionApiDefinition } from '@prompt-bench/shared';
-// import { PaginatedExecutionsResponseSchema } from '@prompt-bench/shared/execution-definitions'
 import { executionService } from '../services/execution-service';
 import { providerRegistry } from '../providers/provider-registry';
 import { loggingMiddleware, timingMiddleware } from '../app';
 import app from '../app';
 import { ExecutionOptions } from '../providers/base-provider';
 import { promptModel } from '../models/prompt';
+import { ExecutionApiDefinition } from './definitions/execution';
 
 // Register execution API handlers
 RegisterHandlers(app, ExecutionApiDefinition, {

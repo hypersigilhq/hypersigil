@@ -10,8 +10,7 @@
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
     "lint": "echo \"Add linting later\"",
-    "test": "echo \"Add tests later\"",
-    "sync-dev":"cd ../shared && npm run build && cd ../backend && npm install && npm run dev"
+    "test": "echo \"Add tests later\""
   },
   "keywords": [
     "typescript",
@@ -22,7 +21,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prompt-bench/shared": "file:../shared",
     "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.2.0",
     "cors": "^2.8.5",

@@ -237,7 +237,7 @@ import {
 } from '@/components/ui/select'
 
 import { promptsApi, executionsApi } from '@/services/api-client'
-import type { PromptResponse, CreatePromptRequest } from '../../../../shared/prompt-definitions'
+import type { PromptResponse, CreatePromptRequest } from '../../services/definitions/prompt'
 import ScheduleExecutionDialog from '@/components/executions/ScheduleExecutionDialog.vue'
 
 // Reactive state

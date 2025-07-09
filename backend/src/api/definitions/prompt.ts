@@ -55,7 +55,7 @@ export const PromptApiDefinition = CreateApiDefinition({
             // GET /api/v1/prompts - List prompts with pagination and search
             list: {
                 method: 'GET',
-                path: '/',
+                path: '/list/blahblah',
                 params: z.object({}),
                 query: z.object({
                     page: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).optional().default('1'),

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
-import { PromptResponseSchema } from './prompt-definitions';
+import { PromptResponseSchema } from './prompt';
 
 // JSON Schema definition for structured responses
 const JSONSchemaSchema: z.ZodType<any> = z.lazy(() => z.object({

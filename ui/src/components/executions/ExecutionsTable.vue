@@ -308,7 +308,7 @@ import {
 
 import { executionsApi } from '@/services/api-client'
 import ScheduleExecutionDialog from './ScheduleExecutionDialog.vue'
-import { ExecutionResponseSchema as ExecutionResponse } from '../../../../shared/execution-definitions'
+import { ExecutionResponseSchema as ExecutionResponse } from '../../services/definitions/execution'
 
 interface ExecutionStats {
     total: number
