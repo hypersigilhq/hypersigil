@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
+import { PromptResponseSchema } from './prompt-definitions';
 
 // JSON Schema definition for structured responses
 const JSONSchemaSchema: z.ZodType<any> = z.lazy(() => z.object({
@@ -28,9 +29,10 @@ const ExecutionOptionsSchema = z.object({
 }).catchall(z.any());
 
 // Execution response schema
-const ExecutionResponseSchema = z.object({
+export const ExecutionResponseSchema = z.object({
     id: z.string(),
     prompt_id: z.string(),
+    prompt: PromptResponseSchema.optional(),
     user_input: z.string(),
     provider: z.string(),
     model: z.string(),
@@ -42,7 +44,9 @@ const ExecutionResponseSchema = z.object({
     created_at: z.string(),
     updated_at: z.string(),
     options: ExecutionOptionsSchema.optional()
-});
+})
+
+export type ExecutionResponseSchema = z.infer<typeof ExecutionResponseSchema>
 
 // Create execution request schema
 const CreateExecutionRequestSchema = z.object({
@@ -61,7 +65,8 @@ const PaginatedExecutionsResponseSchema = z.object({
     totalPages: z.number(),
     hasNext: z.boolean(),
     hasPrev: z.boolean()
-});
+})
+// export type PaginatedExecutionsResponseSchema = z.infer<typeof PaginatedExecutionsResponseSchema>
 
 // Execution statistics schema
 const ExecutionStatsResponseSchema = z.object({

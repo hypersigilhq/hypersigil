@@ -10,7 +10,8 @@
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
     "lint": "echo \"Add linting later\"",
-    "test": "echo \"Add tests later\""
+    "test": "echo \"Add tests later\"",
+    "sync-dev":"cd ../shared && npm run build && cd ../backend && npm install && npm run dev"
   },
   "keywords": [
     "typescript",
@@ -29,7 +30,7 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "morgan": "^1.10.0",
-    "ts-typed-api": "^0.1.5",
+    "ts-typed-api": "^0.1.7",
     "zod": "^3.25.76"
   },
   "devDependencies": {

@@ -5,7 +5,6 @@ import morgan from 'morgan';
 import { RegisterHandlers, EndpointMiddleware } from 'ts-typed-api';
 import { config, isDevelopment } from './config';
 import { HealthApiDefinition, ExampleApiDefinition } from './api/definitions';
-import { PromptApiDefinition } from '@prompt-bench/shared';
 
 const app = express();
 

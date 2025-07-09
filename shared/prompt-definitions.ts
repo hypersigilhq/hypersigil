@@ -10,6 +10,7 @@ export const PromptResponseSchema = z.object({
     created_at: z.string(),
     updated_at: z.string()
 });
+export type PromptResponseSchema = z.infer<typeof PromptResponseSchema>;
 
 // Create prompt request schema
 export const CreatePromptRequestSchema = z.object({

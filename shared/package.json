@@ -19,15 +19,16 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist"
-  },
-  "dependencies": {
-    "ts-typed-api": "^0.1.5"
+    "clean": "rm -rf dist",
+    "sync": "npm run build && cd ../backend && npm install && cd ../ui && npm install"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
   },
   "peerDependencies": {
     "zod": "^3.0.0"
+  },
+  "dependencies": {
+    "ts-typed-api": "^0.1.7"
   }
 }

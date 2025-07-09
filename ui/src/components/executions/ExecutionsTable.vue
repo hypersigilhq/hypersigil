@@ -88,6 +88,7 @@
                 <TableHeader>
                     <TableRow>
                         <TableHead>ID</TableHead>
+                        <TableHead>Prompt</TableHead>
                         <TableHead>User Input</TableHead>
                         <TableHead>Provider/Model</TableHead>
                         <TableHead>Status</TableHead>
@@ -105,6 +106,11 @@
                     <TableRow v-for="execution in executions" :key="execution.id">
                         <TableCell class="font-mono text-sm">
                             {{ execution.id.substring(0, 8) }}...
+                        </TableCell>
+                        <TableCell class="max-w-xs">
+                            <div class="truncate" :title="execution.user_input">
+                                {{ execution.prompt?.name }}
+                            </div>
                         </TableCell>
                         <TableCell class="max-w-xs">
                             <div class="truncate" :title="execution.user_input">
@@ -302,23 +308,7 @@ import {
 
 import { executionsApi } from '@/services/api-client'
 import ScheduleExecutionDialog from './ScheduleExecutionDialog.vue'
-
-// Types based on execution-definitions.ts
-interface ExecutionResponse {
-    id: string
-    prompt_id: string
-    user_input: string
-    provider: string
-    model: string
-    status: 'pending' | 'running' | 'completed' | 'failed'
-    result?: string
-    error_message?: string
-    started_at?: string
-    completed_at?: string
-    created_at: string
-    updated_at: string
-    options?: Record<string, any>
-}
+import { ExecutionResponseSchema as ExecutionResponse } from '../../../../shared/execution-definitions'
 
 interface ExecutionStats {
     total: number

@@ -1,10 +1,12 @@
 import { RegisterHandlers } from 'ts-typed-api';
 import { ExecutionApiDefinition } from '@prompt-bench/shared';
+// import { PaginatedExecutionsResponseSchema } from '@prompt-bench/shared/execution-definitions'
 import { executionService } from '../services/execution-service';
 import { providerRegistry } from '../providers/provider-registry';
 import { loggingMiddleware, timingMiddleware } from '../app';
 import app from '../app';
 import { ExecutionOptions } from '../providers/base-provider';
+import { promptModel } from '../models/prompt';
 
 // Register execution API handlers
 RegisterHandlers(app, ExecutionApiDefinition, {
@@ -79,23 +81,55 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     orderDirection
                 });
 
+                // Batch fetch prompts for all executions
+                const promptIds = [...new Set(result.data.map(execution => execution.prompt_id))];
+                const promptsMap = new Map();
+
+                if (promptIds.length > 0) {
+                    const prompts = await Promise.all(
+                        promptIds.map(async (id) => {
+                            const prompt = await promptModel.findById(id);
+                            return prompt ? { ...prompt, id } : null;
+                        })
+                    );
+
+                    prompts.forEach(prompt => {
+                        if (prompt) {
+                            promptsMap.set(prompt.id, prompt);
+                        }
+                    });
+                }
+
                 const response = {
                     ...result,
-                    data: result.data.map(execution => ({
-                        id: execution.id!,
-                        prompt_id: execution.prompt_id,
-                        user_input: execution.user_input,
-                        provider: execution.provider,
-                        model: execution.model,
-                        status: execution.status,
-                        result: execution.result,
-                        error_message: execution.error_message,
-                        started_at: execution.started_at?.toISOString(),
-                        completed_at: execution.completed_at?.toISOString(),
-                        created_at: execution.created_at!.toISOString(),
-                        updated_at: execution.updated_at!.toISOString(),
-                        options: execution.options
-                    }))
+                    data: result.data.map(execution => {
+
+                        let prompt = promptsMap.get(execution.prompt_id)
+
+                        return {
+                            id: execution.id!,
+                            prompt_id: execution.prompt_id,
+                            user_input: execution.user_input,
+                            provider: execution.provider,
+                            model: execution.model,
+                            status: execution.status,
+                            result: execution.result,
+                            error_message: execution.error_message,
+                            started_at: execution.started_at?.toISOString(),
+                            completed_at: execution.completed_at?.toISOString(),
+                            created_at: execution.created_at!.toISOString(),
+                            updated_at: execution.updated_at!.toISOString(),
+                            options: execution.options,
+                            prompt: {
+                                id: prompt.id!,
+                                name: prompt.name!,
+                                prompt: prompt.prompt!,
+                                json_schema_response: { ...prompt.json_schema_response },
+                                created_at: prompt.created_at!.toISOString()!,
+                                updated_at: prompt.updated_at!.toISOString()!
+                            }
+                        }
+                    })
                 };
 
                 res.respond(200, response);
@@ -121,9 +155,20 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     });
                 }
 
+                // Fetch the associated prompt
+                const prompt = await promptModel.findById(execution.prompt_id);
+
                 const response = {
                     id: execution.id!,
                     prompt_id: execution.prompt_id,
+                    prompt: prompt && {
+                        id: prompt.id!,
+                        name: prompt.name!,
+                        prompt: prompt.prompt!,
+                        json_schema_response: { ...prompt.json_schema_response },
+                        created_at: prompt.created_at!.toISOString()!,
+                        updated_at: prompt.updated_at!.toISOString()!
+                    } || undefined,
                     user_input: execution.user_input,
                     provider: execution.provider,
                     model: execution.model,
