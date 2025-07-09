@@ -1,8 +1,8 @@
 import { RegisterHandlers, EndpointMiddleware } from 'ts-typed-api';
-import app from '../app';
-import { Prompt, promptModel } from '../models/prompt';
+import app, { loggingMiddleware, timingMiddleware } from '../../app';
+import { Prompt, promptModel } from '../../models/prompt';
 import { z } from 'zod';
-import { PromptApiDefinition } from './definitions/prompt';
+import { PromptApiDefinition } from '../definitions/prompt';
 
 function formatPromptForResponse(prompt: any) {
     return {
@@ -14,24 +14,6 @@ function formatPromptForResponse(prompt: any) {
         updated_at: prompt.updated_at instanceof Date ? prompt.updated_at.toISOString() : prompt.updated_at
     };
 }
-
-
-const loggingMiddleware: EndpointMiddleware = (req, res, next, endpointInfo) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] ${req.method} ${req.path} - Endpoint: ${endpointInfo.domain}.${endpointInfo.routeKey}`);
-    next();
-};
-
-const timingMiddleware: EndpointMiddleware = (req, res, next, endpointInfo) => {
-    const start = Date.now();
-
-    res.on('finish', () => {
-        const duration = Date.now() - start;
-        console.log(`[TIMING] ${endpointInfo.domain}.${endpointInfo.routeKey} completed in ${duration}ms`);
-    });
-
-    next();
-};
 
 RegisterHandlers(app, PromptApiDefinition, {
     prompts: {

@@ -96,7 +96,6 @@ export type ProviderHealthResponse = z.infer<typeof ProviderHealthResponseSchema
 // Queue status response schema
 export const QueueStatusResponseSchema = z.object({
     processing: z.number(),
-    queuedIds: z.array(z.string())
 });
 
 export type QueueStatusResponse = z.infer<typeof QueueStatusResponseSchema>;

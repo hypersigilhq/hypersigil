@@ -1,11 +1,11 @@
 import { RegisterHandlers } from 'ts-typed-api';
-import { executionService } from '../services/execution-service';
-import { providerRegistry } from '../providers/provider-registry';
-import { loggingMiddleware, timingMiddleware } from '../app';
-import app from '../app';
-import { ExecutionOptions } from '../providers/base-provider';
-import { promptModel } from '../models/prompt';
-import { ExecutionApiDefinition } from './definitions/execution';
+import { executionService } from '../../services/execution-service';
+import { providerRegistry } from '../../providers/provider-registry';
+import { loggingMiddleware, timingMiddleware } from '../../app';
+import app from '../../app';
+import { ExecutionOptions } from '../../providers/base-provider';
+import { promptModel } from '../../models/prompt';
+import { ExecutionApiDefinition } from '../definitions/execution';
 
 RegisterHandlers(app, ExecutionApiDefinition, {
     executions: {
