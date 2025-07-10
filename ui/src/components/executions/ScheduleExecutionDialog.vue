@@ -24,9 +24,37 @@
 
             <form @submit.prevent="submitScheduleExecution" class="space-y-4">
                 <div>
+                    <Label for="testDataGroup">Test Data Group (Optional)</Label>
+                    <Select v-model="formData.testDataGroupId">
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select test data group or leave empty for manual input" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem v-if="loadingTestDataGroups" value="loading" disabled>
+                                Loading test data groups...
+                            </SelectItem>
+                            <SelectItem v-for="group in testDataGroups" :key="group.id" :value="group.id">
+                                {{ group.name }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div v-if="!formData.testDataGroupId">
                     <Label for="userInput">User Input</Label>
                     <Textarea id="userInput" v-model="formData.userInput"
                         placeholder="Enter the input text to process with this prompt" rows="12" required />
+                </div>
+
+                <div v-else class="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p class="text-sm text-blue-800">
+                        <strong>Test Data Group Selected:</strong> {{testDataGroups.find(g => g.id ===
+                            formData.testDataGroupId)?.name}}
+                    </p>
+                    <p class="text-xs text-blue-600 mt-1">
+                        The execution will run against all test data items in this group.
+                        <Button @click="formData.testDataGroupId = ''">Switch to user input</Button>
+                    </p>
                 </div>
 
                 <div>
@@ -118,7 +146,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 
-import { executionsApi } from '@/services/api-client'
+import { executionsApi, testDataApi } from '@/services/api-client'
 
 // Props
 interface Props {
@@ -154,13 +182,16 @@ const emit = defineEmits<Emits>()
 // Reactive state
 const submitting = ref(false)
 const loadingModels = ref(false)
+const loadingTestDataGroups = ref(false)
 const availableModels = ref<Record<string, string[]>>({})
+const testDataGroups = ref<Array<{ id: string; name: string }>>([{ id: 'h', name: 'h' }])
 const successMessage = ref<string | null>(null)
 
 // Form data
 const formData = reactive({
     userInput: '',
     providerModel: '',
+    testDataGroupId: '',
     options: {
         temperature: 0.01,
         maxTokens: undefined as number | undefined,
@@ -203,9 +234,22 @@ const loadModels = async () => {
     }
 }
 
+const loadTestDataGroups = async () => {
+    loadingTestDataGroups.value = true
+    try {
+        const response = await testDataApi.groups.selectList()
+        testDataGroups.value = response.items
+    } catch (err) {
+        console.error('Failed to load test data groups:', err)
+    } finally {
+        loadingTestDataGroups.value = false
+    }
+}
+
 const resetForm = () => {
     formData.userInput = ''
     formData.providerModel = ''
+    formData.testDataGroupId = ''
     formData.options.temperature = 0.7
     formData.options.maxTokens = undefined
     formData.options.topP = 1
@@ -257,15 +301,24 @@ const submitScheduleExecution = async () => {
             options.topK = formData.options.topK
         }
 
-        const execution = await executionsApi.create({
+        const executionData: any = {
             promptId: props.promptId,
-            userInput: formData.userInput,
             providerModel: formData.providerModel,
             options: Object.keys(options).length > 0 ? options : undefined
-        })
+        }
 
-        successMessage.value = `Execution ${isCloning.value ? 'cloned' : 'scheduled'} successfully! Execution ID: ${execution.id}`
-        emit('success', execution.id)
+        // Include testDataGroupId if selected, otherwise include userInput
+        if (formData.testDataGroupId) {
+            executionData.testDataGroupId = formData.testDataGroupId
+            executionData.userInput = '' // Required by API but will be ignored when testDataGroupId is provided
+        } else {
+            executionData.userInput = formData.userInput
+        }
+
+        const execution = await executionsApi.create(executionData)
+
+        successMessage.value = `Execution ${isCloning.value ? 'cloned' : 'scheduled'} successfully! Execution IDs: ${execution.executionIds.join(', ')}`
+        emit('success', execution.executionIds[0])
     } catch (err) {
         console.error('Failed to schedule execution:', err)
     } finally {
@@ -277,6 +330,7 @@ const submitScheduleExecution = async () => {
 watch(() => props.open, (newValue) => {
     if (newValue) {
         loadModels()
+        loadTestDataGroups()
         populateForm()
     }
 })

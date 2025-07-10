@@ -84,7 +84,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                 const execution = await executionService.createExecution({
                     promptId,
                     ...(promptVersion !== undefined && { promptVersion }),
-                    userInput,
+                    userInput: userInput!,
                     providerModel,
                     options: options as ExecutionOptions
                 });

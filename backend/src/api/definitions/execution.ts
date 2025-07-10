@@ -70,10 +70,12 @@ export type CreateExecutionResponse = z.infer<typeof CreateExecutionResponseSche
 export const CreateExecutionRequestSchema = z.object({
     promptId: z.string().uuid(),
     promptVersion: z.number().optional(),
-    userInput: z.string().min(1),
+    userInput: z.string().optional(),
     testDataGroupId: z.string().optional(),
     providerModel: z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model'),
     options: ExecutionOptionsSchema.optional()
+}).refine(input => {
+    return !!input.testDataGroupId
 });
 
 export type CreateExecutionRequest = z.infer<typeof CreateExecutionRequestSchema>;
