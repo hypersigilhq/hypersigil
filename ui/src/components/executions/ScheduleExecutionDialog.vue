@@ -58,26 +58,45 @@
                 </div>
 
                 <div>
-                    <Label for="providerModel">Provider/Model</Label>
-                    <Select v-model="formData.providerModel" required>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select provider and model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem v-if="loadingModels" value="loading" disabled>
-                                Loading models...
-                            </SelectItem>
-                            <SelectItem v-else-if="modelOptions.length === 0" value="no-models" disabled>
-                                No models available
-                            </SelectItem>
-                            <template v-else v-for="(models, provider) in availableModels" :key="provider">
-                                <SelectItem v-for="model in models" :key="`${provider}:${model}`"
-                                    :value="`${provider}:${model}`">
-                                    {{ provider }}: {{ model }}
-                                </SelectItem>
-                            </template>
-                        </SelectContent>
-                    </Select>
+                    <Label for="providerModel">Provider/Model (Select multiple)</Label>
+                    <div class="border rounded-md p-3 min-h-[40px] bg-background">
+                        <div v-if="loadingModels" class="text-sm text-muted-foreground">
+                            Loading models...
+                        </div>
+                        <div v-else-if="modelOptions.length === 0" class="text-sm text-muted-foreground">
+                            No models available
+                        </div>
+                        <div v-else class="space-y-2">
+                            <div v-if="formData.providerModel.length > 0" class="flex flex-wrap gap-2 mb-3">
+                                <div v-for="selectedModel in formData.providerModel" :key="selectedModel"
+                                    class="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded-md text-sm">
+                                    {{ selectedModel }}
+                                    <button type="button" @click="removeModel(selectedModel)"
+                                        class="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5">
+                                        ×
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="max-h-48 overflow-y-auto space-y-1">
+                                <template v-for="(models, provider) in availableModels" :key="provider">
+                                    <div v-for="model in models" :key="`${provider}:${model}`"
+                                        class="flex items-center space-x-2 p-2 hover:bg-muted rounded-md cursor-pointer"
+                                        @click="toggleModel(`${provider}:${model}`)">
+                                        <input type="checkbox"
+                                            :checked="formData.providerModel.includes(`${provider}:${model}`)"
+                                            @change="toggleModel(`${provider}:${model}`)"
+                                            class="rounded border-gray-300">
+                                        <label class="text-sm cursor-pointer flex-1">
+                                            {{ provider }}: {{ model }}
+                                        </label>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="formData.providerModel.length === 0" class="text-sm text-red-500 mt-1">
+                        Please select at least one provider/model
+                    </div>
                 </div>
 
                 <div class="space-y-3">
@@ -114,7 +133,8 @@
                     <Button type="button" variant="outline" @click="closeDialog">
                         Cancel
                     </Button>
-                    <Button type="submit" :disabled="submitting || loadingModels">
+                    <Button type="submit"
+                        :disabled="submitting || loadingModels || formData.providerModel.length === 0">
                         {{ submitting ? 'Scheduling...' : (isCloning ? 'Clone Execution' : 'Schedule Execution') }}
                     </Button>
                 </DialogFooter>
@@ -156,7 +176,7 @@ interface Props {
     // For cloning - pre-populate with existing execution data
     initialData?: {
         userInput: string
-        providerModel: string
+        providerModel: string[]
         options?: {
             temperature?: number
             maxTokens?: number
@@ -190,7 +210,7 @@ const successMessage = ref<string | null>(null)
 // Form data
 const formData = reactive({
     userInput: '',
-    providerModel: '',
+    providerModel: <string[]>[],
     testDataGroupId: '',
     options: {
         temperature: 0.01,
@@ -248,7 +268,7 @@ const loadTestDataGroups = async () => {
 
 const resetForm = () => {
     formData.userInput = ''
-    formData.providerModel = ''
+    formData.providerModel = []
     formData.testDataGroupId = ''
     formData.options.temperature = 0.7
     formData.options.maxTokens = undefined
@@ -272,6 +292,22 @@ const populateForm = () => {
     }
 }
 
+const toggleModel = (modelValue: string) => {
+    const index = formData.providerModel.indexOf(modelValue)
+    if (index > -1) {
+        formData.providerModel.splice(index, 1)
+    } else {
+        formData.providerModel.push(modelValue)
+    }
+}
+
+const removeModel = (modelValue: string) => {
+    const index = formData.providerModel.indexOf(modelValue)
+    if (index > -1) {
+        formData.providerModel.splice(index, 1)
+    }
+}
+
 const closeDialog = () => {
     isOpen.value = false
     successMessage.value = null
@@ -280,6 +316,11 @@ const closeDialog = () => {
 const submitScheduleExecution = async () => {
     if (!props.promptId) {
         console.error('No prompt ID provided')
+        return
+    }
+
+    if (formData.providerModel.length === 0) {
+        console.error('No provider/model selected')
         return
     }
 

@@ -25,11 +25,11 @@ Enhanced the execution details dialog in the ExecutionsTable component to provid
 ├─────────────────────────────────────┤
 │ Timestamps (fixed)                  │
 ├─────────────────────────────────────┤
-│ ┌─────────────┬─────────────────────┐│
-│ │ User Input  │ Result              ││
-│ │ (scrollable)│ (scrollable)        ││
-│ │             │                     ││
-│ └─────────────┴─────────────────────┘│
+│ ┌─────────────┬────────────────────┐│
+│ │ User Input  │ Result             ││
+│ │ (scrollable)│ (scrollable)       ││
+│ │             │                    ││
+│ └─────────────┴────────────────────┘│
 ├─────────────────────────────────────┤
 │ Error Message (scrollable if needed)│
 ├─────────────────────────────────────┤

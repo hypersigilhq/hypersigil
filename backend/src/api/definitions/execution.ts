@@ -74,7 +74,7 @@ export const CreateExecutionRequestSchema = z.object({
     promptVersion: z.number().optional(),
     userInput: z.string().optional(),
     testDataGroupId: z.string().optional(),
-    providerModel: z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model'),
+    providerModel: z.array(z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model')),
     options: ExecutionOptionsSchema.optional()
 }).refine(input => {
     return !input.testDataGroupId || !input.userInput

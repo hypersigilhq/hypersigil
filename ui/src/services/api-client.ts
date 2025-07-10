@@ -107,7 +107,7 @@ export const executionsApi = {
     create: (body: {
         promptId: string;
         userInput: string;
-        providerModel: string;
+        providerModel: string[];
         testDataGroupId?: string;
         options?: Record<string, any>
     }) =>

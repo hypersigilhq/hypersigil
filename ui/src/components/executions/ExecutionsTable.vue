@@ -366,7 +366,7 @@ const viewingExecution = ref<ExecutionResponse | null>(null)
 const cloningExecution = ref<ExecutionResponse | null>(null)
 const cloneInitialData = ref<{
     userInput: string
-    providerModel: string
+    providerModel: string[]
     options?: {
         temperature?: number
         maxTokens?: number
@@ -448,7 +448,7 @@ const cloneExecution = (execution: ExecutionResponse) => {
     cloningExecution.value = execution
     cloneInitialData.value = {
         userInput: execution.user_input,
-        providerModel: `${execution.provider}:${execution.model}`,
+        providerModel: [`${execution.provider}:${execution.model}`],
         options: execution.options
     }
     showCloneDialog.value = true
