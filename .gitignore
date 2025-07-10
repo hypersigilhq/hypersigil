@@ -4,3 +4,4 @@ backend/data/*
 backend/dist
 shared/dist
 shared/node_modules
+**/.env

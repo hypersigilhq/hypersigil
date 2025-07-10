@@ -148,9 +148,7 @@ export class OllamaProvider implements AIProvider {
     }
 
     private buildFullPrompt(prompt: string, userInput: string): string {
-        // Simple template for now - can be enhanced later
         return `Context of your task: ${prompt}\n Your task: ${userInput}`
-        // return prompt.replace(/\{user_input\}/g, userInput) || `${prompt}\n\nUser Input: ${userInput}`;
     }
 
     private buildPromptWithSchema(prompt: string, schema: JSONSchema): string {
@@ -176,61 +174,6 @@ export class OllamaProvider implements AIProvider {
         } catch (error) {
             clearTimeout(timeoutId);
             throw error;
-        }
-    }
-
-    // Health check method
-    async healthCheck(): Promise<{
-        available: boolean;
-        models: string[];
-        version?: string;
-        error?: string;
-    }> {
-        try {
-            const available = await this.isAvailable();
-            if (!available) {
-                return {
-                    available: false,
-                    models: [],
-                    error: 'Ollama service is not available'
-                };
-            }
-
-            const models = await this.getSupportedModels();
-
-            // Try to get version info
-            let version: string | undefined;
-            try {
-                const versionResponse = await this.makeRequest('/api/version', { method: 'GET' });
-                if (versionResponse.ok) {
-                    const versionData = await versionResponse.json() as { version?: string };
-                    version = versionData.version;
-                }
-            } catch {
-                // Version endpoint might not be available in all Ollama versions
-            }
-
-            const result: {
-                available: boolean;
-                models: string[];
-                version?: string;
-                error?: string;
-            } = {
-                available: true,
-                models
-            };
-
-            if (version) {
-                result.version = version;
-            }
-
-            return result;
-        } catch (error) {
-            return {
-                available: false,
-                models: [],
-                error: error instanceof Error ? error.message : String(error)
-            };
         }
     }
 }
