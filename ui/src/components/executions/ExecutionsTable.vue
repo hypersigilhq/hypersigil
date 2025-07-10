@@ -243,7 +243,7 @@
                             <Label class="mb-2">Result</Label>
                             <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
                                 <pre
-                                    class="whitespace-pre-wrap text-sm h-full overflow-auto">{{ viewingExecution.result }}</pre>
+                                    class="whitespace-pre-wrap text-sm h-full overflow-auto">{{ JSON.stringify(JSON.parse(viewingExecution.result), null, "\t") }}</pre>
                             </div>
                         </div>
                     </div>

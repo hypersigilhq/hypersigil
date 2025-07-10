@@ -20,7 +20,7 @@ interface OpenAIRequest {
     top_p?: number;
     response_format?: {
         type: 'json_object';
-    };
+    } | { type: 'json_schema', json_schema: { name: string, description: string, schema: any, strict: boolean } };
 }
 
 interface OpenAIResponse {
@@ -94,7 +94,8 @@ export class OpenAIProvider implements AIProvider {
         const messages: OpenAIMessage[] = [
             {
                 role: 'system',
-                content: options?.schema ? this.buildPromptWithSchema(prompt, options.schema) : prompt
+                // content: options?.schema ? this.buildPromptWithSchema(prompt, options.schema) : prompt
+                content: prompt
             },
             {
                 role: 'user',
@@ -108,7 +109,16 @@ export class OpenAIProvider implements AIProvider {
             temperature: options?.temperature ?? 0.7,
             max_tokens: options?.maxTokens || 4096,
             top_p: options?.topP ?? 0.9,
-            ...(options?.schema && { response_format: { type: 'json_object' } })
+            ...(options?.schema && {
+                response_format: {
+                    type: 'json_schema', json_schema: {
+                        description: "Follow prompt and schema description",
+                        name: "Name",
+                        schema: options.schema,
+                        strict: true
+                    }
+                }
+            })
         };
 
         try {

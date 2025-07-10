@@ -2,6 +2,37 @@ import { Model } from '../database/base-model';
 import { BaseDocument } from '../database/types';
 import { db } from '../database/manager';
 
+// Utility function to recursively add "additionalProperties": false to all objects in a JSON schema
+function addAdditionalPropertiesFalse(obj: any): any {
+    if (obj === null || obj === undefined) {
+        return obj;
+    }
+
+    if (Array.isArray(obj)) {
+        return obj.map(item => addAdditionalPropertiesFalse(item));
+    }
+
+    if (typeof obj === 'object') {
+        const result = { ...obj };
+
+        // If this is an object type in JSON schema, add additionalProperties: false
+        if (result.type === 'object' && !result.hasOwnProperty('additionalProperties')) {
+            result.additionalProperties = false;
+        }
+
+        // Recursively process all properties
+        for (const key in result) {
+            if (result.hasOwnProperty(key)) {
+                result[key] = addAdditionalPropertiesFalse(result[key]);
+            }
+        }
+
+        return result;
+    }
+
+    return obj;
+}
+
 // Prompt version interface
 export interface PromptVersion {
     version: number;
@@ -26,16 +57,19 @@ export class PromptModel extends Model<Prompt> {
     // Override create to initialize versioning
     public override async create(data: Omit<Prompt, 'id' | 'created_at' | 'updated_at' | 'current_version' | 'versions'>): Promise<Prompt> {
         const now = new Date();
+        const processedSchema = addAdditionalPropertiesFalse(data.json_schema_response);
+
         const initialVersion: PromptVersion = {
             version: 1,
             name: data.name,
             prompt: data.prompt,
-            json_schema_response: data.json_schema_response,
+            json_schema_response: processedSchema,
             created_at: now
         };
 
         const promptData = {
             ...data,
+            json_schema_response: processedSchema,
             current_version: 1,
             versions: [initialVersion]
         };
@@ -59,17 +93,22 @@ export class PromptModel extends Model<Prompt> {
         if (hasContentChanges) {
             // Create new version
             const newVersion = existing.current_version + 1;
+            const processedSchema = data.json_schema_response
+                ? addAdditionalPropertiesFalse(data.json_schema_response)
+                : existing.json_schema_response;
+
             const newVersionEntry: PromptVersion = {
                 version: newVersion,
                 name: data.name || existing.name,
                 prompt: data.prompt || existing.prompt,
-                json_schema_response: data.json_schema_response || existing.json_schema_response,
+                json_schema_response: processedSchema,
                 created_at: new Date()
             };
 
             // Update with new version
             const updateData = {
                 ...data,
+                json_schema_response: data.json_schema_response ? processedSchema : data.json_schema_response,
                 current_version: newVersion,
                 versions: [...existing.versions, newVersionEntry]
             };
