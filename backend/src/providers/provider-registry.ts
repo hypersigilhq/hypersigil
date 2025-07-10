@@ -1,6 +1,7 @@
 import { AIProvider } from './base-provider';
 import { OllamaProvider } from './ollama-provider';
 import { ClaudeProvider } from './claude-provider';
+import { OpenAIProvider } from './openai-provider';
 
 export class ProviderRegistry {
     private providers: Map<string, AIProvider> = new Map();
@@ -26,9 +27,11 @@ export class ProviderRegistry {
         const claudeProvider = new ClaudeProvider();
         this.providers.set(claudeProvider.name, claudeProvider);
 
+        // Initialize OpenAI provider
+        const openaiProvider = new OpenAIProvider();
+        this.providers.set(openaiProvider.name, openaiProvider);
+
         // Future providers can be added here
-        // const openaiProvider = new OpenAIProvider();
-        // this.providers.set(openaiProvider.name, openaiProvider);
     }
 
     public getProvider(name: string): AIProvider | null {

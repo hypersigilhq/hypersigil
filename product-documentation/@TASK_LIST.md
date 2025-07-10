@@ -36,7 +36,7 @@
 - [todo] Implement database integration
 - [todo] Add API documentation
 - [todo] Set up testing framework
-- [done] Add more AI providers (Claude/Anthropic provider implemented)
+- [done] Add more AI providers (Claude/Anthropic and OpenAI providers implemented)
 - [todo] Implement streaming responses for real-time execution updates
 - [todo] Add execution result caching and optimization
 - [todo] Create execution templates and presets
