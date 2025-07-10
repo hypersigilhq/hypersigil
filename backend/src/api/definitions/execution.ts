@@ -42,6 +42,8 @@ export const ExecutionResponseSchema = z.object({
     prompt_id: z.string(),
     prompt_version: z.number(),
     prompt: z.object({ name: z.string(), version: z.number() }).optional(),
+    test_data_group_id: z.string().optional(),
+    test_data_item_id: z.string().optional(),
     user_input: z.string(),
     provider: z.string(),
     model: z.string(),
@@ -57,11 +59,19 @@ export const ExecutionResponseSchema = z.object({
 
 export type ExecutionResponse = z.infer<typeof ExecutionResponseSchema>;
 
+
+export const CreateExecutionResponseSchema = z.object({
+    executionIds: z.array(z.string())
+});
+
+export type CreateExecutionResponse = z.infer<typeof CreateExecutionResponseSchema>;
+
 // Request schemas
 export const CreateExecutionRequestSchema = z.object({
     promptId: z.string().uuid(),
     promptVersion: z.number().optional(),
     userInput: z.string().min(1),
+    testDataGroupId: z.string().optional(),
     providerModel: z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model'),
     options: ExecutionOptionsSchema.optional()
 });
@@ -141,7 +151,7 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 query: z.object({}),
                 body: CreateExecutionRequestSchema,
                 responses: CreateResponses({
-                    201: ExecutionResponseSchema,
+                    201: CreateExecutionResponseSchema,
                     400: ErrorResponseSchema,
                     404: ErrorResponseSchema,
                     500: ErrorResponseSchema

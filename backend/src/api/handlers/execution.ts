@@ -5,12 +5,80 @@ import { loggingMiddleware, timingMiddleware } from '../../app';
 import app from '../../app';
 import { ExecutionOptions } from '../../providers/base-provider';
 import { promptModel } from '../../models/prompt';
-import { ExecutionApiDefinition } from '../definitions/execution';
+import { ExecutionApiDefinition, ExecutionResponse } from '../definitions/execution';
+import { testDataGroupModel, testDataItemModel } from '../../models';
 
 RegisterHandlers(app, ExecutionApiDefinition, {
     executions: {
         create: async (req, res) => {
             try {
+
+                if (req.body.testDataGroupId) {
+                    try {
+                        const { promptId, promptVersion, testDataGroupId, providerModel, options } = req.body;
+
+                        // Check if test data group exists
+                        const group = await testDataGroupModel.findById(testDataGroupId);
+                        if (!group) {
+                            res.respond(404, {
+                                error: 'Not found',
+                                message: 'Test data group not found'
+                            });
+                            return;
+                        }
+
+                        // Get all items in the group
+                        const items = await testDataItemModel.findByGroupId(testDataGroupId);
+                        if (items.length === 0) {
+                            res.respond(400, {
+                                error: 'Validation error',
+                                message: 'Test data group is empty'
+                            });
+                            return;
+                        }
+
+                        const executionIds: string[] = [];
+                        const errors: { itemId: string; error: string }[] = [];
+
+                        // Create executions for each item
+                        for (const item of items) {
+                            try {
+                                const executionData: any = {
+                                    promptId,
+                                    userInput: item.content,
+                                    providerModel
+                                };
+
+                                if (promptVersion !== undefined) {
+                                    executionData.promptVersion = promptVersion;
+                                }
+
+                                if (options !== undefined) {
+                                    executionData.options = options;
+                                }
+
+                                const execution = await executionService.createExecution(executionData);
+
+                                executionIds.push(execution.id!);
+                            } catch (error) {
+                                errors.push({
+                                    itemId: item.id!,
+                                    error: error instanceof Error ? error.message : 'Unknown error'
+                                });
+                            }
+                        }
+
+                        res.respond(201, { executionIds });
+                    } catch (error) {
+                        console.error('Error creating batch executions:', error);
+                        res.respond(500, {
+                            error: 'Internal server error',
+                            message: 'Failed to create batch executions'
+                        });
+                    }
+                    return
+                }
+
                 const { promptId, promptVersion, userInput, providerModel, options } = req.body;
 
                 const execution = await executionService.createExecution({
@@ -21,24 +89,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     options: options as ExecutionOptions
                 });
 
-                const response = {
-                    id: execution.id!,
-                    prompt_id: execution.prompt_id,
-                    prompt_version: execution.prompt_version,
-                    user_input: execution.user_input,
-                    provider: execution.provider,
-                    model: execution.model,
-                    status: execution.status,
-                    result: execution.result,
-                    error_message: execution.error_message,
-                    started_at: execution.started_at?.toISOString(),
-                    completed_at: execution.completed_at?.toISOString(),
-                    created_at: execution.created_at!.toISOString(),
-                    updated_at: execution.updated_at!.toISOString(),
-                    options: execution.options
-                };
-
-                res.respond(201, response);
+                res.respond(201, { executionIds: [execution.id!] });
             } catch (error) {
                 console.error('Error creating execution:', error);
 
@@ -105,13 +156,15 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
                         let pv = prompt.versions.find((v: any) => v.version === execution.prompt_version)
 
-                        return {
+                        return <ExecutionResponse>{
                             id: execution.id!,
                             prompt_id: execution.prompt_id,
                             prompt_version: execution.prompt_version,
                             user_input: execution.user_input,
                             provider: execution.provider,
                             model: execution.model,
+                            test_data_group_id: execution.test_data_group_id,
+                            test_data_item_id: execution.test_data_item_id,
                             status: execution.status,
                             result: execution.result,
                             error_message: execution.error_message,

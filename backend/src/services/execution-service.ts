@@ -9,6 +9,9 @@ export interface CreateExecutionRequest {
     userInput: string;
     providerModel: string; // Format: "provider:model" e.g., "ollama:qwen2.5:6b"
     options?: ExecutionOptions;
+
+    testDataGroupId?: string
+    testDataItemId?: string
 }
 
 export class ExecutionService {
@@ -184,7 +187,9 @@ export class ExecutionService {
             user_input: request.userInput,
             provider: providerName,
             model: model,
-            status: 'pending'
+            status: 'pending',
+            test_data_group_id: request.testDataGroupId,
+            test_data_item_id: request.testDataItemId,
         };
 
         if (request.options) {

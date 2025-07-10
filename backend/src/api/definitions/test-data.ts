@@ -130,6 +130,15 @@ export const BatchExecutionRequestSchema = z.object({
 
 export type BatchExecutionRequest = z.infer<typeof BatchExecutionRequestSchema>;
 
+export const TestDataSelectListSchema = z.object({
+    items: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+    }))
+});
+
+export type TestDataSelectListResponse = z.infer<typeof TestDataSelectListSchema>;
+
 export const BatchExecutionResponseSchema = z.object({
     executionIds: z.array(z.string()),
     totalCreated: z.number(),
@@ -145,6 +154,15 @@ export const TestDataApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/test-data',
     endpoints: {
         groups: {
+            selectList: {
+                method: 'GET',
+                path: '/select-list',
+                responses: CreateResponses({
+                    200: TestDataSelectListSchema,
+                    400: ErrorResponseSchema,
+                    500: ErrorResponseSchema
+                }),
+            },
             list: {
                 method: 'GET',
                 path: '/groups',
@@ -290,22 +308,6 @@ export const TestDataApiDefinition = CreateApiDefinition({
                 body: z.object({}),
                 responses: CreateResponses({
                     204: z.object({}),
-                    404: ErrorResponseSchema,
-                    500: ErrorResponseSchema
-                })
-            }
-        },
-
-        executions: {
-            createBatch: {
-                method: 'POST',
-                path: '/executions/batch',
-                params: z.object({}),
-                query: z.object({}),
-                body: BatchExecutionRequestSchema,
-                responses: CreateResponses({
-                    201: BatchExecutionResponseSchema,
-                    400: ErrorResponseSchema,
                     404: ErrorResponseSchema,
                     500: ErrorResponseSchema
                 })

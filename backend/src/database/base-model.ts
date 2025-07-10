@@ -332,6 +332,10 @@ export abstract class Model<T extends BaseDocument> {
         }
     }
 
+    public async findAll(offset: number = 0, limit: number = 0): Promise<T[]> {
+        return this.findMany({ limit, offset })
+    }
+
     // New method for finding by any property
     public async findByProperty(property: string, value: any): Promise<T[]> {
         return this.findMany({ where: { [property]: value } });

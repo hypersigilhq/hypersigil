@@ -1,7 +1,7 @@
 import { RegisterHandlers } from 'ts-typed-api';
 import app, { loggingMiddleware, timingMiddleware } from '../../app';
 import { TestDataApiDefinition } from '../definitions/test-data';
-import { testDataGroupModel, TestDataItem, testDataItemModel } from '../../models';
+import { testDataGroupModel, testDataItemModel } from '../../models';
 import { executionService } from '../../services/execution-service';
 
 // Helper function to format test data group for response
@@ -25,6 +25,16 @@ const formatTestDataItemForResponse = (item: any) => ({
 
 RegisterHandlers(app, TestDataApiDefinition, {
     groups: {
+        selectList: async (req, res) => {
+            let list = await testDataGroupModel.findAll()
+
+            res.respond(200, {
+                items: list.map(e => ({
+                    id: e.id!,
+                    name: e.name!
+                }))
+            })
+        },
         list: async (req, res) => {
             try {
                 const { page, limit, search, orderBy, orderDirection } = req.query;
@@ -393,79 +403,6 @@ RegisterHandlers(app, TestDataApiDefinition, {
                 res.respond(500, {
                     error: 'Internal server error',
                     message: 'Failed to delete test data item'
-                });
-            }
-        }
-    },
-
-    executions: {
-        createBatch: async (req, res) => {
-            try {
-                const { promptId, promptVersion, testDataGroupId, providerModel, options } = req.body;
-
-                // Check if test data group exists
-                const group = await testDataGroupModel.findById(testDataGroupId);
-                if (!group) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data group not found'
-                    });
-                    return;
-                }
-
-                // Get all items in the group
-                const items = await testDataItemModel.findByGroupId(testDataGroupId);
-                if (items.length === 0) {
-                    res.respond(400, {
-                        error: 'Validation error',
-                        message: 'Test data group is empty'
-                    });
-                    return;
-                }
-
-                const executionIds: string[] = [];
-                const errors: { itemId: string; error: string }[] = [];
-
-                // Create executions for each item
-                for (const item of items) {
-                    try {
-                        const executionData: any = {
-                            promptId,
-                            userInput: item.content,
-                            providerModel
-                        };
-
-                        if (promptVersion !== undefined) {
-                            executionData.promptVersion = promptVersion;
-                        }
-
-                        if (options !== undefined) {
-                            executionData.options = options;
-                        }
-
-                        const execution = await executionService.createExecution(executionData);
-
-                        executionIds.push(execution.id!);
-                    } catch (error) {
-                        errors.push({
-                            itemId: item.id!,
-                            error: error instanceof Error ? error.message : 'Unknown error'
-                        });
-                    }
-                }
-
-                const response = {
-                    executionIds,
-                    totalCreated: executionIds.length,
-                    errors
-                };
-
-                res.respond(201, response);
-            } catch (error) {
-                console.error('Error creating batch executions:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to create batch executions'
                 });
             }
         }

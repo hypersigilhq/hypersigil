@@ -16,6 +16,9 @@ export interface Execution extends BaseDocument {
     started_at?: Date;
     completed_at?: Date;
     options?: ExecutionOptions;
+
+    test_data_group_id?: string | undefined;
+    test_data_item_id?: string | undefined;
 }
 
 export class ExecutionModel extends Model<Execution> {
