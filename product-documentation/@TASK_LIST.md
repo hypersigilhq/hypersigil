@@ -29,6 +29,7 @@
 ## Frontend Features
 - [done] Connect frontend to backend API - Executions view implemented
 - [done] Add schedule execution action to prompts table with execution creation dialog
+- [done] Implement test data management UI interface with table views and modal dialogs
 
 ## Future Tasks
 - [todo] Add authentication and authorization

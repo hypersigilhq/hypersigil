@@ -32,6 +32,17 @@ const router = createRouter({
       name: 'executions',
       component: () => import('../views/ExecutionsView.vue'),
     },
+    {
+      path: '/test-data',
+      name: 'test-data',
+      component: () => import('../views/TestDataView.vue'),
+    },
+    {
+      path: '/test-data/:groupId',
+      name: 'test-data-items',
+      component: () => import('../views/TestDataItemsView.vue'),
+      props: true,
+    },
   ],
 })
 
