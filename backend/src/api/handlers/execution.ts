@@ -86,7 +86,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                                 try {
                                     await executionBundleModel.create({
                                         test_group_id: testDataGroupId,
-                                        execution_ids: executionIds
+                                        execution_ids: executionIds,
+                                        prompt_id: promptId,
                                     });
                                 } catch (bundleError) {
                                     console.error('Error creating execution bundle:', bundleError);

@@ -77,7 +77,7 @@ export const CreateExecutionRequestSchema = z.object({
     providerModel: z.array(z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model')),
     options: ExecutionOptionsSchema.optional()
 }).refine(input => {
-    return !input.testDataGroupId || !input.userInput
+    return input.testDataGroupId || input.userInput
 }, { message: "userInput or testDataGroupId is required" });
 
 export type CreateExecutionRequest = z.infer<typeof CreateExecutionRequestSchema>;

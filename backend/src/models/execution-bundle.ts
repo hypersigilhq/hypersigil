@@ -4,6 +4,7 @@ import { BaseDocument } from '../database/types';
 // ExecutionBundle interface extending BaseDocument
 export interface ExecutionBundle extends BaseDocument {
     test_group_id: string;
+    prompt_id: string;
     execution_ids: string[];
 }
 

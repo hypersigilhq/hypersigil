@@ -8,10 +8,10 @@ RegisterHandlers(app, ExecutionBundleApiDefinition, {
     executionBundles: {
         list: async (req, res) => {
             try {
-                const { test_group_id } = req.query;
+                const { test_group_id, prompt_id } = req.query;
 
                 const bundles = await executionBundleModel.findMany({
-                    where: { test_group_id },
+                    where: { test_group_id, prompt_id },
                     orderBy: 'created_at',
                     orderDirection: 'DESC'
                 });

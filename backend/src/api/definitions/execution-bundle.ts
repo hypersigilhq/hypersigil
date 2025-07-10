@@ -15,8 +15,11 @@ export type ExecutionBundleResponse = z.infer<typeof ExecutionBundleResponseSche
 
 // Query schemas
 export const ExecutionBundleListQuerySchema = z.object({
-    test_group_id: z.string().uuid()
-});
+    test_group_id: z.string().uuid().optional(),
+    prompt_id: z.string().uuid().optional(),
+}).refine(input => {
+    return input.prompt_id || input.test_group_id
+}, { message: "test_group_id or prompt_id is required" });;
 
 export type ExecutionBundleListQuery = z.infer<typeof ExecutionBundleListQuerySchema>;
 
