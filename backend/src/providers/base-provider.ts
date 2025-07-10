@@ -26,10 +26,17 @@ export interface ExecutionOptions {
     [key: string]: any;
 }
 
+// Execution result interface
+export interface ExecutionResult {
+    output: string;
+    inputTokensUsed: number;
+    outputTokensUsed: number;
+}
+
 // Base interface for AI providers
 export interface AIProvider {
     name: string;
-    execute(prompt: string, userInput: string, model: string, options?: ExecutionOptions): Promise<string>;
+    execute(prompt: string, userInput: string, model: string, options?: ExecutionOptions): Promise<ExecutionResult>;
     isAvailable(): Promise<boolean>;
     getSupportedModels(): Promise<string[]>;
     supportsStructuredOutput?(): boolean;

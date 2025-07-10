@@ -49,6 +49,8 @@ export const ExecutionResponseSchema = z.object({
     model: z.string(),
     status: ExecutionStatusSchema,
     result: z.string().optional(),
+    input_tokens_used: z.number().optional(),
+    output_tokens_used: z.number().optional(),
     error_message: z.string().optional(),
     started_at: z.string().optional(),
     completed_at: z.string().optional(),
@@ -75,8 +77,8 @@ export const CreateExecutionRequestSchema = z.object({
     providerModel: z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model'),
     options: ExecutionOptionsSchema.optional()
 }).refine(input => {
-    return !!input.testDataGroupId
-});
+    return !input.testDataGroupId || !input.userInput
+}, { message: "userInput or testDataGroupId is required" });
 
 export type CreateExecutionRequest = z.infer<typeof CreateExecutionRequestSchema>;
 

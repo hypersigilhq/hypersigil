@@ -1,7 +1,7 @@
 import { Model } from '../database/base-model';
 import { BaseDocument } from '../database/types';
 import { db } from '../database/manager';
-import { ExecutionOptions } from '../providers/base-provider';
+import { ExecutionOptions, ExecutionResult } from '../providers/base-provider';
 
 // Execution interface extending BaseDocument
 export interface Execution extends BaseDocument {
@@ -12,6 +12,8 @@ export interface Execution extends BaseDocument {
     model: string;     // e.g., "qwen2.5:6b"
     status: 'pending' | 'running' | 'completed' | 'failed';
     result?: string;
+    input_tokens_used?: number;
+    output_tokens_used?: number;
     error_message?: string;
     started_at?: Date;
     completed_at?: Date;
@@ -56,7 +58,7 @@ export class ExecutionModel extends Model<Execution> {
     public async updateStatus(
         id: string,
         status: Execution['status'],
-        additionalData?: Partial<Pick<Execution, 'result' | 'error_message' | 'started_at' | 'completed_at'>>
+        additionalData?: Partial<Pick<Execution, 'result' | 'input_tokens_used' | 'output_tokens_used' | 'error_message' | 'started_at' | 'completed_at'>>
     ): Promise<Execution | null> {
         const updateData: Partial<Execution> = { status };
 

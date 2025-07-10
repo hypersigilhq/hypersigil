@@ -95,6 +95,7 @@
                         <TableHead>Started</TableHead>
                         <TableHead>Completed</TableHead>
                         <TableHead>Duration</TableHead>
+                        <TableHead>I/O Tokens used</TableHead>
                         <TableHead class="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -139,6 +140,10 @@
                         </TableCell>
                         <TableCell>
                             {{ formatDuration(execution) }}
+                        </TableCell>
+                        <TableCell>
+                            <template v-if="execution.status === 'completed'">{{ execution.input_tokens_used }}/{{
+                                execution.output_tokens_used }}</template>
                         </TableCell>
 
                         <TableCell class="text-right">
@@ -237,22 +242,27 @@
                             <Label>Duration</Label>
                             <div class="mt-1 text-sm">{{ formatDuration(viewingExecution) }}</div>
                         </div>
+                        <div>
+                            <Label>Input / Output tokens used</Label>
+                            <div class="mt-1 text-sm">{{ viewingExecution.input_tokens_used }} / {{
+                                viewingExecution.output_tokens_used }}</div>
+                        </div>
                     </div>
 
                     <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
                         <div class="flex flex-col min-h-0">
                             <Label class="mb-2">User Input</Label>
                             <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
-                                <pre
-                                    class="whitespace-pre-wrap text-sm h-full overflow-auto">{{ viewingExecution.user_input }}</pre>
+                                <pre class="whitespace-pre-wrap text-sm h-full overflow-auto">{{ viewingExecution.user_input }}
+                        </pre>
                             </div>
                         </div>
 
                         <div v-if="viewingExecution.result" class="flex flex-col min-h-0">
                             <Label class="mb-2">Result</Label>
                             <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
-                                <pre
-                                    class="whitespace-pre-wrap text-sm h-full overflow-auto">{{ JSON.stringify(JSON.parse(viewingExecution.result), null, "\t") }}</pre>
+                                <pre class="whitespace-pre-wrap text-sm h-full overflow-auto">{{
+                                    JSON.stringify(JSON.parse(viewingExecution.result), null, "\t") }}</pre>
                             </div>
                         </div>
                     </div>

@@ -1,7 +1,7 @@
 import { executionModel, Execution } from '../models/execution';
 import { promptModel } from '../models/prompt';
 import { providerRegistry } from '../providers/provider-registry';
-import { ProviderError, ExecutionOptions, JSONSchema } from '../providers/base-provider';
+import { ProviderError, ExecutionOptions, JSONSchema, ExecutionResult } from '../providers/base-provider';
 
 export interface CreateExecutionRequest {
     promptId: string;
@@ -316,7 +316,9 @@ export class ExecutionService {
 
             // Update with result
             await executionModel.updateStatus(executionId, 'completed', {
-                result: result
+                result: result.output,
+                input_tokens_used: result.inputTokensUsed,
+                output_tokens_used: result.outputTokensUsed
             });
 
             console.log(`Execution ${executionId} completed successfully`);

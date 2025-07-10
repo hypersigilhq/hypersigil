@@ -177,6 +177,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             model: execution.model,
                             test_data_group_id: execution.test_data_group_id,
                             test_data_item_id: execution.test_data_item_id,
+                            input_tokens_used: execution.input_tokens_used,
+                            output_tokens_used: execution.output_tokens_used,
                             status: execution.status,
                             result: execution.result,
                             error_message: execution.error_message,

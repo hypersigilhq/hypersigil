@@ -1,4 +1,4 @@
-import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema } from './base-provider';
+import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult } from './base-provider';
 
 export interface OpenAIConfig extends ProviderConfig {
     apiKey: string;
@@ -79,7 +79,7 @@ export class OpenAIProvider implements AIProvider {
         }
     }
 
-    async execute(prompt: string, userInput: string, model: string, options?: ExecutionOptions): Promise<string> {
+    async execute(prompt: string, userInput: string, model: string, options?: ExecutionOptions): Promise<ExecutionResult> {
         if (!this.config.apiKey) {
             throw new ProviderUnavailableError(this.name, 'API key not configured');
         }
@@ -172,7 +172,11 @@ export class OpenAIProvider implements AIProvider {
                 );
             }
 
-            return choice.message.content;
+            return {
+                output: choice.message.content,
+                inputTokensUsed: result.usage.prompt_tokens,
+                outputTokensUsed: result.usage.completion_tokens
+            };
         } catch (error) {
             if (error instanceof ProviderError) {
                 throw error;

@@ -1,4 +1,4 @@
-import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema } from './base-provider';
+import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult } from './base-provider';
 
 export interface OllamaConfig extends ProviderConfig {
     baseUrl: string;
@@ -19,7 +19,7 @@ export class OllamaProvider implements AIProvider {
         };
     }
 
-    async execute(prompt: string, userInput: string, model: string, options?: ExecutionOptions): Promise<string> {
+    async execute(prompt: string, userInput: string, model: string, options?: ExecutionOptions): Promise<ExecutionResult> {
         // Validate model is available
         const availableModels = await this.getSupportedModels();
         if (!availableModels.includes(model)) {
@@ -70,6 +70,8 @@ export class OllamaProvider implements AIProvider {
                 response?: string;
                 error?: string;
                 done?: boolean;
+                prompt_eval_count?: number;
+                eval_count?: number;
             };
 
             if (result.error) {
@@ -80,7 +82,11 @@ export class OllamaProvider implements AIProvider {
                 );
             }
 
-            return result.response || '';
+            return {
+                output: result.response || '',
+                inputTokensUsed: result.prompt_eval_count || 0,
+                outputTokensUsed: result.eval_count || 0
+            };
         } catch (error) {
             if (error instanceof ProviderError) {
                 throw error;
