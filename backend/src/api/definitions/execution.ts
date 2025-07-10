@@ -131,6 +131,7 @@ export const ExecutionListQuerySchema = PaginationQuerySchema.extend({
     status: ExecutionStatusSchema.optional(),
     provider: z.string().optional(),
     promptId: z.string().uuid().optional(),
+    ids: z.string().optional().transform(v => v?.split(',')),
     orderBy: z.enum(['created_at', 'updated_at', 'started_at', 'completed_at']).optional().default('created_at'),
     orderDirection: OrderDirectionSchema.optional().default('DESC')
 });

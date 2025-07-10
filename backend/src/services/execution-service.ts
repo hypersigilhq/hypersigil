@@ -222,6 +222,7 @@ export class ExecutionService {
         promptId?: string;
         orderBy?: string;
         orderDirection?: 'ASC' | 'DESC';
+        ids?: string[];
     }) {
         return executionModel.findWithFilters(options);
     }

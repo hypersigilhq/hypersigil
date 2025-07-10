@@ -84,6 +84,7 @@ export class ExecutionModel extends Model<Execution> {
         status?: Execution['status'];
         provider?: string;
         promptId?: string;
+        ids?: string[];
         orderBy?: string;
         orderDirection?: 'ASC' | 'DESC';
     }): Promise<{
@@ -95,13 +96,14 @@ export class ExecutionModel extends Model<Execution> {
         hasNext: boolean;
         hasPrev: boolean;
     }> {
-        const { page, limit, status, provider, promptId, orderBy = 'created_at', orderDirection = 'DESC' } = options;
+        const { page, limit, status, provider, promptId, orderBy = 'created_at', orderDirection = 'DESC', ids } = options;
 
         // Build where clause
         const where: any = {};
         if (status) where.status = status;
         if (provider) where.provider = provider;
         if (promptId) where.prompt_id = promptId;
+        if (ids) where.id = ids;
 
         return this.findWithPagination({
             page,

@@ -6,7 +6,7 @@ import app from '../../app';
 import { ExecutionOptions } from '../../providers/base-provider';
 import { promptModel } from '../../models/prompt';
 import { ExecutionApiDefinition, ExecutionResponse } from '../definitions/execution';
-import { testDataGroupModel, testDataItemModel } from '../../models';
+import { testDataGroupModel, testDataItemModel, executionBundleModel } from '../../models';
 
 // Provider cache - simple in-memory cache with no TTL
 let providerHealthCache: any = null;
@@ -27,7 +27,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             try {
                 for (let i in req.body.providerModel) {
                     let providerModel = req.body.providerModel[i]!
-                    console.log('--------------', providerModel)
                     if (req.body.testDataGroupId) {
                         try {
                             const { promptId, promptVersion, testDataGroupId, options } = req.body;
@@ -52,7 +51,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                                 return;
                             }
 
-                            const executionIds: string[] = [];
                             const errors: { itemId: string; error: string }[] = [];
 
                             // Create executions for each item
@@ -80,6 +78,19 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                                         itemId: item.id!,
                                         error: error instanceof Error ? error.message : 'Unknown error'
                                     });
+                                }
+                            }
+
+                            // Create ExecutionBundle if executions were created successfully
+                            if (executionIds.length > 0) {
+                                try {
+                                    await executionBundleModel.create({
+                                        test_group_id: testDataGroupId,
+                                        execution_ids: executionIds
+                                    });
+                                } catch (bundleError) {
+                                    console.error('Error creating execution bundle:', bundleError);
+                                    // Continue execution even if bundle creation fails
                                 }
                             }
 
@@ -137,7 +148,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
         list: async (req, res) => {
             try {
-                const { page, limit, status, provider, promptId, orderBy, orderDirection } = req.query;
+                const { page, limit, status, provider, promptId, orderBy, orderDirection, ids } = req.query;
 
                 const result = await executionService.getExecutions({
                     page,
@@ -145,6 +156,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     ...(status && { status }),
                     ...(provider && { provider }),
                     ...(promptId && { promptId }),
+                    ...(ids && { ids }),
                     orderBy,
                     orderDirection
                 });
