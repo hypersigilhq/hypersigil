@@ -94,6 +94,7 @@
                         <TableHead>Status</TableHead>
                         <TableHead>Started</TableHead>
                         <TableHead>Completed</TableHead>
+                        <TableHead>Duration</TableHead>
                         <TableHead class="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -136,6 +137,10 @@
                         <TableCell>
                             {{ execution.completed_at ? formatDate(execution.completed_at) : '-' }}
                         </TableCell>
+                        <TableCell>
+                            {{ formatDuration(execution) }}
+                        </TableCell>
+
                         <TableCell class="text-right">
                             <div class="flex justify-end space-x-2">
                                 <Button variant="ghost" size="sm" @click="viewExecution(execution)">
@@ -227,6 +232,10 @@
                             <Label>Completed</Label>
                             <div class="mt-1 text-sm">{{ viewingExecution.completed_at ?
                                 formatDate(viewingExecution.completed_at) : '-' }}</div>
+                        </div>
+                        <div>
+                            <Label>Duration</Label>
+                            <div class="mt-1 text-sm">{{ formatDuration(viewingExecution) }}</div>
                         </div>
                     </div>
 
@@ -485,6 +494,29 @@ const formatDate = (dateString: string) => {
         hour: '2-digit',
         minute: '2-digit'
     })
+}
+
+const formatDuration = (execution: ExecutionResponse) => {
+    if (!execution.started_at || !execution.completed_at) {
+        return '-'
+    }
+
+    const startTime = new Date(execution.started_at).getTime()
+    let endTime: number
+
+    if (execution.completed_at) {
+        // Execution is completed
+        endTime = new Date(execution.completed_at).getTime()
+    } else if (execution.status === 'running') {
+        // Execution is still running, use current time
+        endTime = Date.now()
+    } else {
+        // Execution failed or was cancelled without completion
+        return '-'
+    }
+
+    const durationMs = endTime - startTime
+    return durationMs.toLocaleString() + 'ms'
 }
 
 // Watchers
