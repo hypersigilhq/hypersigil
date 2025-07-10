@@ -39,3 +39,6 @@ After every implementation, add high-level documentation in ./product-documentat
 - Use consistent naming conventions for schemas and types
 - You can reuse types within `backend/src/api/definitions/` folder from different files
 - Make sure params, query, body, response schemas are defined under variables
+
+
+DONT TOUCH SYMLINKS (dont update, dont create)

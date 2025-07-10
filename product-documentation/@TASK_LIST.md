@@ -19,6 +19,13 @@
 - [done] Implement prompt data retrieval in execution API endpoints
 - [done] Implement prompt versioning system with automatic version creation and version-specific execution
 
+## Test Data Management Feature
+- [done] Design and implement test data group and test data item API definitions
+- [done] Create comprehensive type-safe API schemas for test data management
+- [done] Implement batch execution functionality for test data groups
+- [done] Add bulk operations support for test data items
+- [done] Integrate test data system with existing execution infrastructure
+
 ## Frontend Features
 - [done] Connect frontend to backend API - Executions view implemented
 - [done] Add schedule execution action to prompts table with execution creation dialog
