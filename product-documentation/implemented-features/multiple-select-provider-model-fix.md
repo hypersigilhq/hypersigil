@@ -20,9 +20,10 @@ Replaced the single Select dropdown with a custom multi-select interface featuri
 ### Key Features
 1. **Toggle Selection**: Click anywhere on a model row to toggle selection
 2. **Remove Individual Items**: X button on each selected badge
-3. **Visual Validation**: Red error message when no models selected
-4. **Disabled Submit**: Submit button disabled when no models selected
-5. **Scrollable List**: Max height with scroll for long model lists
+3. **Search Functionality**: Real-time search bar to filter providers and models
+4. **Visual Validation**: Red error message when no models selected
+5. **Disabled Submit**: Submit button disabled when no models selected
+6. **Scrollable List**: Max height with scroll for long model lists
 
 ### Technical Implementation
 ```typescript

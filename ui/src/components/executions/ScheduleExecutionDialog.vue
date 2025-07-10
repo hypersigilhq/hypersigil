@@ -43,7 +43,7 @@
                 <div v-if="!formData.testDataGroupId">
                     <Label for="userInput">User Input</Label>
                     <Textarea id="userInput" v-model="formData.userInput"
-                        placeholder="Enter the input text to process with this prompt" rows="12" required />
+                        placeholder="Enter the input text to process with this prompt" rows="4" required />
                 </div>
 
                 <div v-else class="p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -77,8 +77,15 @@
                                     </button>
                                 </div>
                             </div>
+
+                            <!-- Search bar -->
+                            <div class="mb-3">
+                                <Input v-model="modelSearchQuery" placeholder="Search providers and models..."
+                                    class="text-sm" @input="onSearchInput" />
+                            </div>
+
                             <div class="max-h-48 overflow-y-auto space-y-1">
-                                <template v-for="(models, provider) in availableModels" :key="provider">
+                                <template v-for="(models, provider) in filteredAvailableModels" :key="provider">
                                     <div v-for="model in models" :key="`${provider}:${model}`"
                                         class="flex items-center space-x-2 p-2 hover:bg-muted rounded-md cursor-pointer"
                                         @click="toggleModel(`${provider}:${model}`)">
@@ -91,6 +98,10 @@
                                         </label>
                                     </div>
                                 </template>
+                                <div v-if="Object.keys(filteredAvailableModels).length === 0 && modelSearchQuery"
+                                    class="text-sm text-muted-foreground p-2 text-center">
+                                    No models found matching "{{ modelSearchQuery }}"
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -204,8 +215,9 @@ const submitting = ref(false)
 const loadingModels = ref(false)
 const loadingTestDataGroups = ref(false)
 const availableModels = ref<Record<string, string[]>>({})
-const testDataGroups = ref<Array<{ id: string; name: string }>>([{ id: 'h', name: 'h' }])
+const testDataGroups = ref<Array<{ id: string; name: string }>>([])
 const successMessage = ref<string | null>(null)
+const modelSearchQuery = ref('')
 
 // Form data
 const formData = reactive({
@@ -242,6 +254,29 @@ const modelOptions = computed(() => {
     return options
 })
 
+const filteredAvailableModels = computed(() => {
+    if (!modelSearchQuery.value.trim()) {
+        return availableModels.value
+    }
+
+    const searchTerm = modelSearchQuery.value.toLowerCase()
+    const filtered: Record<string, string[]> = {}
+
+    for (const [provider, models] of Object.entries(availableModels.value)) {
+        const filteredModels = models.filter(model =>
+            provider.toLowerCase().includes(searchTerm) ||
+            model.toLowerCase().includes(searchTerm) ||
+            `${provider}:${model}`.toLowerCase().includes(searchTerm)
+        )
+
+        if (filteredModels.length > 0) {
+            filtered[provider] = filteredModels
+        }
+    }
+
+    return filtered
+})
+
 // Methods
 const loadModels = async () => {
     loadingModels.value = true
@@ -275,6 +310,7 @@ const resetForm = () => {
     formData.options.topP = 1
     formData.options.topK = 50
     successMessage.value = null
+    modelSearchQuery.value = ''
 }
 
 const populateForm = () => {
@@ -306,6 +342,11 @@ const removeModel = (modelValue: string) => {
     if (index > -1) {
         formData.providerModel.splice(index, 1)
     }
+}
+
+const onSearchInput = () => {
+    // The search filtering is handled by the computed property filteredAvailableModels
+    // This method can be used for additional search-related logic if needed
 }
 
 const closeDialog = () => {
