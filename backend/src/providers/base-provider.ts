@@ -85,3 +85,19 @@ export class ModelNotSupportedError extends ProviderError {
         this.name = 'ModelNotSupportedError';
     }
 }
+
+export class GenericProvider {
+    protected buildPromptWithSchema(prompt: string, schema: JSONSchema): string {
+        const schemaString = JSON.stringify(schema, null, 2);
+
+        return `${prompt}
+
+Please respond with valid JSON that matches this exact schema:
+${schemaString}
+
+Important: 
+- Your response must be valid JSON only, without any additional text, explanations, or markdown formatting. 
+- If a property in JSON schema is enum, respect the possible values and only provide value that the schema accepts.
+- Don't produce null values for properties listed in provided JSON schema`;
+    }
+}

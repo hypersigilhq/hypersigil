@@ -1,4 +1,4 @@
-import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult } from './base-provider';
+import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult, GenericProvider } from './base-provider';
 
 export interface OpenAIConfig extends ProviderConfig {
     apiKey: string;
@@ -55,7 +55,8 @@ interface OpenAIModelsResponse {
     data: OpenAIModel[];
 }
 
-export class OpenAIProvider implements AIProvider {
+
+export class OpenAIProvider extends GenericProvider implements AIProvider {
     public readonly name = 'openai';
     private config: OpenAIConfig;
     private modelsCache: string[] | null = null;
@@ -63,6 +64,7 @@ export class OpenAIProvider implements AIProvider {
     private readonly modelsCacheTTL = 5 * 60 * 1000; // 5 minutes
 
     constructor(config: Partial<OpenAIConfig> = {}) {
+        super()
         this.config = {
             name: 'openai',
             apiKey: config.apiKey || process.env.OPENAI_API_KEY || '',
@@ -94,8 +96,8 @@ export class OpenAIProvider implements AIProvider {
         const messages: OpenAIMessage[] = [
             {
                 role: 'system',
-                // content: options?.schema ? this.buildPromptWithSchema(prompt, options.schema) : prompt
-                content: prompt
+                content: options?.schema ? this.buildPromptWithSchema(prompt, options.schema) : prompt
+                // content: prompt
             },
             {
                 role: 'user',
@@ -110,14 +112,15 @@ export class OpenAIProvider implements AIProvider {
             max_tokens: options?.maxTokens || 4096,
             top_p: options?.topP ?? 0.9,
             ...(options?.schema && {
-                response_format: {
-                    type: 'json_schema', json_schema: {
-                        description: "Follow prompt and schema description",
-                        name: "Name",
-                        schema: options.schema,
-                        strict: true
-                    }
-                }
+                response_format: { type: 'json_object' }
+                // response_format: {
+                //     type: 'json_schema', json_schema: {
+                //         description: "Follow prompt and schema description",
+                //         name: "Name",
+                //         schema: options.schema,
+                //         strict: true
+                //     }
+                // }
             })
         };
 
@@ -274,17 +277,6 @@ export class OpenAIProvider implements AIProvider {
 
     supportsStructuredOutput(): boolean {
         return true; // OpenAI supports structured output through response_format
-    }
-
-    private buildPromptWithSchema(prompt: string, schema: JSONSchema): string {
-        const schemaString = JSON.stringify(schema, null, 2);
-
-        return `${prompt}
-
-Please respond with valid JSON that matches this exact schema:
-${schemaString}
-
-Important: Your response must be valid JSON only, without any additional text, explanations, or markdown formatting.`;
     }
 
     private async makeRequest(endpoint: string, options: RequestInit): Promise<Response> {

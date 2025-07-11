@@ -210,7 +210,9 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             prompt: prompt && {
                                 name: pv.name!,
                                 version: pv.version
-                            }
+                            },
+                            result_valid: execution.result_valid,
+                            result_validation_message: execution.result_validation_message
                         }
                     })
                 };

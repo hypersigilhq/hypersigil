@@ -12,6 +12,8 @@ export interface Execution extends BaseDocument {
     model: string;     // e.g., "qwen2.5:6b"
     status: 'pending' | 'running' | 'completed' | 'failed';
     result?: string;
+    result_valid?: boolean;
+    result_validation_message?: string;
     input_tokens_used?: number;
     output_tokens_used?: number;
     error_message?: string;

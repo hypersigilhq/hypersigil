@@ -22,6 +22,8 @@
   "license": "ISC",
   "dependencies": {
     "@types/better-sqlite3": "^7.6.13",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "better-sqlite3": "^12.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.1.0",

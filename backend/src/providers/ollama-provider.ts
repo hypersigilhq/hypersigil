@@ -1,15 +1,16 @@
-import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult } from './base-provider';
+import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult, GenericProvider } from './base-provider';
 
 export interface OllamaConfig extends ProviderConfig {
     baseUrl: string;
     timeout: number;
 }
 
-export class OllamaProvider implements AIProvider {
+export class OllamaProvider extends GenericProvider implements AIProvider {
     public readonly name = 'ollama';
     private config: OllamaConfig;
 
     constructor(config: Partial<OllamaConfig> = {}) {
+        super()
         this.config = {
             name: 'ollama',
             baseUrl: config.baseUrl || 'http://localhost:11434',
@@ -30,9 +31,10 @@ export class OllamaProvider implements AIProvider {
         let fullPrompt = this.buildFullPrompt(prompt, userInput);
 
         // Add JSON schema instructions if provided
-        if (options?.schema) {
-            fullPrompt = this.buildPromptWithSchema(fullPrompt, options.schema);
-        }
+        // if (options?.schema) {
+        //     fullPrompt = this.buildPromptWithSchema(fullPrompt, options.schema);
+        // }
+
         // console.log('fullPrompt', fullPrompt)
         const requestBody = {
             model,
@@ -155,12 +157,6 @@ export class OllamaProvider implements AIProvider {
 
     private buildFullPrompt(prompt: string, userInput: string): string {
         return `Context of your task: ${prompt}\n Your task: ${userInput}`
-    }
-
-    private buildPromptWithSchema(prompt: string, schema: JSONSchema): string {
-        const schemaString = JSON.stringify(schema, null, 2);
-
-        return `${prompt}`
     }
 
     private async makeRequest(endpoint: string, options: RequestInit): Promise<Response> {

@@ -2,6 +2,8 @@ import { executionModel, Execution } from '../models/execution';
 import { promptModel } from '../models/prompt';
 import { providerRegistry } from '../providers/provider-registry';
 import { ProviderError, ExecutionOptions, JSONSchema, ExecutionResult } from '../providers/base-provider';
+import Ajv from 'ajv';
+import addFormats from "ajv-formats"
 
 export interface CreateExecutionRequest {
     promptId: string;
@@ -258,6 +260,56 @@ export class ExecutionService {
     /**
      * Process a single execution
      */
+    /**
+     * Validate execution result against JSON schema
+     */
+    private validateExecutionResult(result: any, jsonSchema?: JSONSchema): {
+        result_valid: boolean;
+        result_validation_message?: string
+    } {
+        // If no schema is provided, consider it valid
+        if (!jsonSchema) {
+            return { result_valid: true };
+        }
+
+        // Create Ajv instance
+        const ajv = new Ajv();
+        addFormats(ajv)
+
+        try {
+            // Compile the schema
+            const validate = ajv.compile(jsonSchema);
+
+            // Validate the result
+            const valid = validate(result);
+
+            if (valid) {
+                return {
+                    result_valid: true
+                };
+            } else {
+                console.log(validate.errors)
+                // Generate error message
+                const errorDetails = validate.errors?.map(err =>
+                    `${err.instancePath} ${err.message}`
+                ).join('; ') + "; " + JSON.stringify(validate.errors) || 'Validation failed';
+
+                return {
+                    result_valid: false,
+                    result_validation_message: errorDetails
+                };
+            }
+        } catch (error: any) {
+            console.error(error)
+            return {
+                result_valid: false,
+                result_validation_message: error.message
+            };
+        }
+    }
+
+    // Removed convertJsonSchemaToZodSchema method as it's no longer needed
+
     private async processExecution(executionId: string): Promise<void> {
         try {
             // Get execution
@@ -315,11 +367,36 @@ export class ExecutionService {
                 { schema: promptVersion.json_schema_response as JSONSchema, ...execution.options }
             );
 
-            // Update with result
+            let vr: {
+                result_valid: boolean;
+                result_validation_message?: string
+            } = {
+                result_valid: true
+            }
+
+            let parsedOutput: object = {}
+            try {
+                parsedOutput = JSON.parse(result.output)
+            } catch (e) {
+                vr.result_valid = false
+                vr.result_validation_message = "Incorrect JSON"
+            }
+
+            // Clean the output by removing null values
+            const cleanedOutput = this.removeNullValues(parsedOutput);
+
+            // Validate the result
+            const validationResult = this.validateExecutionResult(
+                cleanedOutput,
+                promptVersion.json_schema_response as JSONSchema
+            );
+
+            // Update with result and validation
             await executionModel.updateStatus(executionId, 'completed', {
-                result: result.output,
+                result: JSON.stringify(cleanedOutput), // null values has been removed
                 input_tokens_used: result.inputTokensUsed,
-                output_tokens_used: result.outputTokensUsed
+                output_tokens_used: result.outputTokensUsed,
+                ...validationResult
             });
 
             console.log(`Execution ${executionId} completed successfully`);
@@ -372,6 +449,39 @@ export class ExecutionService {
      */
     public async cleanupOldExecutions(olderThanDays: number = 30): Promise<number> {
         return executionModel.cleanupOldExecutions(olderThanDays);
+    }
+
+    /**
+     * Recursively remove properties with null values from an object
+     */
+    private removeNullValues(obj: object): object | null {
+        // If not an object or is null, return as is
+        if (obj === null || typeof obj !== 'object') {
+            return obj;
+        }
+
+        // If it's an array, process each element
+        if (Array.isArray(obj)) {
+            return obj
+                .map(item => this.removeNullValues(item))
+                .filter(item => item !== null);
+        }
+
+        // If it's an object, process its properties
+        const result: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+            const cleanedValue = this.removeNullValues(value);
+
+            // Only add non-null values
+            if (cleanedValue !== null &&
+                (typeof cleanedValue !== 'object' ||
+                    (Object.keys(cleanedValue).length > 0 && cleanedValue !== null))) {
+                result[key] = cleanedValue;
+            }
+        }
+
+        // Return the object if it has properties, otherwise null
+        return Object.keys(result).length > 0 ? result : null;
     }
 }
 

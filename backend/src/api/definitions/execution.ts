@@ -49,6 +49,8 @@ export const ExecutionResponseSchema = z.object({
     model: z.string(),
     status: ExecutionStatusSchema,
     result: z.string().optional(),
+    result_valid: z.boolean().optional(),
+    result_validation_message: z.string().optional(),
     input_tokens_used: z.number().optional(),
     output_tokens_used: z.number().optional(),
     error_message: z.string().optional(),

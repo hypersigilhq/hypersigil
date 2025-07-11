@@ -92,6 +92,7 @@
                         <TableHead>User Input</TableHead>
                         <TableHead>Provider/Model</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Result valid</TableHead>
                         <TableHead>Started</TableHead>
                         <TableHead>Completed</TableHead>
                         <TableHead>Duration</TableHead>
@@ -130,6 +131,15 @@
                                 <div v-if="execution.status === 'running'"
                                     class="w-2 h-2 bg-current rounded-full animate-pulse"></div>
                                 {{ execution.status }}
+                            </Badge>
+                        </TableCell>
+                        <TableCell>
+                            <Badge :variant="'destructive'" class="flex items-center gap-1"
+                                v-if="!execution.result_valid">
+                                Invalid
+                            </Badge>
+                            <Badge :variant="'secondary'" class="flex items-center gap-1" v-if="execution.result_valid">
+                                Valid
                             </Badge>
                         </TableCell>
                         <TableCell>
@@ -223,7 +233,7 @@
                         </div>
                     </div>
 
-                    <div class="flex-shrink-0 grid grid-cols-3 gap-4">
+                    <div class="flex-shrink-0 grid grid-cols-5 gap-2">
                         <div>
                             <Label>Created</Label>
                             <div class="mt-1 text-sm">{{ formatDate(viewingExecution.created_at) }}</div>
@@ -249,6 +259,25 @@
                         </div>
                     </div>
 
+
+                    <div v-if="viewingExecution.error_message" class="flex-shrink-0">
+                        <Label>Error Message</Label>
+                        <div
+                            class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
+                            <pre
+                                class="whitespace-pre-wrap text-sm text-destructive">{{ viewingExecution.error_message }}</pre>
+                        </div>
+                    </div>
+
+                    <div v-if="!viewingExecution.result_valid" class="flex-shrink-0">
+                        <Label>Result validation error</Label>
+                        <div
+                            class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
+                            <pre class="whitespace-pre-wrap text-sm text-destructive">{{
+                                viewingExecution.result_validation_message }}</pre>
+                        </div>
+                    </div>
+
                     <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
                         <div class="flex flex-col min-h-0">
                             <Label class="mb-2">User Input</Label>
@@ -264,15 +293,6 @@
                                 <pre class="whitespace-pre-wrap text-sm h-full overflow-auto">{{
                                     JSON.stringify(JSON.parse(viewingExecution.result), null, "\t") }}</pre>
                             </div>
-                        </div>
-                    </div>
-
-                    <div v-if="viewingExecution.error_message" class="flex-shrink-0">
-                        <Label>Error Message</Label>
-                        <div
-                            class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
-                            <pre
-                                class="whitespace-pre-wrap text-sm text-destructive">{{ viewingExecution.error_message }}</pre>
                         </div>
                     </div>
 

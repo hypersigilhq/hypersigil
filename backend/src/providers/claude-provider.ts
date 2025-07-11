@@ -1,4 +1,4 @@
-import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult } from './base-provider';
+import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult, GenericProvider } from './base-provider';
 
 export interface ClaudeConfig extends ProviderConfig {
     apiKey: string;
@@ -52,7 +52,7 @@ interface ClaudeModelsResponse {
     last_id?: string;
 }
 
-export class ClaudeProvider implements AIProvider {
+export class ClaudeProvider extends GenericProvider implements AIProvider {
     public readonly name = 'claude';
     private config: ClaudeConfig;
     private modelsCache: string[] | null = null;
@@ -60,6 +60,7 @@ export class ClaudeProvider implements AIProvider {
     private readonly modelsCacheTTL = 5 * 60 * 1000; // 5 minutes
 
     constructor(config: Partial<ClaudeConfig> = {}) {
+        super()
         this.config = {
             name: 'claude',
             apiKey: config.apiKey || process.env.ANTHROPIC_API_KEY || '',
@@ -252,17 +253,6 @@ export class ClaudeProvider implements AIProvider {
 
     supportsStructuredOutput(): boolean {
         return true; // Claude supports structured output through prompt engineering
-    }
-
-    private buildPromptWithSchema(prompt: string, schema: JSONSchema): string {
-        const schemaString = JSON.stringify(schema, null, 2);
-
-        return `${prompt}
-
-Please respond with valid JSON that matches this exact schema:
-${schemaString}
-
-Important: Your response must be valid JSON only, without any additional text, explanations, or markdown formatting.`;
     }
 
     private async makeRequest(endpoint: string, options: RequestInit): Promise<Response> {
