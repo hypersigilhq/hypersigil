@@ -24,12 +24,12 @@ RegisterHandlers(app, ExecutionApiDefinition, {
     executions: {
         create: async (req, res) => {
             let executionIds: string[] = []
+            const { promptId, promptVersion, testDataGroupId, options } = req.body;
             try {
                 for (let i in req.body.providerModel) {
                     let providerModel = req.body.providerModel[i]!
-                    if (req.body.testDataGroupId) {
+                    if (testDataGroupId) {
                         try {
-                            const { promptId, promptVersion, testDataGroupId, options } = req.body;
 
                             // Check if test data group exists
                             const group = await testDataGroupModel.findById(testDataGroupId);
@@ -81,20 +81,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                                 }
                             }
 
-                            // Create ExecutionBundle if executions were created successfully
-                            if (executionIds.length > 0) {
-                                try {
-                                    await executionBundleModel.create({
-                                        test_group_id: testDataGroupId,
-                                        execution_ids: executionIds,
-                                        prompt_id: promptId,
-                                    });
-                                } catch (bundleError) {
-                                    console.error('Error creating execution bundle:', bundleError);
-                                    // Continue execution even if bundle creation fails
-                                }
-                            }
-
                         } catch (error) {
                             console.error('Error creating batch executions:', error);
                             res.respond(500, {
@@ -142,7 +128,19 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                 });
             } finally {
                 res.respond(201, { executionIds });
-
+                // Create ExecutionBundle if executions were created successfully
+                if (executionIds.length > 0 && testDataGroupId) {
+                    try {
+                        await executionBundleModel.create({
+                            test_group_id: testDataGroupId,
+                            execution_ids: executionIds,
+                            prompt_id: promptId,
+                        });
+                    } catch (bundleError) {
+                        console.error('Error creating execution bundle:', bundleError);
+                        // Continue execution even if bundle creation fails
+                    }
+                }
             }
 
         },

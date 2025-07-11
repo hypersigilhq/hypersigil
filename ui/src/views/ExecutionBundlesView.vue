@@ -112,7 +112,12 @@
                                 <Badge :variant="getStatusVariant(execution.status)" class="text-xs">
                                     {{ execution.status }}
                                 </Badge>
+                                <Badge v-if="execution.result_valid !== undefined"
+                                    :variant="getResultValidVariant(execution.result_valid)" class="text-xs">
+                                    {{ execution.result_valid ? 'valid' : 'invalid' }}
+                                </Badge>
                             </div>
+
                             <div class="text-xs text-muted-foreground mb-1">
                                 {{ execution.provider }}:{{ execution.model }}
                             </div>
@@ -180,6 +185,25 @@
                             </div>
                         </div>
 
+
+                        <div v-if="selectedExecution.error_message" class="flex-shrink-0">
+                            <Label>Error Message</Label>
+                            <div
+                                class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
+                                <pre
+                                    class="whitespace-pre-wrap text-sm text-destructive">{{ selectedExecution.error_message }}</pre>
+                            </div>
+                        </div>
+
+                        <div v-if="!selectedExecution.result_valid" class="flex-shrink-0">
+                            <Label>Result validation error</Label>
+                            <div
+                                class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
+                                <pre class="whitespace-pre-wrap text-sm text-destructive">{{
+                                    selectedExecution.result_validation_message }}</pre>
+                            </div>
+                        </div>
+
                         <!-- Remaining sections remain the same -->
                         <div>
                             <Label class="text-xs font-medium text-muted-foreground">User Input</Label>
@@ -192,15 +216,6 @@
                             <Label class="text-xs font-medium text-muted-foreground">Result</Label>
                             <div class="mt-1 p-3 bg-muted rounded-md text-sm max-h-96 overflow-auto">
                                 <pre class="whitespace-pre-wrap">{{ formatJsonResult(selectedExecution.result) }}</pre>
-                            </div>
-                        </div>
-
-                        <div v-if="selectedExecution.error_message">
-                            <Label class="text-xs font-medium text-muted-foreground">Error</Label>
-                            <div
-                                class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm max-h-32 overflow-auto">
-                                <pre
-                                    class="whitespace-pre-wrap text-destructive">{{ selectedExecution.error_message }}</pre>
                             </div>
                         </div>
 
@@ -248,7 +263,7 @@ const searchQuery = ref('')
 
 // Column resizing
 const bundlesColumnWidth = ref(250)
-const executionsColumnWidth = ref(250)
+const executionsColumnWidth = ref(300)
 const isResizing = ref(false)
 const currentResizingColumn = ref<'bundles' | 'executions' | null>(null)
 
@@ -444,6 +459,9 @@ const getStatusVariant = (status: string) => {
         default:
             return 'secondary'
     }
+}
+const getResultValidVariant = (valid: boolean) => {
+    return valid ? 'default' : 'destructive'
 }
 
 const formatJsonResult = (result: string) => {

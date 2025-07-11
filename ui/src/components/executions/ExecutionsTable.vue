@@ -259,7 +259,6 @@
                         </div>
                     </div>
 
-
                     <div v-if="viewingExecution.error_message" class="flex-shrink-0">
                         <Label>Error Message</Label>
                         <div
