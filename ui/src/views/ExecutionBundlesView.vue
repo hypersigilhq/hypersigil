@@ -58,11 +58,9 @@
                 </div>
             </div>
 
-
             <!-- Resizer for first column -->
             <div ref="bundlesResizer" @mousedown="startResize($event, 'bundles')"
                 class=" top-0 bottom-0 w-1 right-0 cursor-col-resize hover:bg-primary/20 z-10"></div>
-
 
             <!-- Column 2: Executions List -->
             <div ref="executionsColumn" :style="{ width: `${executionsColumnWidth}px` }"
@@ -97,12 +95,15 @@
 
                     <!-- Executions list -->
                     <div v-else class="p-2">
-                        <div v-for="execution in executions" :key="execution.id" @click="selectExecution(execution)"
-                            :class="[
+                        <div v-for="(execution, index) in executions" :key="execution.id" :data-index="index"
+                            @click="selectExecution(execution)" :class="[
                                 'p-3 rounded-md cursor-pointer border mb-2 transition-colors',
                                 selectedExecution?.id === execution.id
                                     ? 'bg-primary/10 border-primary'
-                                    : 'hover:bg-muted border-border'
+                                    : 'hover:bg-muted border-border',
+                                focusedExecutionIndex === index
+                                    ? 'ring-2 ring-primary/50'
+                                    : ''
                             ]">
                             <div class="flex items-center justify-between mb-2">
                                 <div class="font-medium text-sm font-mono">
@@ -129,6 +130,7 @@
 
             <!-- Column 3: Execution Results -->
             <div class="flex-1 flex flex-col min-h-0">
+                <!-- Rest of the template remains the same -->
                 <div class="flex-shrink-0 p-4 border-b">
                     <h2 class="font-semibold">
                         {{ selectedExecution ? 'Execution Results' : 'Select an execution' }}
@@ -138,6 +140,7 @@
                     </p>
                 </div>
 
+                <!-- Execution details section remains the same -->
                 <div class="flex-1 overflow-auto">
                     <!-- No execution selected -->
                     <div v-if="!selectedExecution" class="p-4 text-center text-muted-foreground">
@@ -146,7 +149,7 @@
 
                     <!-- Execution details -->
                     <div v-else class="p-4 space-y-4">
-                        <!-- Status and metadata -->
+                        <!-- Status and metadata section remains the same -->
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <Label class="text-xs font-medium text-muted-foreground">Status</Label>
@@ -177,7 +180,7 @@
                             </div>
                         </div>
 
-                        <!-- User Input -->
+                        <!-- Remaining sections remain the same -->
                         <div>
                             <Label class="text-xs font-medium text-muted-foreground">User Input</Label>
                             <div class="mt-1 p-3 bg-muted rounded-md text-sm max-h-32 overflow-auto">
@@ -185,7 +188,6 @@
                             </div>
                         </div>
 
-                        <!-- Results -->
                         <div v-if="selectedExecution.result">
                             <Label class="text-xs font-medium text-muted-foreground">Result</Label>
                             <div class="mt-1 p-3 bg-muted rounded-md text-sm max-h-96 overflow-auto">
@@ -193,7 +195,6 @@
                             </div>
                         </div>
 
-                        <!-- Error message -->
                         <div v-if="selectedExecution.error_message">
                             <Label class="text-xs font-medium text-muted-foreground">Error</Label>
                             <div
@@ -203,7 +204,6 @@
                             </div>
                         </div>
 
-                        <!-- Execution options -->
                         <div v-if="selectedExecution.options">
                             <Label class="text-xs font-medium text-muted-foreground">Options</Label>
                             <div class="mt-1 p-3 bg-muted rounded-md text-sm max-h-32 overflow-auto">
@@ -219,7 +219,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { debounce } from 'lodash-es'
 
 import { Button } from '@/components/ui/button'
@@ -237,6 +237,7 @@ const bundles = ref<ExecutionBundleResponse[]>([])
 const executions = ref<ExecutionResponse[]>([])
 const selectedBundle = ref<ExecutionBundleResponse | null>(null)
 const selectedExecution = ref<ExecutionResponse | null>(null)
+const focusedExecutionIndex = ref<number>(-1)
 
 const bundlesLoading = ref(false)
 const executionsLoading = ref(false)
@@ -284,9 +285,62 @@ const stopResize = () => {
     document.removeEventListener('mouseup', stopResize)
 }
 
+// Keyboard navigation for executions
+const handleKeyNavigation = (e: KeyboardEvent) => {
+    // Only handle navigation when executions column is focused and has items
+    if (!selectedBundle.value || executions.value.length === 0) return
+
+    // Check if the event is from arrow up/down keys
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault() // Prevent default scrolling
+
+        // Determine the new index based on current focused index
+        const currentIndex = focusedExecutionIndex.value
+        const maxIndex = executions.value.length - 1
+
+        let newIndex = currentIndex
+
+        if (e.key === 'ArrowDown') {
+            // Move down, wrapping to top if at the end
+            newIndex = currentIndex < maxIndex ? currentIndex + 1 : 0
+        } else if (e.key === 'ArrowUp') {
+            // Move up, wrapping to bottom if at the top
+            newIndex = currentIndex > 0 ? currentIndex - 1 : maxIndex
+        }
+
+        // Update focused and selected execution
+        focusedExecutionIndex.value = newIndex
+        selectExecution(executions.value[newIndex])
+
+        // Scroll to the selected item if it's not in view
+        nextTick(() => {
+            const executionsList = document.querySelector('.flex-1.overflow-auto')
+            const selectedItem = executionsList?.querySelector(`[data-index="${newIndex}"]`) as HTMLElement
+            if (selectedItem) {
+                selectedItem.scrollIntoView({ block: 'nearest' })
+            }
+        })
+    }
+}
+
+// Add event listener when a bundle is selected
+watch(selectedBundle, (newBundle) => {
+    if (newBundle) {
+        // Reset focused index when a new bundle is selected
+        focusedExecutionIndex.value = -1
+
+        // Add keyboard navigation listener
+        document.addEventListener('keydown', handleKeyNavigation)
+    } else {
+        // Remove listener if no bundle is selected
+        document.removeEventListener('keydown', handleKeyNavigation)
+    }
+})
+
 onUnmounted(() => {
     document.removeEventListener('mousemove', handleResize)
     document.removeEventListener('mouseup', stopResize)
+    document.removeEventListener('keydown', handleKeyNavigation)
 })
 
 // Load bundles
@@ -295,9 +349,11 @@ const loadBundles = async () => {
     bundlesError.value = null
 
     try {
-        // For now, load all bundles without filtering
-        // In a real implementation, you might want to add filtering by prompt_id or test_group_id
-        bundles.value = await executionBundlesApi.list({ query: { prompt_id: <string>router.currentRoute.value.query.prompt_id } })
+        bundles.value = await executionBundlesApi.list({
+            query: {
+                prompt_id: router.currentRoute.value.query.prompt_id as string
+            }
+        })
     } catch (err) {
         bundlesError.value = err instanceof Error ? err.message : 'Failed to load execution bundles'
     } finally {
@@ -343,7 +399,6 @@ const selectExecution = (execution: ExecutionResponse) => {
 // Debounced search
 const debouncedSearch = debounce(() => {
     // For now, search is not implemented on the backend
-    // This would require adding search functionality to the execution bundles API
     loadBundles()
 }, 300)
 
