@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Home, Settings, Info, User, FileText, Play, Database } from 'lucide-vue-next'
+import { Home, Settings, Info, User, FileText, Play, Database, Package } from 'lucide-vue-next'
 import NavigationItem from './NavigationItem.vue'
 
 interface NavigationItemType {

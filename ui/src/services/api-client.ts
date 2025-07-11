@@ -1,6 +1,7 @@
 import { ApiClient } from 'ts-typed-api/client';
 import { PromptApiDefinition } from './definitions/prompt';
-import { ExecutionApiDefinition } from './definitions/execution';
+import { ExecutionApiDefinition, type CreateExecutionRequest } from './definitions/execution';
+import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './definitions/execution-bundle';
 import { TestDataApiDefinition } from './definitions/test-data';
 
 // Create the API client with the base URL
@@ -14,6 +15,11 @@ export const executionApiClient = new ApiClient(
     ExecutionApiDefinition
 );
 
+export const executionBundleApiClient = new ApiClient(
+    'http://localhost:3000', // Adjust this to match your backend URL
+    ExecutionBundleApiDefinition
+);
+
 export const testDataApiClient = new ApiClient(
     'http://localhost:3000', // Adjust this to match your backend URL
     TestDataApiDefinition
@@ -22,6 +28,7 @@ export const testDataApiClient = new ApiClient(
 // Set default headers
 apiClient.setHeader('Content-Type', 'application/json');
 executionApiClient.setHeader('Content-Type', 'application/json');
+executionBundleApiClient.setHeader('Content-Type', 'application/json');
 testDataApiClient.setHeader('Content-Type', 'application/json');
 
 // Helper functions for prompts API
@@ -93,6 +100,7 @@ export const executionsApi = {
             status?: 'pending' | 'running' | 'completed' | 'failed';
             provider?: string;
             promptId?: string;
+            ids?: string;
             orderBy?: 'created_at' | 'updated_at' | 'started_at' | 'completed_at';
             orderDirection?: 'ASC' | 'DESC'
         }
@@ -104,13 +112,7 @@ export const executionsApi = {
             422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
-    create: (body: {
-        promptId: string;
-        userInput: string;
-        providerModel: string[];
-        testDataGroupId?: string;
-        options?: Record<string, any>
-    }) =>
+    create: (body: CreateExecutionRequest) =>
         executionApiClient.callApi('executions', 'create', { body }, {
             201: (payload) => payload.data,
             400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
@@ -167,6 +169,17 @@ export const executionsApi = {
     getAvailableModels: () =>
         executionApiClient.callApi('providers', 'getAvailableModels', {}, {
             200: (payload) => payload.data,
+            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        })
+};
+
+// Helper functions for execution bundles API
+export const executionBundlesApi = {
+    list: (options?: { query?: ExecutionBundleListQuery }) =>
+        executionBundleApiClient.callApi('executionBundles', 'list', options, {
+            200: (payload) => payload.data,
+            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
             500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
             422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         })

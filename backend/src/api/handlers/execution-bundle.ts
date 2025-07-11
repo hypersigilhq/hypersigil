@@ -11,7 +11,10 @@ RegisterHandlers(app, ExecutionBundleApiDefinition, {
                 const { test_group_id, prompt_id } = req.query;
 
                 const bundles = await executionBundleModel.findMany({
-                    where: { test_group_id, prompt_id },
+                    where: {
+                        ...(test_group_id && { test_group_id }),
+                        ...(prompt_id && { prompt_id })
+                    },
                     orderBy: 'created_at',
                     orderDirection: 'DESC'
                 });

@@ -81,6 +81,10 @@
                                 <Button variant="ghost" size="sm" @click="editPrompt(prompt)">
                                     <Edit class="w-4 h-4" />
                                 </Button>
+                                <RouterLink :class="buttonVariants({ variant: 'ghost', size: 'sm' })"
+                                    :to="`/execution-bundles?prompt_id=${prompt.id}`">
+                                    <Package class="w-4 h-4" />
+                                </RouterLink>
                                 <Button variant="ghost" size="sm" @click="deletePrompt(prompt)"
                                     class="text-destructive hover:text-destructive">
                                     <Trash2 class="w-4 h-4" />
@@ -205,9 +209,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue'
 import { debounce } from 'lodash-es'
-import { Plus, Eye, Edit, Trash2, Play } from 'lucide-vue-next'
+import { Plus, Eye, Edit, Trash2, Play, Package } from 'lucide-vue-next'
 
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -239,6 +243,7 @@ import {
 import { promptsApi, executionsApi } from '@/services/api-client'
 import type { PromptResponse, CreatePromptRequest } from '../../services/definitions/prompt'
 import ScheduleExecutionDialog from '@/components/executions/ScheduleExecutionDialog.vue'
+import { RouterLink } from 'vue-router'
 
 // Reactive state
 const prompts = ref<PromptResponse[]>([])

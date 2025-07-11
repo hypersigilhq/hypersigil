@@ -43,6 +43,11 @@ const router = createRouter({
       component: () => import('../views/TestDataItemsView.vue'),
       props: true,
     },
+    {
+      path: '/execution-bundles',
+      name: 'execution-bundles',
+      component: () => import('../views/ExecutionBundlesView.vue'),
+    },
   ],
 })
 

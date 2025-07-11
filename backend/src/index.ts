@@ -1,6 +1,7 @@
 import app from "./app";
 import "./api/handlers/prompt"
 import "./api/handlers/execution"
+import "./api/handlers/execution-bundle"
 import "./api/handlers/test-data"
 import { config } from "./config";
 import { executionService } from "./services/execution-service";
