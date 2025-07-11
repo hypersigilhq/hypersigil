@@ -7,9 +7,10 @@
         </div>
 
         <!-- Three-column layout -->
-        <div class="flex-1 flex min-h-0">
+        <div class="flex-1 flex min-h-0 relative">
             <!-- Column 1: Execution Bundles List -->
-            <div class="w-1/4 border-r flex flex-col min-h-0">
+            <div ref="bundlesColumn" :style="{ width: `${bundlesColumnWidth}px` }"
+                class="border-r flex flex-col min-h-0">
                 <div class="flex-shrink-0 p-4 border-b">
                     <h2 class="font-semibold mb-2">Execution Bundles</h2>
                     <Input v-model="searchQuery" placeholder="Search bundles..." class="w-full"
@@ -57,8 +58,15 @@
                 </div>
             </div>
 
+
+            <!-- Resizer for first column -->
+            <div ref="bundlesResizer" @mousedown="startResize($event, 'bundles')"
+                class=" top-0 bottom-0 w-1 right-0 cursor-col-resize hover:bg-primary/20 z-10"></div>
+
+
             <!-- Column 2: Executions List -->
-            <div class="w-2/5 border-r flex flex-col min-h-0">
+            <div ref="executionsColumn" :style="{ width: `${executionsColumnWidth}px` }"
+                class="border-r flex flex-col min-h-0">
                 <div class="flex-shrink-0 p-4 border-b">
                     <h2 class="font-semibold">
                         {{ selectedBundle ? 'Executions' : 'Select a bundle' }}
@@ -114,6 +122,10 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Resizer for second column -->
+            <div ref="executionsResizer" @mousedown="startResize($event, 'executions')"
+                class=" top-0 bottom-0 w-1 right-0 cursor-col-resize hover:bg-primary/20 z-10"></div>
 
             <!-- Column 3: Execution Results -->
             <div class="flex-1 flex flex-col min-h-0">
@@ -207,7 +219,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { debounce } from 'lodash-es'
 
 import { Button } from '@/components/ui/button'
@@ -232,6 +244,50 @@ const bundlesError = ref<string | null>(null)
 const executionsError = ref<string | null>(null)
 
 const searchQuery = ref('')
+
+// Column resizing
+const bundlesColumnWidth = ref(250)
+const executionsColumnWidth = ref(250)
+const isResizing = ref(false)
+const currentResizingColumn = ref<'bundles' | 'executions' | null>(null)
+
+const startResize = (e: MouseEvent, column: 'bundles' | 'executions') => {
+    e.preventDefault()
+    isResizing.value = true
+    currentResizingColumn.value = column
+    document.addEventListener('mousemove', handleResize)
+    document.addEventListener('mouseup', stopResize)
+}
+
+const handleResize = (e: MouseEvent) => {
+    if (!isResizing.value) return
+
+    const containerRect = document.querySelector('.flex-1.flex.min-h-0.relative') as HTMLElement
+    if (!containerRect) return
+
+    const containerWidth = containerRect.offsetWidth
+    const mouseX = e.clientX - containerRect.getBoundingClientRect().left
+
+    if (currentResizingColumn.value === 'bundles') {
+        bundlesColumnWidth.value = Math.max(100, Math.min(mouseX, containerWidth * 0.4))
+    } else if (currentResizingColumn.value === 'executions') {
+        const bundlesWidth = bundlesColumnWidth.value
+        const maxExecutionsWidth = containerWidth * 0.4
+        executionsColumnWidth.value = Math.max(100, Math.min(mouseX - bundlesWidth, maxExecutionsWidth))
+    }
+}
+
+const stopResize = () => {
+    isResizing.value = false
+    currentResizingColumn.value = null
+    document.removeEventListener('mousemove', handleResize)
+    document.removeEventListener('mouseup', stopResize)
+}
+
+onUnmounted(() => {
+    document.removeEventListener('mousemove', handleResize)
+    document.removeEventListener('mouseup', stopResize)
+})
 
 // Load bundles
 const loadBundles = async () => {
