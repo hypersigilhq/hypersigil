@@ -7,7 +7,7 @@
         </div>
 
         <!-- Three-column layout -->
-        <div class="flex-1 flex min-h-0 relative">
+        <div ref="containerRef" class="flex-1 flex min-h-0 relative">
             <!-- Column 1: Execution Bundles List -->
             <div ref="bundlesColumn" :style="{ width: `${bundlesColumnWidth}px` }"
                 class="border-r flex flex-col min-h-0">
@@ -252,6 +252,10 @@ const executionsColumnWidth = ref(250)
 const isResizing = ref(false)
 const currentResizingColumn = ref<'bundles' | 'executions' | null>(null)
 
+// Refs for DOM elements
+const containerRef = ref<HTMLElement | null>(null)
+const executionsContainerRef = ref<HTMLElement | null>(null)
+
 const startResize = (e: MouseEvent, column: 'bundles' | 'executions') => {
     e.preventDefault()
     isResizing.value = true
@@ -261,13 +265,10 @@ const startResize = (e: MouseEvent, column: 'bundles' | 'executions') => {
 }
 
 const handleResize = (e: MouseEvent) => {
-    if (!isResizing.value) return
+    if (!isResizing.value || !containerRef.value) return
 
-    const containerRect = document.querySelector('.flex-1.flex.min-h-0.relative') as HTMLElement
-    if (!containerRect) return
-
-    const containerWidth = containerRect.offsetWidth
-    const mouseX = e.clientX - containerRect.getBoundingClientRect().left
+    const containerWidth = containerRef.value.offsetWidth
+    const mouseX = e.clientX - containerRef.value.getBoundingClientRect().left
 
     if (currentResizingColumn.value === 'bundles') {
         bundlesColumnWidth.value = Math.max(100, Math.min(mouseX, containerWidth * 0.4))
@@ -314,10 +315,11 @@ const handleKeyNavigation = (e: KeyboardEvent) => {
 
         // Scroll to the selected item if it's not in view
         nextTick(() => {
-            const executionsList = document.querySelector('.flex-1.overflow-auto')
-            const selectedItem = executionsList?.querySelector(`[data-index="${newIndex}"]`) as HTMLElement
-            if (selectedItem) {
-                selectedItem.scrollIntoView({ block: 'nearest' })
+            if (executionsContainerRef.value) {
+                const selectedItem = executionsContainerRef.value.querySelector(`[data-index="${newIndex}"]`) as HTMLElement
+                if (selectedItem) {
+                    selectedItem.scrollIntoView({ block: 'nearest' })
+                }
             }
         })
     }
