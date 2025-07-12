@@ -161,7 +161,7 @@ interface Props {
 
 interface Emits {
     (e: 'update:open', value: boolean): void
-    (e: 'success', itemsCreated: number): void
+    (e: 'success'): void
 }
 
 const props = defineProps<Props>()
@@ -231,8 +231,7 @@ const startImport = async () => {
             if (response.errors.length > 0) {
                 console.warn('Some items failed to create:', response.errors)
             }
-
-            emit('success', response.created.length)
+            emit('success')
         }
 
         completed.value = true

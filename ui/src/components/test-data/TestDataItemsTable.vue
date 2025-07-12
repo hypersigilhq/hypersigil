@@ -274,11 +274,8 @@ const onItemSaved = () => {
     loadItems()
 }
 
-const onImportSuccess = (itemsCreated: number) => {
-    showImportDialog.value = false
+const onImportSuccess = () => {
     loadItems()
-    // Could show a success message here if desired
-    console.log(`Successfully imported ${itemsCreated} items`)
 }
 
 // Delete item
