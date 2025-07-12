@@ -80,10 +80,32 @@ export const PromptSearchParamsSchema = z.object({
 
 export type PromptSearchParams = z.infer<typeof PromptSearchParamsSchema>;
 
+// Select list schema for dropdowns
+export const PromptSelectListSchema = z.object({
+    items: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+    }))
+});
+
+export type PromptSelectListResponse = z.infer<typeof PromptSelectListSchema>;
+
 export const PromptApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/prompts',
     endpoints: {
         prompts: {
+            selectList: {
+                method: 'GET',
+                path: '/select-list',
+                params: z.object({}),
+                query: z.object({}),
+                body: z.object({}),
+                responses: CreateResponses({
+                    200: PromptSelectListSchema,
+                    400: ErrorResponseSchema,
+                    500: ErrorResponseSchema
+                }),
+            },
             list: {
                 method: 'GET',
                 path: '/',

@@ -134,13 +134,16 @@
                             </Badge>
                         </TableCell>
                         <TableCell>
-                            <Badge :variant="'destructive'" class="flex items-center gap-1"
-                                v-if="!execution.result_valid">
-                                Invalid
-                            </Badge>
-                            <Badge :variant="'secondary'" class="flex items-center gap-1" v-if="execution.result_valid">
-                                Valid
-                            </Badge>
+                            <template v-if="['completed', 'failed'].includes(execution.status)">
+                                <Badge :variant="'destructive'" class="flex items-center gap-1"
+                                    v-if="!execution.result_valid">
+                                    Invalid
+                                </Badge>
+                                <Badge :variant="'secondary'" class="flex items-center gap-1"
+                                    v-if="execution.result_valid">
+                                    Valid
+                                </Badge>
+                            </template>
                         </TableCell>
                         <TableCell>
                             {{ execution.started_at ? formatDate(execution.started_at) : '-' }}

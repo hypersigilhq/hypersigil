@@ -33,6 +33,14 @@ testDataApiClient.setHeader('Content-Type', 'application/json');
 
 // Helper functions for prompts API
 export const promptsApi = {
+    selectList: () =>
+        apiClient.callApi('prompts', 'selectList', {}, {
+            200: (payload) => payload.data,
+            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
+            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
     list: (options?: { query?: { page?: string; limit?: string; search?: string; orderBy?: 'name' | 'created_at' | 'updated_at'; orderDirection?: 'ASC' | 'DESC' } }) =>
         apiClient.callApi('prompts', 'list', options, {
             200: (payload) => payload.data,

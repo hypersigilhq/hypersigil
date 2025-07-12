@@ -23,7 +23,26 @@
             </div>
 
             <form @submit.prevent="submitScheduleExecution" class="space-y-4">
-                <div>
+                <!-- Prompt Selection (for item mode) -->
+                <div v-if="mode === 'item'">
+                    <Label for="prompt">Prompt (Required)</Label>
+                    <Select v-model="formData.promptId" required>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a prompt" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem v-if="loadingPrompts" value="loading" disabled>
+                                Loading prompts...
+                            </SelectItem>
+                            <SelectItem v-for="prompt in prompts" :key="prompt.id" :value="prompt.id">
+                                {{ prompt.name }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <!-- Test Data Group Selection (for group mode) -->
+                <div v-if="mode !== 'item'">
                     <Label for="testDataGroup">Test Data Group (Optional)</Label>
                     <Select v-model="formData.testDataGroupId">
                         <SelectTrigger>
@@ -177,13 +196,15 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 
-import { executionsApi, testDataApi } from '@/services/api-client'
+import { executionsApi, testDataApi, promptsApi } from '@/services/api-client'
 
 // Props
 interface Props {
     open: boolean
+    mode?: 'group' | 'item'
     promptId?: string
     promptName?: string
+    initialUserInput?: string
     // For cloning - pre-populate with existing execution data
     initialData?: {
         userInput: string
@@ -214,13 +235,16 @@ const emit = defineEmits<Emits>()
 const submitting = ref(false)
 const loadingModels = ref(false)
 const loadingTestDataGroups = ref(false)
+const loadingPrompts = ref(false)
 const availableModels = ref<Record<string, string[]>>({})
 const testDataGroups = ref<Array<{ id: string; name: string }>>([])
+const prompts = ref<Array<{ id: string; name: string }>>([])
 const successMessage = ref<string | null>(null)
 const modelSearchQuery = ref('')
 
 // Form data
 const formData = reactive({
+    promptId: '',
     userInput: '',
     providerModel: <string[]>[],
     testDataGroupId: '',
@@ -301,6 +325,18 @@ const loadTestDataGroups = async () => {
     }
 }
 
+const loadPrompts = async () => {
+    loadingPrompts.value = true
+    try {
+        const response = await promptsApi.selectList()
+        prompts.value = response.items
+    } catch (err) {
+        console.error('Failed to load prompts:', err)
+    } finally {
+        loadingPrompts.value = false
+    }
+}
+
 const resetForm = () => {
     formData.userInput = ''
     formData.providerModel = []
@@ -325,6 +361,20 @@ const populateForm = () => {
         }
     } else {
         resetForm()
+    }
+
+    // Handle item mode specific initialization
+    if (props.mode === 'item') {
+        if (props.initialUserInput) {
+            formData.userInput = props.initialUserInput
+        }
+        // Clear test data group selection in item mode
+        formData.testDataGroupId = ''
+    }
+
+    // Set prompt ID if provided
+    if (props.promptId) {
+        formData.promptId = props.promptId
     }
 }
 
@@ -355,7 +405,10 @@ const closeDialog = () => {
 }
 
 const submitScheduleExecution = async () => {
-    if (!props.promptId) {
+    // Determine which prompt ID to use based on mode
+    const promptId = props.mode === 'item' ? formData.promptId : props.promptId
+
+    if (!promptId) {
         console.error('No prompt ID provided')
         return
     }
@@ -384,7 +437,7 @@ const submitScheduleExecution = async () => {
         }
 
         const executionData: any = {
-            promptId: props.promptId,
+            promptId: promptId,
             providerModel: formData.providerModel,
             options: Object.keys(options).length > 0 ? options : undefined
         }
@@ -412,7 +465,11 @@ const submitScheduleExecution = async () => {
 watch(() => props.open, (newValue) => {
     if (newValue) {
         loadModels()
-        loadTestDataGroups()
+        if (props.mode === 'item') {
+            loadPrompts()
+        } else {
+            loadTestDataGroups()
+        }
         populateForm()
     }
 })

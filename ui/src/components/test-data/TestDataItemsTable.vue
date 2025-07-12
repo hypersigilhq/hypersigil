@@ -72,6 +72,10 @@
                         <TableCell>{{ formatDate(item.updated_at) }}</TableCell>
                         <TableCell class="text-right">
                             <div class="flex justify-end space-x-2">
+                                <Button variant="ghost" size="sm" @click="scheduleItem(item)"
+                                    title="Schedule execution">
+                                    <Play class="w-4 h-4" />
+                                </Button>
                                 <Button variant="ghost" size="sm" @click="viewItem(item)">
                                     <Eye class="w-4 h-4" />
                                 </Button>
@@ -120,13 +124,17 @@
 
         <!-- Import Dialog -->
         <ImportItemsDialog v-model:open="showImportDialog" :group-id="groupId" @success="onImportSuccess" />
+
+        <!-- Schedule Execution Dialog -->
+        <ScheduleExecutionDialog v-model:open="showScheduleDialog" mode="item"
+            :initial-user-input="schedulingItem?.content" @success="onScheduleSuccess" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { debounce } from 'lodash-es'
-import { Plus, Edit, Trash2, Eye, Upload } from 'lucide-vue-next'
+import { Plus, Edit, Trash2, Eye, Upload, Play } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -151,6 +159,7 @@ import type { TestDataItemResponse } from '../../services/definitions/test-data'
 import CreateItemDialog from './CreateItemDialog.vue'
 import ViewItemDialog from './ViewItemDialog.vue'
 import ImportItemsDialog from './ImportItemsDialog.vue'
+import ScheduleExecutionDialog from '../executions/ScheduleExecutionDialog.vue'
 
 interface Props {
     groupId: string
@@ -171,7 +180,7 @@ const searchQuery = ref('')
 const orderBy = ref<'name' | 'created_at' | 'updated_at'>('created_at')
 const orderDirection = ref<'ASC' | 'DESC'>('DESC')
 const currentPage = ref(1)
-const pageLimit = ref(10)
+const pageLimit = ref(100)
 
 const pagination = ref<{
     total: number
@@ -186,8 +195,10 @@ const pagination = ref<{
 const showDialog = ref(false)
 const showViewDialog = ref(false)
 const showImportDialog = ref(false)
+const showScheduleDialog = ref(false)
 const editingItem = ref<TestDataItemResponse | null>(null)
 const viewingItem = ref<TestDataItemResponse | null>(null)
+const schedulingItem = ref<TestDataItemResponse | null>(null)
 
 // Debounced search
 const debouncedSearch = debounce(() => {
@@ -272,6 +283,16 @@ const onItemSaved = () => {
     showDialog.value = false
     editingItem.value = null
     loadItems()
+}
+
+const scheduleItem = (item: TestDataItemResponse) => {
+    schedulingItem.value = item
+    showScheduleDialog.value = true
+}
+
+const onScheduleSuccess = () => {
+    showScheduleDialog.value = false
+    schedulingItem.value = null
 }
 
 const onImportSuccess = () => {

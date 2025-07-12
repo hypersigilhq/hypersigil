@@ -25,6 +25,28 @@ function formatPromptForResponse(prompt: any) {
 
 RegisterHandlers(app, PromptApiDefinition, {
     prompts: {
+        selectList: async (req, res) => {
+            try {
+                const prompts = await promptModel.findAll();
+                const selectList = {
+                    items: prompts
+                        .filter(prompt => prompt.id) // Filter out any prompts without id
+                        .map(prompt => ({
+                            id: prompt.id!,
+                            name: prompt.name
+                        }))
+                };
+
+                res.respond(200, selectList);
+            } catch (error) {
+                console.error('Error getting prompt select list:', error);
+                res.respond(500, {
+                    error: 'Internal Server Error',
+                    message: 'Failed to retrieve prompt select list'
+                });
+            }
+        },
+
         list: async (req, res) => {
             try {
                 const { page, limit, search, orderBy, orderDirection } = req.query;
