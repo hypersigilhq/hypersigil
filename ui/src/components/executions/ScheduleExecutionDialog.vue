@@ -60,9 +60,18 @@
                 </div>
 
                 <div v-if="!formData.testDataGroupId">
-                    <Label for="userInput">User Input</Label>
-                    <Textarea id="userInput" v-model="formData.userInput"
-                        placeholder="Enter the input text to process with this prompt" rows="4" required />
+                    <template v-if="multipleUserInputs">
+                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <p class="text-sm text-blue-800">
+                                Multiple user input provided, will schedule {{ multipleUserInputs }} executions
+                            </p>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <Label for="userInput">User Input</Label>
+                        <Textarea id="userInput" v-model="formData.userInput"
+                            placeholder="Enter the input text to process with this prompt" rows="4" required />
+                    </template>
                 </div>
 
                 <div v-else class="p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -204,7 +213,7 @@ interface Props {
     mode?: 'group' | 'item'
     promptId?: string
     promptName?: string
-    initialUserInput?: string
+    initialUserInput?: string[]
     // For cloning - pre-populate with existing execution data
     initialData?: {
         userInput: string
@@ -246,6 +255,7 @@ const modelSearchQuery = ref('')
 const formData = reactive({
     promptId: '',
     userInput: '',
+    userInputs: [] as string[],
     providerModel: <string[]>[],
     testDataGroupId: '',
     options: {
@@ -349,9 +359,19 @@ const resetForm = () => {
     modelSearchQuery.value = ''
 }
 
+const multipleUserInputs = computed(() => {
+    if (props.initialUserInput && props.initialUserInput.length > 1) {
+        return props.initialUserInput.length
+    }
+    return 0
+})
+
 const populateForm = () => {
     if (props.initialData) {
         formData.userInput = props.initialData.userInput
+        if (props.initialUserInput) {
+            formData.userInputs = props.initialUserInput
+        }
         formData.providerModel = props.initialData.providerModel
         if (props.initialData.options) {
             formData.options.temperature = props.initialData.options.temperature ?? 0.01
@@ -366,7 +386,8 @@ const populateForm = () => {
     // Handle item mode specific initialization
     if (props.mode === 'item') {
         if (props.initialUserInput) {
-            formData.userInput = props.initialUserInput
+            formData.userInputs = props.initialUserInput
+            formData.userInput = props.initialUserInput[0] || ''
         }
         // Clear test data group selection in item mode
         formData.testDataGroupId = ''
@@ -442,18 +463,27 @@ const submitScheduleExecution = async () => {
             options: Object.keys(options).length > 0 ? options : undefined
         }
 
-        // Include testDataGroupId if selected, otherwise include userInput
+        // Include testDataGroupId if selected, otherwise include userInput(s)
         if (formData.testDataGroupId) {
             executionData.testDataGroupId = formData.testDataGroupId
             executionData.userInput = '' // Required by API but will be ignored when testDataGroupId is provided
+        } else if (multipleUserInputs.value) {
+            // Create multiple executions for each user input
+            const executions = await Promise.all(formData.userInputs.map(async (input) => {
+                const data = { ...executionData, userInput: input }
+                return executionsApi.create(data)
+            }))
+
+            const allExecutionIds = executions.flatMap(e => e.executionIds)
+            successMessage.value = `${isCloning.value ? 'Cloned' : 'Scheduled'} ${allExecutionIds.length} executions successfully! Execution IDs: ${allExecutionIds.join(', ')}`
+            emit('success', allExecutionIds[0])
         } else {
             executionData.userInput = formData.userInput
+            const execution = await executionsApi.create(executionData)
+            successMessage.value = `Execution ${isCloning.value ? 'cloned' : 'scheduled'} successfully! Execution IDs: ${execution.executionIds.join(', ')}`
+            emit('success', execution.executionIds[0])
         }
 
-        const execution = await executionsApi.create(executionData)
-
-        successMessage.value = `Execution ${isCloning.value ? 'cloned' : 'scheduled'} successfully! Execution IDs: ${execution.executionIds.join(', ')}`
-        emit('success', execution.executionIds[0])
     } catch (err) {
         console.error('Failed to schedule execution:', err)
     } finally {

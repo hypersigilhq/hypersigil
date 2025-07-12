@@ -36,6 +36,23 @@
             </div>
         </div>
 
+        <!-- Bulk Action Bar -->
+        <div v-if="selectedItems.size > 0"
+            class="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center space-x-3">
+                <span class="text-sm font-medium text-blue-900">
+                    {{ selectedItems.size }} item{{ selectedItems.size === 1 ? '' : 's' }} selected
+                </span>
+                <Button @click="clearSelection" variant="outline" size="sm">
+                    Clear Selection
+                </Button>
+            </div>
+            <Button @click="bulkScheduleItems" class="bg-blue-600 hover:bg-blue-700">
+                <Play class="w-4 h-4 mr-2" />
+                Schedule Execution
+            </Button>
+        </div>
+
         <!-- Loading state -->
         <div v-if="loading" class="flex justify-center py-8">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -54,6 +71,12 @@
             <Table>
                 <TableHeader>
                     <TableRow>
+                        <TableHead class="w-12">
+                            <input type="checkbox" :checked="items.length > 0 && selectedItems.size === items.length"
+                                :indeterminate="selectedItems.size > 0 && selectedItems.size < items.length"
+                                @change="toggleAllSelection" class="rounded border-gray-300"
+                                aria-label="Select all items" />
+                        </TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead>Updated</TableHead>
@@ -62,11 +85,17 @@
                 </TableHeader>
                 <TableBody>
                     <TableRow v-if="items.length === 0">
-                        <TableCell colspan="4" class="text-center py-8 text-muted-foreground">
+                        <TableCell colspan="5" class="text-center py-8 text-muted-foreground">
                             No test data items found
                         </TableCell>
                     </TableRow>
-                    <TableRow v-for="item in items" :key="item.id">
+                    <TableRow v-for="item in items" :key="item.id"
+                        :class="{ 'bg-blue-50': selectedItems.has(item.id) }">
+                        <TableCell>
+                            <input type="checkbox" :checked="selectedItems.has(item.id)"
+                                @change="toggleItemSelection(item.id)" class="rounded border-gray-300"
+                                :aria-label="`Select ${item.name || 'Unnamed Item'}`" />
+                        </TableCell>
                         <TableCell class="font-medium">{{ item.name || 'Unnamed Item' }}</TableCell>
                         <TableCell>{{ formatDate(item.created_at) }}</TableCell>
                         <TableCell>{{ formatDate(item.updated_at) }}</TableCell>
@@ -127,7 +156,8 @@
 
         <!-- Schedule Execution Dialog -->
         <ScheduleExecutionDialog v-model:open="showScheduleDialog" mode="item"
-            :initial-user-input="schedulingItem?.content" @success="onScheduleSuccess" />
+            :initial-user-input="schedulingItem?.content ? [schedulingItem.content] : bulkUserInputs.length > 0 ? bulkUserInputs : undefined"
+            @success="onScheduleSuccess" />
     </div>
 </template>
 
@@ -181,6 +211,10 @@ const orderBy = ref<'name' | 'created_at' | 'updated_at'>('created_at')
 const orderDirection = ref<'ASC' | 'DESC'>('DESC')
 const currentPage = ref(1)
 const pageLimit = ref(100)
+
+// Selection state
+const selectedItems = ref<Set<string>>(new Set())
+const bulkUserInputs = ref<string[]>([])
 
 const pagination = ref<{
     total: number
@@ -293,6 +327,8 @@ const scheduleItem = (item: TestDataItemResponse) => {
 const onScheduleSuccess = () => {
     showScheduleDialog.value = false
     schedulingItem.value = null
+    bulkUserInputs.value = []
+    clearSelection()
 }
 
 const onImportSuccess = () => {
@@ -311,6 +347,39 @@ const deleteItem = async (item: TestDataItemResponse) => {
     } catch (err) {
         error.value = err instanceof Error ? err.message : 'Failed to delete item'
     }
+}
+
+// Selection management
+const clearSelection = () => {
+    selectedItems.value.clear()
+}
+
+const toggleItemSelection = (itemId: string) => {
+    if (selectedItems.value.has(itemId)) {
+        selectedItems.value.delete(itemId)
+    } else {
+        selectedItems.value.add(itemId)
+    }
+}
+
+const toggleAllSelection = () => {
+    if (selectedItems.value.size === items.value.length) {
+        selectedItems.value.clear()
+    } else {
+        selectedItems.value.clear()
+        items.value.forEach(item => selectedItems.value.add(item.id))
+    }
+}
+
+// Bulk scheduling
+const bulkScheduleItems = () => {
+    const selectedItemsArray = items.value.filter(item => selectedItems.value.has(item.id))
+    const userInputs = selectedItemsArray.map(item => item.content)
+
+    // Set up for bulk scheduling
+    schedulingItem.value = null // Clear single item
+    bulkUserInputs.value = userInputs // Set multiple inputs
+    showScheduleDialog.value = true
 }
 
 // Utility functions
@@ -334,6 +403,11 @@ watch(() => props.groupId, () => {
     currentPage.value = 1
     loadItems()
 }, { immediate: true })
+
+// Clear selection when items change
+watch(items, () => {
+    clearSelection()
+})
 
 // Initialize
 onMounted(() => {
