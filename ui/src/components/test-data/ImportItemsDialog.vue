@@ -217,7 +217,8 @@ const startImport = async () => {
         const importProgress = await fileImportService.processFiles(
             selectedFiles.value,
             (updatedProgress) => {
-                progress.value = updatedProgress
+                // Force reactivity by creating a new object
+                progress.value = { ...updatedProgress }
             }
         )
 

@@ -32,15 +32,15 @@ export class FileImportService {
     ): Promise<ImportProgress> {
         const results: ImportResult[] = files.map(file => ({
             fileName: file.name,
-            status: 'pending'
+            status: 'pending' as const
         }))
 
-        const progress: ImportProgress = {
+        let progress: ImportProgress = {
             totalFiles: files.length,
             processedFiles: 0,
             successfulFiles: 0,
             failedFiles: 0,
-            results
+            results: [...results]
         }
 
         // Initial progress callback
@@ -48,10 +48,14 @@ export class FileImportService {
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
-            const result = results[i]
 
             try {
-                result.status = 'processing'
+                // Update status to processing
+                results[i] = { ...results[i], status: 'processing' }
+                progress = {
+                    ...progress,
+                    results: [...results]
+                }
                 onProgress?.(progress)
 
                 const parser = this.findParser(file)
@@ -61,16 +65,33 @@ export class FileImportService {
 
                 const items = await parser.parse(file)
 
-                result.status = 'success'
-                result.items = items
-                progress.successfulFiles++
+                // Update status to success
+                results[i] = {
+                    ...results[i],
+                    status: 'success',
+                    items
+                }
+                progress = {
+                    ...progress,
+                    processedFiles: progress.processedFiles + 1,
+                    successfulFiles: progress.successfulFiles + 1,
+                    results: [...results]
+                }
             } catch (error) {
-                result.status = 'error'
-                result.error = error instanceof Error ? error.message : 'Unknown error'
-                progress.failedFiles++
+                // Update status to error
+                results[i] = {
+                    ...results[i],
+                    status: 'error',
+                    error: error instanceof Error ? error.message : 'Unknown error'
+                }
+                progress = {
+                    ...progress,
+                    processedFiles: progress.processedFiles + 1,
+                    failedFiles: progress.failedFiles + 1,
+                    results: [...results]
+                }
             }
 
-            progress.processedFiles++
             onProgress?.(progress)
         }
 
