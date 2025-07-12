@@ -40,6 +40,12 @@ After every implementation, add high-level documentation in ./product-documentat
 - You can reuse types within `backend/src/api/definitions/` folder from different files
 - Make sure params, query, body, response schemas are defined under variables
 
+## Vue.js Architecture
+- Keep components small, and split in multiple files if there are multiple different pieces in a view. For example if there's a table and details of each row can be displayed in a modal/dialog window. Make the modal window a separate component in a separate file.
+- Keep props typed (leverate Typescript types)
+- Leverage API `ui/services/definitions` types across the application
+- All data should be typed, avoid any/unknown types if possible
+
 ### __UI/UX Considerations__
 
 __Design Consistency:__

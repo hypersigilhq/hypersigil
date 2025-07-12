@@ -30,6 +30,7 @@
 - [done] Connect frontend to backend API - Executions view implemented
 - [done] Add schedule execution action to prompts table with execution creation dialog
 - [done] Implement test data management UI interface with table views and modal dialogs
+- [done] Implement extensible file import feature for test data items with markdown support
 
 ## Future Tasks
 - [todo] Add authentication and authorization

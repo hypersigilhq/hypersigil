@@ -24,10 +24,16 @@
                     </SelectContent>
                 </Select>
             </div>
-            <Button @click="openCreateDialog">
-                <Plus class="w-4 h-4 mr-2" />
-                Create Item
-            </Button>
+            <div class="flex space-x-2">
+                <Button @click="openImportDialog" variant="outline">
+                    <Upload class="w-4 h-4 mr-2" />
+                    Import
+                </Button>
+                <Button @click="openCreateDialog">
+                    <Plus class="w-4 h-4 mr-2" />
+                    Create Item
+                </Button>
+            </div>
         </div>
 
         <!-- Loading state -->
@@ -111,13 +117,16 @@
 
         <!-- View Dialog -->
         <ViewItemDialog v-model:open="showViewDialog" :item="viewingItem" />
+
+        <!-- Import Dialog -->
+        <ImportItemsDialog v-model:open="showImportDialog" :group-id="groupId" @success="onImportSuccess" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { debounce } from 'lodash-es'
-import { Plus, Edit, Trash2, Eye } from 'lucide-vue-next'
+import { Plus, Edit, Trash2, Eye, Upload } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -141,6 +150,7 @@ import { testDataApi } from '@/services/api-client'
 import type { TestDataItemResponse } from '../../services/definitions/test-data'
 import CreateItemDialog from './CreateItemDialog.vue'
 import ViewItemDialog from './ViewItemDialog.vue'
+import ImportItemsDialog from './ImportItemsDialog.vue'
 
 interface Props {
     groupId: string
@@ -175,6 +185,7 @@ const pagination = ref<{
 // Dialog state
 const showDialog = ref(false)
 const showViewDialog = ref(false)
+const showImportDialog = ref(false)
 const editingItem = ref<TestDataItemResponse | null>(null)
 const viewingItem = ref<TestDataItemResponse | null>(null)
 
@@ -243,6 +254,10 @@ const openCreateDialog = () => {
     showDialog.value = true
 }
 
+const openImportDialog = () => {
+    showImportDialog.value = true
+}
+
 const editItem = (item: TestDataItemResponse) => {
     editingItem.value = item
     showDialog.value = true
@@ -257,6 +272,13 @@ const onItemSaved = () => {
     showDialog.value = false
     editingItem.value = null
     loadItems()
+}
+
+const onImportSuccess = (itemsCreated: number) => {
+    showImportDialog.value = false
+    loadItems()
+    // Could show a success message here if desired
+    console.log(`Successfully imported ${itemsCreated} items`)
 }
 
 // Delete item

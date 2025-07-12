@@ -254,6 +254,15 @@ export const testDataApi = {
                 404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
                 500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
                 422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+            }),
+
+        bulkCreateItems: (groupId: string, body: { items: Array<{ name?: string; content: string }> }) =>
+            testDataApiClient.callApi('groups', 'bulkCreateItems', { params: { groupId }, body }, {
+                201: (payload) => payload.data,
+                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
+                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
+                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             })
     },
 
