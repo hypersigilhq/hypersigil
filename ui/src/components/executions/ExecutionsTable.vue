@@ -209,122 +209,18 @@
             :initial-data="cloneInitialData" :source-execution-id="cloningExecution?.id" @success="onCloneSuccess" />
 
         <!-- View Dialog -->
-        <Dialog v-model:open="showViewDialog">
-            <DialogContent class="w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
-                <DialogHeader class="flex-shrink-0 border-b pb-4">
-                    <DialogTitle>Execution Details</DialogTitle>
-                    <DialogDescription>
-                        ID: {{ viewingExecution?.id }}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div v-if="viewingExecution" class="flex-1 overflow-hidden flex flex-col space-y-4 p-4">
-                    <div class="flex-shrink-0 grid grid-cols-2 gap-4">
-                        <div>
-                            <Label>Status</Label>
-                            <div class="mt-1">
-                                <Badge :variant="getStatusVariant(viewingExecution.status)"
-                                    class="flex items-center gap-1 w-fit">
-                                    <div v-if="viewingExecution.status === 'running'"
-                                        class="w-2 h-2 bg-current rounded-full animate-pulse"></div>
-                                    {{ viewingExecution.status }}
-                                </Badge>
-                            </div>
-                        </div>
-                        <div>
-                            <Label>Provider/Model</Label>
-                            <div class="mt-1 text-sm">
-                                {{ viewingExecution.provider }}:{{ viewingExecution.model }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex-shrink-0 grid grid-cols-5 gap-2">
-                        <div>
-                            <Label>Created</Label>
-                            <div class="mt-1 text-sm">{{ formatDate(viewingExecution.created_at) }}</div>
-                        </div>
-                        <div>
-                            <Label>Started</Label>
-                            <div class="mt-1 text-sm">{{ viewingExecution.started_at ?
-                                formatDate(viewingExecution.started_at) : '-' }}</div>
-                        </div>
-                        <div>
-                            <Label>Completed</Label>
-                            <div class="mt-1 text-sm">{{ viewingExecution.completed_at ?
-                                formatDate(viewingExecution.completed_at) : '-' }}</div>
-                        </div>
-                        <div>
-                            <Label>Duration</Label>
-                            <div class="mt-1 text-sm">{{ formatDuration(viewingExecution) }}</div>
-                        </div>
-                        <div>
-                            <Label>Input / Output tokens used</Label>
-                            <div class="mt-1 text-sm">{{ viewingExecution.input_tokens_used }} / {{
-                                viewingExecution.output_tokens_used }}</div>
-                        </div>
-                    </div>
-
-                    <div v-if="viewingExecution.error_message" class="flex-shrink-0">
-                        <Label>Error Message</Label>
-                        <div
-                            class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
-                            <pre
-                                class="whitespace-pre-wrap text-sm text-destructive">{{ viewingExecution.error_message }}</pre>
-                        </div>
-                    </div>
-
-                    <div v-if="!viewingExecution.result_valid" class="flex-shrink-0">
-                        <Label>Result validation error</Label>
-                        <div
-                            class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
-                            <pre class="whitespace-pre-wrap text-sm text-destructive">{{
-                                viewingExecution.result_validation_message }}</pre>
-                        </div>
-                    </div>
-
-                    <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
-                        <div class="flex flex-col min-h-0">
-                            <Label class="mb-2">User Input</Label>
-                            <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
-                                <pre class="whitespace-pre-wrap text-sm h-full overflow-auto">{{ viewingExecution.user_input }}
-                        </pre>
-                            </div>
-                        </div>
-
-                        <div v-if="viewingExecution.result" class="flex flex-col min-h-0">
-                            <Label class="mb-2">Result</Label>
-                            <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
-                                <pre class="whitespace-pre-wrap text-sm h-full overflow-auto">{{
-                                    JSON.stringify(JSON.parse(viewingExecution.result), null, "\t") }}</pre>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div v-if="viewingExecution.options" class="flex-shrink-0">
-                        <Label>Execution Options</Label>
-                        <div class="mt-1 p-3 bg-muted rounded-md max-h-32 overflow-auto">
-                            <pre class="text-sm">{{ JSON.stringify(viewingExecution.options, null, 2) }}</pre>
-                        </div>
-                    </div>
-                </div>
-
-                <DialogFooter class="flex-shrink-0 border-t pt-4">
-                    <Button @click="showViewDialog = false">Close</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <ExecutionDetailsDialog v-model="showViewDialog" :execution="viewingExecution"
+            @close="showViewDialog = false" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { debounce } from 'lodash-es'
 import { RefreshCw, Eye, X, Copy } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import {
     Table,
@@ -334,14 +230,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
+import ExecutionDetailsDialog from './ExecutionDetailsDialog.vue'
 import {
     Select,
     SelectContent,
@@ -372,7 +261,7 @@ const statusFilter = ref<'pending' | 'running' | 'completed' | 'failed' | 'all'>
 const orderBy = ref<'created_at' | 'updated_at' | 'started_at' | 'completed_at'>('created_at')
 const orderDirection = ref<'ASC' | 'DESC'>('DESC')
 const currentPage = ref(1)
-const pageLimit = ref(10)
+const pageLimit = ref(100)
 const stats = ref<ExecutionStats | null>(null)
 
 const pagination = ref<{
