@@ -359,14 +359,20 @@ export class ExecutionService {
                 return;
             }
 
+            let options: ExecutionOptions = { ...execution.options }
+            if (promptVersion.json_schema_response) {
+                options.schema = promptVersion.json_schema_response as JSONSchema
+            }
+
+
             // Execute the prompt using the specific version
             const result = await provider.execute(
                 promptVersion.prompt,
                 execution.user_input,
                 execution.model,
-                { schema: promptVersion.json_schema_response as JSONSchema, ...execution.options }
+                options
             );
-
+            console.log("result", result.output)
             let vr: {
                 result_valid: boolean;
                 result_validation_message?: string
@@ -375,28 +381,35 @@ export class ExecutionService {
             }
 
             let parsedOutput: object = {}
-            try {
-                parsedOutput = JSON.parse(result.output)
-            } catch (e) {
-                vr.result_valid = false
-                vr.result_validation_message = "Incorrect JSON"
+            let resultOutput: string
+            if (promptVersion.json_schema_response) {
+                try {
+                    parsedOutput = JSON.parse(result.output)
+                    // Clean the output by removing null values
+                    const cleanedOutput = this.removeNullValues(parsedOutput);
+
+                    // Validate the result
+                    vr = this.validateExecutionResult(
+                        cleanedOutput,
+                        promptVersion.json_schema_response as JSONSchema
+                    );
+                    resultOutput = vr.result_valid ? JSON.stringify(cleanedOutput, null, "\t") : result.output
+                } catch (e) {
+                    vr.result_valid = false
+                    vr.result_validation_message = "Incorrect JSON"
+                    resultOutput = result.output
+                }
+            } else {
+                resultOutput = result.output
             }
 
-            // Clean the output by removing null values
-            const cleanedOutput = this.removeNullValues(parsedOutput);
-
-            // Validate the result
-            const validationResult = this.validateExecutionResult(
-                cleanedOutput,
-                promptVersion.json_schema_response as JSONSchema
-            );
 
             // Update with result and validation
             await executionModel.updateStatus(executionId, 'completed', {
-                result: validationResult.result_valid ? JSON.stringify(cleanedOutput) : result.output, // null values has been removed
+                result: resultOutput, // null values has been removed
                 input_tokens_used: result.inputTokensUsed,
                 output_tokens_used: result.outputTokensUsed,
-                ...validationResult
+                ...vr
             });
 
             console.log(`Execution ${executionId} completed successfully`);

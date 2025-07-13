@@ -1,5 +1,5 @@
 import { ApiClient } from 'ts-typed-api/client';
-import { PromptApiDefinition } from './definitions/prompt';
+import { PromptApiDefinition, type CreatePromptRequest } from './definitions/prompt';
 import { ExecutionApiDefinition, type CreateExecutionRequest } from './definitions/execution';
 import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './definitions/execution-bundle';
 import { TestDataApiDefinition } from './definitions/test-data';
@@ -49,7 +49,7 @@ export const promptsApi = {
             422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
-    create: (body: { name: string; prompt: string; json_schema_response: Record<string, any> }) =>
+    create: (body: CreatePromptRequest) =>
         apiClient.callApi('prompts', 'create', { body }, {
             201: (payload) => payload.data,
             400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
@@ -65,7 +65,7 @@ export const promptsApi = {
             422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
-    update: (id: string, body: { name?: string; prompt?: string; json_schema_response?: Record<string, any> }) =>
+    update: (id: string, body: CreatePromptRequest) =>
         apiClient.callApi('prompts', 'update', { params: { id }, body }, {
             200: (payload) => payload.data,
             400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },

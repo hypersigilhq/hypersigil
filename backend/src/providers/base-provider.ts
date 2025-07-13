@@ -18,7 +18,7 @@ export interface JSONSchema {
 
 // Execution options for AI providers
 export interface ExecutionOptions {
-    schema?: JSONSchema;
+    schema?: JSONSchema | undefined;
     temperature?: number;
     maxTokens?: number;
     topP?: number;

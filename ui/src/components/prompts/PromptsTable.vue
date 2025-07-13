@@ -157,7 +157,7 @@
                                 <Label for="schema">JSON Schema Response</Label>
                                 <Textarea id="schema" v-model="schemaText"
                                     placeholder='{"type": "object", "properties": {...}}'
-                                    class="flex-1 min-h-[300px] resize-none font-mono text-sm" required />
+                                    class="flex-1 min-h-[300px] resize-none font-mono text-sm" />
                                 <p class="text-sm text-muted-foreground mt-1">
                                     Enter a valid JSON schema that defines the expected response structure.
                                 </p>
@@ -373,18 +373,19 @@ const savePrompt = async () => {
     saving.value = true
 
     try {
-        // Parse JSON schema
-        let parsedSchema: Record<string, any>
-        try {
-            parsedSchema = JSON.parse(schemaText.value)
-        } catch {
-            throw new Error('Invalid JSON schema format')
-        }
 
-        const promptData = {
+        const promptData: CreatePromptRequest = {
             name: formData.name,
             prompt: formData.prompt,
-            json_schema_response: parsedSchema
+        }
+        try {
+            if (schemaText.value) {
+                let parsedSchema: Record<string, any>
+                parsedSchema = JSON.parse(schemaText.value)
+                promptData.json_schema_response = parsedSchema
+            }
+        } catch {
+            throw new Error('Invalid JSON schema format')
         }
 
         if (editingPrompt.value) {

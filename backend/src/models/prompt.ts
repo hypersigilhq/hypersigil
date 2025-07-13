@@ -38,7 +38,7 @@ export interface PromptVersion {
     version: number;
     name: string;
     prompt: string;
-    json_schema_response: object;
+    json_schema_response?: object | undefined;
     created_at: Date;
 }
 
@@ -46,7 +46,7 @@ export interface PromptVersion {
 export interface Prompt extends BaseDocument {
     name: string;
     prompt: string;
-    json_schema_response: object;
+    json_schema_response?: object | undefined;
     current_version: number;
     versions: PromptVersion[];
 }
@@ -57,7 +57,7 @@ export class PromptModel extends Model<Prompt> {
     // Override create to initialize versioning
     public override async create(data: Omit<Prompt, 'id' | 'created_at' | 'updated_at' | 'current_version' | 'versions'>): Promise<Prompt> {
         const now = new Date();
-        const processedSchema = addAdditionalPropertiesFalse(data.json_schema_response);
+        const processedSchema = data.json_schema_response ? addAdditionalPropertiesFalse(data.json_schema_response) : undefined;
 
         const initialVersion: PromptVersion = {
             version: 1,
