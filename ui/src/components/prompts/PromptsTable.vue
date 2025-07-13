@@ -72,21 +72,25 @@
                         <TableCell>{{ formatDate(prompt.updated_at) }}</TableCell>
                         <TableCell class="text-right">
                             <div class="flex justify-end space-x-2">
-                                <Button variant="ghost" size="sm" @click="viewPrompt(prompt)">
+                                <Button variant="ghost" size="sm" @click="viewPrompt(prompt)"
+                                    v-tooltip.bottom="'View prompt details'">
                                     <Eye class="w-4 h-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" @click="scheduleExecution(prompt)">
+                                <Button variant="ghost" size="sm" @click="scheduleExecution(prompt)"
+                                    v-tooltip.bottom="'Schedule execution'">
                                     <Play class="w-4 h-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" @click="editPrompt(prompt)">
+                                <Button variant="ghost" size="sm" @click="editPrompt(prompt)"
+                                    v-tooltip.bottom="'Edit prompt'">
                                     <Edit class="w-4 h-4" />
                                 </Button>
                                 <RouterLink :class="buttonVariants({ variant: 'ghost', size: 'sm' })"
-                                    :to="`/execution-bundles?prompt_id=${prompt.id}`">
+                                    :to="`/execution-bundles?prompt_id=${prompt.id}`"
+                                    v-tooltip.bottom="'View execution bundles'">
                                     <Package class="w-4 h-4" />
                                 </RouterLink>
                                 <Button variant="ghost" size="sm" @click="deletePrompt(prompt)"
-                                    class="text-destructive hover:text-destructive">
+                                    class="text-destructive hover:text-destructive" v-tooltip.bottom="'Delete prompt'">
                                     <Trash2 class="w-4 h-4" />
                                 </Button>
                             </div>
@@ -120,7 +124,7 @@
 
         <!-- Create/Edit Dialog -->
         <Dialog v-model:open="showDialog">
-            <DialogContent class="max-w-2xl">
+            <DialogContent class="max-w-4xl w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
                 <DialogHeader>
                     <DialogTitle>
                         {{ editingPrompt ? 'Edit Prompt' : 'Create New Prompt' }}
@@ -131,28 +135,37 @@
                     </DialogDescription>
                 </DialogHeader>
 
-                <form @submit.prevent="savePrompt" class="space-y-4">
-                    <div>
-                        <Label for="name">Name</Label>
-                        <Input id="name" v-model="formData.name" placeholder="Enter prompt name" required />
+                <form @submit.prevent="savePrompt" class="flex flex-col h-full">
+                    <div class="grid grid-cols-2 gap-6 flex-1">
+                        <!-- Left Column -->
+                        <div class="flex flex-col">
+                            <div>
+                                <Label for="name">Name</Label>
+                                <Input id="name" v-model="formData.name" placeholder="Enter prompt name" required />
+                            </div>
+
+                            <div class="flex-1 flex flex-col mt-2">
+                                <Label for="prompt">Prompt</Label>
+                                <Textarea id="prompt" v-model="formData.prompt" placeholder="Enter your prompt text"
+                                    class="flex-1 min-h-[300px] resize-none" required />
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div class="flex flex-col">
+                            <div class="flex-1 flex flex-col">
+                                <Label for="schema">JSON Schema Response</Label>
+                                <Textarea id="schema" v-model="schemaText"
+                                    placeholder='{"type": "object", "properties": {...}}'
+                                    class="flex-1 min-h-[300px] resize-none font-mono text-sm" required />
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    Enter a valid JSON schema that defines the expected response structure.
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <Label for="prompt">Prompt</Label>
-                        <Textarea id="prompt" v-model="formData.prompt" placeholder="Enter your prompt text" rows="6"
-                            required />
-                    </div>
-
-                    <div>
-                        <Label for="schema">JSON Schema Response</Label>
-                        <Textarea id="schema" v-model="schemaText" placeholder='{"type": "object", "properties": {...}}'
-                            rows="8" required />
-                        <p class="text-sm text-muted-foreground mt-1">
-                            Enter a valid JSON schema that defines the expected response structure.
-                        </p>
-                    </div>
-
-                    <DialogFooter>
+                    <DialogFooter class="mt-6">
                         <Button type="button" variant="outline" @click="closeDialog">
                             Cancel
                         </Button>

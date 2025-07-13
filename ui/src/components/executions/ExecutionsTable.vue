@@ -161,15 +161,18 @@
 
                         <TableCell class="text-right">
                             <div class="flex justify-end space-x-2">
-                                <Button variant="ghost" size="sm" @click="viewExecution(execution)">
+                                <Button variant="ghost" size="sm" @click="viewExecution(execution)"
+                                    v-tooltip.bottom="'View execution details'">
                                     <Eye class="w-4 h-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" @click="cloneExecution(execution)">
+                                <Button variant="ghost" size="sm" @click="cloneExecution(execution)"
+                                    v-tooltip.bottom="'Clone this execution'">
                                     <Copy class="w-4 h-4" />
                                 </Button>
                                 <Button v-if="execution.status === 'pending' || execution.status === 'running'"
                                     variant="ghost" size="sm" @click="cancelExecution(execution)"
-                                    class="text-destructive hover:text-destructive">
+                                    class="text-destructive hover:text-destructive"
+                                    v-tooltip.bottom="'Cancel execution'">
                                     <X class="w-4 h-4" />
                                 </Button>
                             </div>

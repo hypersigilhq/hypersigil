@@ -393,7 +393,7 @@ export class ExecutionService {
 
             // Update with result and validation
             await executionModel.updateStatus(executionId, 'completed', {
-                result: JSON.stringify(cleanedOutput), // null values has been removed
+                result: validationResult.result_valid ? JSON.stringify(cleanedOutput) : result.output, // null values has been removed
                 input_tokens_used: result.inputTokensUsed,
                 output_tokens_used: result.outputTokensUsed,
                 ...validationResult
