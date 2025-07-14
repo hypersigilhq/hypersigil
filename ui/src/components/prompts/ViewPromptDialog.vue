@@ -121,14 +121,6 @@ const goToNextVersion = () => {
     }
 }
 
-onMounted(() => {
-    window.addEventListener('keydown', handleKeydown)
-})
-
-onUnmounted(() => {
-    window.removeEventListener('keydown', handleKeydown)
-})
-
 const handleKeydown = (event: KeyboardEvent) => {
     if (event.key === 'ArrowLeft') {
         event.preventDefault()
@@ -154,6 +146,16 @@ const formatDate = (dateString: string) => {
         minute: '2-digit'
     })
 }
+
+watch(() => props.open, (newOpen) => {
+    if (newOpen) {
+        window.addEventListener('keydown', handleKeydown)
+
+    } else {
+        window.removeEventListener('keydown', handleKeydown)
+
+    }
+})
 
 // Reset to current version when prompt changes
 watch(() => props.prompt, (newPrompt) => {
