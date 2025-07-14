@@ -50,6 +50,7 @@
                     <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Prompt Preview</TableHead>
+                        <TableHead>Versions</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead>Updated</TableHead>
                         <TableHead class="text-right">Actions</TableHead>
@@ -68,6 +69,7 @@
                                 {{ prompt.prompt }}
                             </div>
                         </TableCell>
+                        <TableCell>{{ prompt.current_version }}</TableCell>
                         <TableCell>{{ formatDate(prompt.created_at) }}</TableCell>
                         <TableCell>{{ formatDate(prompt.updated_at) }}</TableCell>
                         <TableCell class="text-right">
