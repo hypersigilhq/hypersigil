@@ -106,9 +106,6 @@
                                     : ''
                             ]">
                             <div class="flex items-center justify-between mb-2">
-                                <div class="font-medium text-sm font-mono">
-                                    {{ execution.id.substring(0, 8) }}...
-                                </div>
                                 <Badge :variant="getStatusVariant(execution.status)" class="text-xs">
                                     {{ execution.status }}
                                 </Badge>
@@ -120,9 +117,7 @@
 
                             <div class="text-xs text-muted-foreground mb-1">
                                 {{ execution.provider }}:{{ execution.model }}
-                            </div>
-                            <div class="text-xs text-muted-foreground">
-                                {{ formatDuration(execution) }}
+                                / {{ formatDuration(execution) }}
                             </div>
                         </div>
                     </div>
@@ -262,8 +257,8 @@ const executionsError = ref<string | null>(null)
 const searchQuery = ref('')
 
 // Column resizing
-const bundlesColumnWidth = ref(250)
-const executionsColumnWidth = ref(300)
+const bundlesColumnWidth = ref(200)
+const executionsColumnWidth = ref(180)
 const isResizing = ref(false)
 const currentResizingColumn = ref<'bundles' | 'executions' | null>(null)
 

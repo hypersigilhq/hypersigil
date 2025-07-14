@@ -80,6 +80,10 @@
                                     v-tooltip.bottom="'Schedule execution'">
                                     <Play class="w-4 h-4" />
                                 </Button>
+                                <Button variant="ghost" size="sm" @click="clonePrompt(prompt)"
+                                    v-tooltip.bottom="'Clone prompt'">
+                                    <Copy class="w-4 h-4" />
+                                </Button>
                                 <Button variant="ghost" size="sm" @click="editPrompt(prompt)"
                                     v-tooltip.bottom="'Edit prompt'">
                                     <Edit class="w-4 h-4" />
@@ -127,11 +131,11 @@
             <DialogContent class="max-w-4xl w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
                 <DialogHeader>
                     <DialogTitle>
-                        {{ editingPrompt ? 'Edit Prompt' : 'Create New Prompt' }}
+                        {{ editingPrompt ? 'Edit Prompt' : (cloningPrompt ? 'Clone Prompt' : 'Create New Prompt') }}
                     </DialogTitle>
                     <DialogDescription>
-                        {{ editingPrompt ? 'Update the prompt details below.' : `Fill in the details to create a new
-                        prompt.` }}
+                        {{ editingPrompt ? 'Update the prompt details below.' : (cloningPrompt ? `Modify the cloned
+                        prompt details below.` : 'Fill in the details to create a new prompt.') }}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -222,7 +226,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue'
 import { debounce } from 'lodash-es'
-import { Plus, Eye, Edit, Trash2, Play, Package } from 'lucide-vue-next'
+import { Plus, Eye, Edit, Trash2, Play, Package, Copy } from 'lucide-vue-next'
 
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -282,6 +286,7 @@ const showDialog = ref(false)
 const showViewDialog = ref(false)
 const showScheduleDialog = ref(false)
 const editingPrompt = ref<PromptResponse | null>(null)
+const cloningPrompt = ref<PromptResponse | null>(null)
 const viewingPrompt = ref<PromptResponse | null>(null)
 const schedulingPrompt = ref<PromptResponse | null>(null)
 const saving = ref(false)
@@ -342,6 +347,7 @@ const goToPage = (page: number) => {
 // Dialog management
 const openCreateDialog = () => {
     editingPrompt.value = null
+    cloningPrompt.value = null
     formData.name = ''
     formData.prompt = ''
     formData.json_schema_response = {}
@@ -351,7 +357,18 @@ const openCreateDialog = () => {
 
 const editPrompt = (prompt: PromptResponse) => {
     editingPrompt.value = prompt
+    cloningPrompt.value = null
     formData.name = prompt.name
+    formData.prompt = prompt.prompt
+    formData.json_schema_response = prompt.json_schema_response
+    schemaText.value = JSON.stringify(prompt.json_schema_response, null, 2)
+    showDialog.value = true
+}
+
+const clonePrompt = (prompt: PromptResponse) => {
+    editingPrompt.value = null
+    cloningPrompt.value = prompt
+    formData.name = `Copy: ${prompt.name}`
     formData.prompt = prompt.prompt
     formData.json_schema_response = prompt.json_schema_response
     schemaText.value = JSON.stringify(prompt.json_schema_response, null, 2)
@@ -366,6 +383,7 @@ const viewPrompt = (prompt: PromptResponse) => {
 const closeDialog = () => {
     showDialog.value = false
     editingPrompt.value = null
+    cloningPrompt.value = null
 }
 
 // Save prompt
