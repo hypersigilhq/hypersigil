@@ -207,7 +207,7 @@
                         <!-- Remaining sections remain the same -->
                         <div>
                             <Label class="text-xs font-medium text-muted-foreground">User Input</Label>
-                            <div class="mt-1 p-3 bg-muted rounded-md text-sm max-h-32 overflow-auto">
+                            <div class="mt-1 p-3 bg-muted rounded-md text-sm max-h-96 overflow-auto">
                                 <pre class="whitespace-pre-wrap">{{ selectedExecution.user_input }}</pre>
                             </div>
                         </div>

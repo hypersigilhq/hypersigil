@@ -466,7 +466,10 @@ const submitScheduleExecution = async () => {
         // Include testDataGroupId if selected, otherwise include userInput(s)
         if (formData.testDataGroupId) {
             executionData.testDataGroupId = formData.testDataGroupId
-            executionData.userInput = '' // Required by API but will be ignored when testDataGroupId is provided
+            executionData.userInput = formData.userInput
+            const execution = await executionsApi.create(executionData)
+            successMessage.value = `Execution ${isCloning.value ? 'cloned' : 'scheduled'} successfully! Execution IDs: ${execution.executionIds.join(', ')}`
+            emit('success', execution.executionIds[0])
         } else if (multipleUserInputs.value) {
             // Create multiple executions for each user input
             const executions = await Promise.all(formData.userInputs.map(async (input) => {
@@ -477,11 +480,6 @@ const submitScheduleExecution = async () => {
             const allExecutionIds = executions.flatMap(e => e.executionIds)
             successMessage.value = `${isCloning.value ? 'Cloned' : 'Scheduled'} ${allExecutionIds.length} executions successfully! Execution IDs: ${allExecutionIds.join(', ')}`
             emit('success', allExecutionIds[0])
-        } else {
-            executionData.userInput = formData.userInput
-            const execution = await executionsApi.create(executionData)
-            successMessage.value = `Execution ${isCloning.value ? 'cloned' : 'scheduled'} successfully! Execution IDs: ${execution.executionIds.join(', ')}`
-            emit('success', execution.executionIds[0])
         }
 
     } catch (err) {

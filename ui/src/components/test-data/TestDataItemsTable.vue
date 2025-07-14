@@ -24,6 +24,21 @@
                     </SelectContent>
                 </Select>
             </div>
+            <!-- Bulk Action Bar -->
+            <div v-if="selectedItems.size > 0" class="flex items-center justify-between ">
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm font-medium text-blue-900">
+                        {{ selectedItems.size }} item{{ selectedItems.size === 1 ? '' : 's' }} selected
+                    </span>
+                    <Button @click="clearSelection" variant="outline" size="sm">
+                        Clear Selection
+                    </Button>
+                </div>
+                <Button @click="bulkScheduleItems" class="ml-2 bg-blue-600 hover:bg-blue-700" size="sm">
+                    <Play class="w-4 h-4 mr-2" />
+                    Schedule Execution
+                </Button>
+            </div>
             <div class="flex space-x-2">
                 <Button @click="openImportDialog" variant="outline">
                     <Upload class="w-4 h-4 mr-2" />
@@ -34,23 +49,6 @@
                     Create Item
                 </Button>
             </div>
-        </div>
-
-        <!-- Bulk Action Bar -->
-        <div v-if="selectedItems.size > 0"
-            class="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div class="flex items-center space-x-3">
-                <span class="text-sm font-medium text-blue-900">
-                    {{ selectedItems.size }} item{{ selectedItems.size === 1 ? '' : 's' }} selected
-                </span>
-                <Button @click="clearSelection" variant="outline" size="sm">
-                    Clear Selection
-                </Button>
-            </div>
-            <Button @click="bulkScheduleItems" class="bg-blue-600 hover:bg-blue-700">
-                <Play class="w-4 h-4 mr-2" />
-                Schedule Execution
-            </Button>
         </div>
 
         <!-- Loading state -->
