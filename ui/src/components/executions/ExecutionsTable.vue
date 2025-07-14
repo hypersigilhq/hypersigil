@@ -216,7 +216,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { debounce } from 'lodash-es'
 import { RefreshCw, Eye, X, Copy } from 'lucide-vue-next'
 
@@ -282,6 +282,7 @@ const showViewDialog = ref(false)
 const showCloneDialog = ref(false)
 const viewingExecution = ref<ExecutionResponse | null>(null)
 const cloningExecution = ref<ExecutionResponse | null>(null)
+const currentExecutionIndex = ref(-1)
 const cloneInitialData = ref<{
     userInput: string
     providerModel: string[]
@@ -359,7 +360,40 @@ const goToPage = (page: number) => {
 // View execution
 const viewExecution = (execution: ExecutionResponse) => {
     viewingExecution.value = execution
+    currentExecutionIndex.value = executions.value.findIndex(e => e.id === execution.id)
     showViewDialog.value = true
+
+    // Add event listener for keyboard navigation
+    nextTick(() => {
+        window.addEventListener('keydown', handleExecutionKeyNavigation)
+    })
+}
+
+// Handle keyboard navigation for executions
+const handleExecutionKeyNavigation = (event: KeyboardEvent) => {
+    if (!showViewDialog.value) return
+
+    switch (event.key) {
+        case 'ArrowUp':
+            event.preventDefault()
+            navigateExecutions(-1)
+            break
+        case 'ArrowDown':
+            event.preventDefault()
+            navigateExecutions(1)
+            break
+    }
+}
+
+// Navigate between executions
+const navigateExecutions = (direction: number) => {
+    if (currentExecutionIndex.value === -1) return
+
+    const newIndex = currentExecutionIndex.value + direction
+    if (newIndex >= 0 && newIndex < executions.value.length) {
+        currentExecutionIndex.value = newIndex
+        viewingExecution.value = executions.value[newIndex]
+    }
 }
 
 // Clone execution
