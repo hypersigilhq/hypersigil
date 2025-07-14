@@ -43,3 +43,11 @@
 - [todo] Add execution result caching and optimization
 - [todo] Create execution templates and presets
 - [todo] Add execution scheduling and batch processing
+
+- [todo] Implement user management (create organization as well), detect if there are no users in the system and prompt for registration on first visit
+- [todo] Token cost settings
+- [todo] API keys settings
+- [todo] Execution user status, rating
+- [todo] Prompt user status, rating
+- [todo] Comments for entities (execution, prompt)
+- [todo] Notifications?
