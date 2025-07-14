@@ -89,6 +89,10 @@
                                     <Edit class="w-4 h-4" />
                                 </Button>
                                 <RouterLink :class="buttonVariants({ variant: 'ghost', size: 'sm' })"
+                                    :to="`/executions?prompt_id=${prompt.id}`" v-tooltip.bottom="'View executions'">
+                                    <Search class="w-4 h-4" />
+                                </RouterLink>
+                                <RouterLink :class="buttonVariants({ variant: 'ghost', size: 'sm' })"
                                     :to="`/execution-bundles?prompt_id=${prompt.id}`"
                                     v-tooltip.bottom="'View execution bundles'">
                                     <Package class="w-4 h-4" />
@@ -226,7 +230,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue'
 import { debounce } from 'lodash-es'
-import { Plus, Eye, Edit, Trash2, Play, Package, Copy } from 'lucide-vue-next'
+import { Plus, Eye, Edit, Trash2, Play, Package, Copy, Search } from 'lucide-vue-next'
 
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

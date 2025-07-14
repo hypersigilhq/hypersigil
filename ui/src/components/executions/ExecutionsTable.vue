@@ -4,6 +4,7 @@
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <Input v-model="searchQuery" placeholder="Search executions..." class="w-64" @input="debouncedSearch" />
+                <PromptSelector v-model="promptId" :label="''" :null-option="true" class="w-64" />
                 <Select v-model="statusFilter">
                     <SelectTrigger class="w-32">
                         <SelectValue placeholder="Status" />
@@ -242,6 +243,8 @@ import {
 import { executionsApi } from '@/services/api-client'
 import ScheduleExecutionDialog from './ScheduleExecutionDialog.vue'
 import type { ExecutionResponse } from '../../services/definitions/execution'
+import PromptSelector from '../prompts/PromptSelector.vue'
+import router from '@/router'
 
 interface ExecutionStats {
     total: number
@@ -257,6 +260,7 @@ const executions = ref<ExecutionResponse[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
+const promptId = ref('')
 const statusFilter = ref<'pending' | 'running' | 'completed' | 'failed' | 'all'>('all')
 const orderBy = ref<'created_at' | 'updated_at' | 'started_at' | 'completed_at'>('created_at')
 const orderDirection = ref<'ASC' | 'DESC'>('DESC')
@@ -316,7 +320,8 @@ const loadExecutions = async () => {
                 limit: pageLimit.value.toString(),
                 status: st || undefined,
                 orderBy: orderBy.value,
-                orderDirection: orderDirection.value
+                orderDirection: orderDirection.value,
+                ...(promptId.value && { promptId: promptId.value })
             }
         })
 
@@ -444,7 +449,7 @@ const formatDuration = (execution: ExecutionResponse) => {
 }
 
 // Watchers
-watch([statusFilter, orderBy, orderDirection], () => {
+watch([statusFilter, orderBy, orderDirection, promptId], () => {
     currentPage.value = 1
     loadExecutions()
 })
@@ -472,6 +477,11 @@ onMounted(() => {
     loadExecutions()
     loadStats()
     startAutoRefresh()
+
+    let promptIdQuery = router.currentRoute.value.query.prompt_id as string
+    if (promptIdQuery) {
+        promptId.value = promptIdQuery
+    }
 })
 
 onUnmounted(() => {

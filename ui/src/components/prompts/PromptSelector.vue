@@ -1,6 +1,6 @@
 <template>
     <div>
-        <Label for="prompt">Prompt (Required)</Label>
+        <Label v-if="label" for="prompt">Prompt (Required)</Label>
         <Select v-model="selectedPromptId" required>
             <SelectTrigger>
                 <SelectValue placeholder="Select a prompt" />
@@ -8,6 +8,9 @@
             <SelectContent>
                 <SelectItem v-if="loadingPrompts" value="loading" disabled>
                     Loading prompts...
+                </SelectItem>
+                <SelectItem v-if="nullOption" :value="null">
+                    All
                 </SelectItem>
                 <SelectItem v-for="prompt in prompts" :key="prompt.id" :value="prompt.id">
                     {{ prompt.name }}
@@ -31,7 +34,9 @@ import {
 import { promptsApi } from '@/services/api-client'
 
 interface Props {
-    modelValue?: string
+    modelValue?: string,
+    label?: string,
+    nullOption?: boolean,
 }
 
 interface Emits {
@@ -39,6 +44,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+    label: "Prompt (required)"
 })
 
 const emit = defineEmits<Emits>()

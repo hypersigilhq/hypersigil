@@ -25,7 +25,7 @@
             <form @submit.prevent="submitScheduleExecution" class="space-y-4">
                 <!-- Prompt Selection (for item mode) -->
                 <div v-if="mode === 'item'">
-                    <PromptSelector v-model="formData.promptId" :mode="mode" required />
+                    <PromptSelector v-model="formData.promptId" required />
                 </div>
 
                 <!-- Test Data Group Selection (for group mode) -->
