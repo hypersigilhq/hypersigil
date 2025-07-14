@@ -148,80 +148,7 @@
                     </div>
 
                     <!-- Execution details -->
-                    <div v-else class="p-4 space-y-4">
-                        <!-- Status and metadata section remains the same -->
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label class="text-xs font-medium text-muted-foreground">Status</Label>
-                                <div class="mt-1">
-                                    <Badge :variant="getStatusVariant(selectedExecution.status)">
-                                        {{ selectedExecution.status }}
-                                    </Badge>
-                                </div>
-                            </div>
-                            <div>
-                                <Label class="text-xs font-medium text-muted-foreground">Provider/Model</Label>
-                                <div class="mt-1 text-sm">
-                                    {{ selectedExecution.provider }}:{{ selectedExecution.model }}
-                                </div>
-                            </div>
-                            <div>
-                                <Label class="text-xs font-medium text-muted-foreground">Duration</Label>
-                                <div class="mt-1 text-sm">
-                                    {{ formatDuration(selectedExecution) }}
-                                </div>
-                            </div>
-                            <div v-if="selectedExecution.input_tokens_used || selectedExecution.output_tokens_used">
-                                <Label class="text-xs font-medium text-muted-foreground">Tokens Used</Label>
-                                <div class="mt-1 text-sm">
-                                    {{ selectedExecution.input_tokens_used || 0 }} / {{
-                                        selectedExecution.output_tokens_used || 0 }}
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <div v-if="selectedExecution.error_message" class="flex-shrink-0">
-                            <Label>Error Message</Label>
-                            <div
-                                class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
-                                <pre
-                                    class="whitespace-pre-wrap text-sm text-destructive">{{ selectedExecution.error_message }}</pre>
-                            </div>
-                        </div>
-
-                        <div v-if="!selectedExecution.result_valid" class="flex-shrink-0">
-                            <Label>Result validation error</Label>
-                            <div
-                                class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
-                                <pre class="whitespace-pre-wrap text-sm text-destructive">{{
-                                    selectedExecution.result_validation_message }}</pre>
-                            </div>
-                        </div>
-
-                        <!-- Remaining sections remain the same -->
-                        <div>
-                            <Label class="text-xs font-medium text-muted-foreground">User Input</Label>
-                            <div class="mt-1 p-3 bg-muted rounded-md text-sm max-h-96 overflow-auto">
-                                <pre class="whitespace-pre-wrap">{{ selectedExecution.user_input }}</pre>
-                            </div>
-                        </div>
-
-                        <div v-if="selectedExecution.result">
-                            <Label class="text-xs font-medium text-muted-foreground">Result</Label>
-                            <div class="mt-1 p-3 bg-muted rounded-md text-sm max-h-96 overflow-auto">
-                                <pre class="whitespace-pre-wrap">{{ formatJsonResult(selectedExecution.result) }}</pre>
-                            </div>
-                        </div>
-
-                        <div v-if="selectedExecution.options">
-                            <Label class="text-xs font-medium text-muted-foreground">Options</Label>
-                            <div class="mt-1 p-3 bg-muted rounded-md text-sm max-h-32 overflow-auto">
-                                <pre
-                                    class="whitespace-pre-wrap">{{ JSON.stringify(selectedExecution.options, null, 2) }}</pre>
-                            </div>
-                        </div>
-                    </div>
+                    <ExecutionDetailsView :execution="selectedExecution" />
                 </div>
             </div>
         </div>
@@ -241,6 +168,7 @@ import { executionBundlesApi, executionsApi } from '@/services/api-client'
 import type { ExecutionBundleResponse } from '@/services/definitions/execution-bundle'
 import type { ExecutionResponse } from '@/services/definitions/execution'
 import router from '@/router'
+import ExecutionDetailsView from '@/components/executions/ExecutionDetailsView.vue'
 
 // State
 const bundles = ref<ExecutionBundleResponse[]>([])
