@@ -185,41 +185,7 @@
             </DialogContent>
         </Dialog>
 
-        <!-- View Dialog -->
-        <Dialog v-model:open="showViewDialog">
-            <DialogContent class="max-w-4xl w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>{{ viewingPrompt?.name }}</DialogTitle>
-                    <DialogDescription>
-                        Created: {{ viewingPrompt ? formatDate(viewingPrompt.created_at) : '' }} |
-                        Updated: {{ viewingPrompt ? formatDate(viewingPrompt.updated_at) : '' }}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div v-if="viewingPrompt" class="flex-1 overflow-hidden flex flex-col space-y-4 p-4">
-                    <div class="flex-shrink-0 grid grid-cols-2 gap-4 h-full">
-                        <div class="flex flex-col min-h-0">
-                            <Label>Prompt</Label>
-                            <div class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
-                                <pre class="whitespace-pre-wrap text-sm">{{ viewingPrompt.prompt }}</pre>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col min-h-0">
-                            <Label>JSON Schema Response</Label>
-                            <div class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
-                                <pre
-                                    class="whitespace-pre-wrap text-sm">{{ JSON.stringify(viewingPrompt.json_schema_response, null, 2) }}</pre>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <DialogFooter>
-                    <Button @click="showViewDialog = false">Close</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <ViewPromptDialog :open="showViewDialog" :prompt="viewingPrompt" @close="showViewDialog = false" />
 
         <!-- Schedule Execution Dialog -->
         <ScheduleExecutionDialog v-model:open="showScheduleDialog" :prompt-id="schedulingPrompt?.id"
@@ -236,7 +202,6 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import {
     Table,
     TableBody,
@@ -265,6 +230,7 @@ import { promptsApi, executionsApi } from '@/services/api-client'
 import type { PromptResponse, CreatePromptRequest } from '../../services/definitions/prompt'
 import ScheduleExecutionDialog from '@/components/executions/ScheduleExecutionDialog.vue'
 import { RouterLink } from 'vue-router'
+import ViewPromptDialog from './ViewPromptDialog.vue'
 
 // Reactive state
 const prompts = ref<PromptResponse[]>([])
