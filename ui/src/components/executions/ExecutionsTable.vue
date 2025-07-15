@@ -49,6 +49,10 @@
                 </Select>
             </div>
             <div class="flex items-center space-x-2">
+                <Button @click="loadExecutions($event, true)" variant="default" size="sm">
+                    <Download class="w-4 h-4 mr-2" />
+                    Export
+                </Button>
                 <Button @click="loadExecutions" variant="outline" size="sm">
                     <RefreshCw class="w-4 h-4 mr-2" />
                     Refresh
@@ -232,7 +236,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { debounce } from 'lodash-es'
-import { RefreshCw, Eye, X, Copy, Star } from 'lucide-vue-next'
+import { RefreshCw, Eye, X, Copy, Star, Download } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -319,7 +323,7 @@ const debouncedSearch = debounce(() => {
 }, 300)
 
 // Load executions
-const loadExecutions = async () => {
+const loadExecutions = async ($event = null, download: boolean = false) => {
     loading.value = true
     error.value = null
 
@@ -338,9 +342,15 @@ const loadExecutions = async () => {
                 orderBy: orderBy.value,
                 orderDirection: orderDirection.value,
                 ...(promptId.value && { promptId: promptId.value }),
-                ...(starred.value !== 'all' && { starred: starred.value === 'yes' })
+                ...(starred.value !== 'all' && { starred: starred.value === 'yes' }),
+                downloadCsv: download
             }
         })
+
+        if (download) {
+            console.log(response.body)
+            return
+        }
 
         executions.value = response.data
         pagination.value = {

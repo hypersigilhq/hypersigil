@@ -4,7 +4,7 @@ import { providerRegistry } from '../../providers/provider-registry';
 import { loggingMiddleware, timingMiddleware } from '../../app';
 import app from '../../app';
 import { ExecutionOptions } from '../../providers/base-provider';
-import { promptModel } from '../../models/prompt';
+import { Prompt, promptModel } from '../../models/prompt';
 import { ExecutionApiDefinition, ExecutionResponse } from '../definitions/execution';
 import { testDataGroupModel, testDataItemModel, executionBundleModel, executionModel } from '../../models';
 
@@ -170,11 +170,16 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
         list: async (req, res) => {
             try {
-                const { page, limit, status, provider, promptId, orderBy, orderDirection, ids, starred } = req.query;
+                const { page, limit, status, provider, promptId, orderBy, orderDirection, ids, starred, downloadCsv } = req.query;
+
+                let limitP = limit
+                if (downloadCsv) {
+                    limitP = -1
+                }
 
                 const result = await executionService.getExecutions({
                     page,
-                    limit,
+                    limit: limitP,
                     ...(status && { status }),
                     ...(provider && { provider }),
                     ...(promptId && { promptId }),
@@ -202,12 +207,46 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     });
                 }
 
+                if (req.query.downloadCsv) {
+                    // Generate CSV content
+                    const csvHeaders = ['id', 'prompt_id', 'prompt_version', 'model', 'prompt_name', 'prompt_value', 'user_input', 'status', 'result_valid', 'result'];
+                    const csvRows = result.data.map(execution => {
+                        const prompt = promptsMap.get(execution.prompt_id);
+                        const pv = <Prompt['versions'][0]>prompt?.versions.find((v: Prompt['versions'][0]) => v.version === execution.prompt_version);
+
+                        return [
+                            execution.id || '',
+                            execution.prompt_id || '',
+                            execution.prompt_version?.toString() || '',
+                            execution.model || '',
+                            pv?.name || '',
+                            pv?.prompt || '',
+                            execution.user_input.replace(/"/g, '""'),
+                            execution.status || '',
+                            execution.result_valid?.toString() || '',
+                            (execution.result || '').replace(/"/g, '""') // Escape quotes in CSV
+                        ];
+                    });
+
+                    // Create CSV content
+                    const csvContent = [
+                        csvHeaders.join(','),
+                        ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
+                    ].join('\n');
+
+                    // Set CSV headers
+                    res.setHeader('Content-Type', 'text/csv');
+                    res.setHeader('Content-Disposition', 'attachment; filename="executions.csv"');
+
+                    res.send(csvContent);
+                    return;
+                }
+
                 const response = {
                     ...result,
                     data: result.data.map(execution => {
 
                         let prompt = promptsMap.get(execution.prompt_id)
-
                         let pv = prompt.versions.find((v: any) => v.version === execution.prompt_version)
 
                         return <ExecutionResponse>{

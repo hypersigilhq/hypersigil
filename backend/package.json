@@ -30,7 +30,7 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "morgan": "^1.10.0",
-    "ts-typed-api": "^0.1.7",
+    "ts-typed-api": "^0.1.8",
     "zod": "^3.25.76"
   },
   "devDependencies": {

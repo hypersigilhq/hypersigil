@@ -137,7 +137,8 @@ export const ExecutionListQuerySchema = PaginationQuerySchema.extend({
     starred: z.boolean().optional(),
     ids: z.string().optional().transform(v => v?.split(',')),
     orderBy: z.enum(['created_at', 'updated_at', 'started_at', 'completed_at']).optional().default('created_at'),
-    orderDirection: OrderDirectionSchema.optional().default('DESC')
+    orderDirection: OrderDirectionSchema.optional().default('DESC'),
+    downloadCsv: z.boolean().optional()
 });
 
 export type ExecutionListQuery = z.infer<typeof ExecutionListQuerySchema>;

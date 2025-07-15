@@ -6,22 +6,22 @@ import { TestDataApiDefinition } from './definitions/test-data';
 
 // Create the API client with the base URL
 export const apiClient = new ApiClient(
-    'http://localhost:3000', // Adjust this to match your backend URL
+    document.location.origin, // Adjust this to match your backend URL
     PromptApiDefinition
 );
 
 export const executionApiClient = new ApiClient(
-    'http://localhost:3000', // Adjust this to match your backend URL
+    document.location.origin, // Adjust this to match your backend URL
     ExecutionApiDefinition
 );
 
 export const executionBundleApiClient = new ApiClient(
-    'http://localhost:3000', // Adjust this to match your backend URL
+    document.location.origin, // Adjust this to match your backend URL
     ExecutionBundleApiDefinition
 );
 
 export const testDataApiClient = new ApiClient(
-    'http://localhost:3000', // Adjust this to match your backend URL
+    document.location.origin, // Adjust this to match your backend URL
     TestDataApiDefinition
 );
 
@@ -111,11 +111,12 @@ export const executionsApi = {
             starred?: boolean;
             ids?: string;
             orderBy?: 'created_at' | 'updated_at' | 'started_at' | 'completed_at';
-            orderDirection?: 'ASC' | 'DESC'
+            orderDirection?: 'ASC' | 'DESC',
+            downloadCsv?: boolean
         }
     }) =>
         executionApiClient.callApi('executions', 'list', options, {
-            200: (payload) => payload.data,
+            200: (payload) => options?.query?.downloadCsv ? payload.rawResponse : payload.data,
             400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
             500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
             422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
