@@ -84,6 +84,11 @@
                     <Label for="prompt-switch" class="text-sm font-medium">Prompt</Label>
                     <Switch id="prompt-switch" :model-value="showPrompt" @update:model-value="onPromptSwitchChange" />
                 </div>
+                <div class="flex items-center space-x-2">
+                    <Label for="comments-switch" class="text-sm font-medium">Comments</Label>
+                    <Switch id="comments-switch" :model-value="showComments"
+                        @update:model-value="(value: boolean) => showComments = value" />
+                </div>
             </div>
         </div>
 
@@ -124,7 +129,15 @@
             <!-- Result Column (Always visible) -->
             <div v-if="execution.result" class="flex flex-col min-h-0">
                 <Label class="mb-2">Result</Label>
-                <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
+                <div v-if="showComments" class="flex-1 overflow-hidden">
+                    <TextCommentable :content="execution.result"
+                        content-class="whitespace-pre-wrap text-sm h-full overflow-auto">
+                        <template #default="{ renderedContent, contentClass }">
+                            <pre v-html="renderedContent" :class="contentClass"></pre>
+                        </template>
+                    </TextCommentable>
+                </div>
+                <div v-else class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
                     <pre class="whitespace-pre-wrap text-sm h-full overflow-auto">{{ execution.result }}</pre>
                 </div>
             </div>
@@ -149,6 +162,7 @@ import { Star } from 'lucide-vue-next'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { TextCommentable } from '@/components/ui/text-commentable'
 
 interface Props {
     execution: ExecutionResponse | null
@@ -163,6 +177,7 @@ const promptError = ref<string | null>(null)
 // Column visibility state
 const showUserInput = ref(true)
 const showPrompt = ref(false)
+const showComments = ref(false)
 
 // Computed property for dynamic grid classes
 const gridClasses = computed(() => {
@@ -220,6 +235,7 @@ const fetchPrompt = async () => {
 watch(() => props.execution, () => {
     showUserInput.value = true
     showPrompt.value = false
+    showComments.value = false
     prompt.value = null
     promptError.value = null
 })

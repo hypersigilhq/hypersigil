@@ -49,5 +49,4 @@
 - [todo] API keys settings
 - [todo] Execution user status, rating
 - [todo] Prompt user status, rating
-- [todo] Comments for entities (execution, prompt)
 - [todo] Notifications?
