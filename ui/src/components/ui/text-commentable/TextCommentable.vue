@@ -45,7 +45,8 @@
                 <div v-else>
                     <div v-for="comment in comments" :key="comment.id"
                         :class="['comment-item', { active: activeCommentId === comment.id }]"
-                        :data-comment-id="comment.id">
+                        :data-comment-id="comment.id" @click="scrollToHighlight(comment.id)"
+                        @mouseenter="highlightComment(comment.id)" @mouseleave="unhighlightComment(comment.id)">
                         <div class="comment-preview">
                             "{{ comment.selectedText }}"
                         </div>
@@ -57,10 +58,7 @@
                             <span class="comment-id">#{{ comment.id }}</span>
                         </div>
                         <div class="comment-actions">
-                            <button class="btn btn-success" @click="scrollToHighlight(comment.id)">
-                                🔍 Find
-                            </button>
-                            <button class="btn btn-danger" @click="deleteComment(comment.id)">
+                            <button class="btn btn-danger" @click.stop="deleteComment(comment.id)">
                                 🗑️ Delete
                             </button>
                         </div>
@@ -281,9 +279,9 @@ const useHighlights = (comments: any, originalContent: any) => {
 
     const activateHighlight = (commentId: number, duration = 2000) => {
         activeHighlightId.value = commentId;
-        setTimeout(() => {
-            activeHighlightId.value = null;
-        }, duration);
+        // setTimeout(() => {
+        // activeHighlightId.value = null;
+        // }, duration);
     };
 
     return {
@@ -404,6 +402,16 @@ const handleHighlightClick = (e: MouseEvent) => {
     }
 };
 
+const highlightComment = (commentId: number) => {
+    activateHighlight(commentId, 0); // 0 duration means it stays highlighted until unhighlighted
+};
+
+const unhighlightComment = (commentId: number) => {
+    if (activeHighlightId.value === commentId) {
+        activeHighlightId.value = null;
+    }
+};
+
 const handleClickOutside = (e: MouseEvent) => {
     if (textElement.value && !textElement.value.contains(e.target as Node)) {
         hideTooltip();
@@ -515,7 +523,11 @@ watch(activeHighlightId, (newId) => {
 }
 
 .comment-item {
-    @apply mb-3 p-3 bg-muted rounded-md border transition-all;
+    @apply mb-3 p-3 bg-muted rounded-md border transition-all cursor-pointer;
+}
+
+.comment-item:hover {
+    @apply bg-muted/80 border-primary/50;
 }
 
 .comment-item.active {
@@ -547,8 +559,10 @@ watch(activeHighlightId, (newId) => {
 }
 
 :deep(.highlight) {
-    @apply bg-yellow-200 cursor-pointer transition-all;
+    @apply bg-yellow-200 cursor-pointer;
     position: relative;
+    border: 1px solid rgba(0, 0, 0, 0) !important;
+    box-sizing: border-box;
 }
 
 :deep(.highlight:hover) {
@@ -556,7 +570,9 @@ watch(activeHighlightId, (newId) => {
 }
 
 :deep(.highlight.active) {
-    @apply bg-yellow-400 animate-pulse;
+    @apply bg-yellow-400;
+    border: 1px solid black !important;
+    box-sizing: border-box;
 }
 
 /* Nested highlights - darker shades for overlapping comments */
@@ -582,7 +598,7 @@ watch(activeHighlightId, (newId) => {
 
 /* Add a subtle border to help distinguish nested highlights */
 :deep(.highlight .highlight) {
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    /* border: 1px solid rgba(0, 0, 0, 0.1); */
     border-radius: 2px;
 }
 </style>
