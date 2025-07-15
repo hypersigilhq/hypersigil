@@ -23,7 +23,7 @@
                         {{ currentSelection?.text || '' }}
                     </div>
                     <Textarea v-model="commentText" placeholder="Add your comment..." @keydown.esc="cancelComment"
-                        @keydown.ctrl.enter="saveComment" ref="commentTextarea" class="min-h-[80px]" />
+                        @keydown.ctrl.enter="saveComment" :ref="'commentTextarea'" class="min-h-[80px]" />
                     <div class="comment-form-actions">
                         <Button @click="saveComment" :disabled="!commentText.trim()" size="sm">
                             Save Comment
@@ -50,9 +50,11 @@
                             {{ comment.text }}
                         </div>
                         <div class="comment-meta">
-                            <span class="text-xs text-muted-foreground">{{ comment.timestamp }}</span>
+                            <span class="text-xs text-muted-foreground">{{ new
+                                Date(comment.unixTimestampMs).toLocaleString()
+                            }}</span>
                             <Button variant="destructive" size="sm" @click.stop="deleteComment(comment.id)" class="">
-                                🗑️ Delete
+                                Delete
                             </Button>
                         </div>
                     </div>
@@ -71,30 +73,14 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
+import type { Comment, Selection, TextCommentableProps, TextCommentableEmits } from './types'
 
-interface Comment {
-    id: number;
-    text: string;
-    selectedText: string;
-    startOffset: number;
-    endOffset: number;
-    timestamp: string;
-}
-
-interface Selection {
-    text: string;
-    startOffset: number;
-    endOffset: number;
-}
-
-interface Props {
-    content: string;
-    contentClass?: string;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-    contentClass: 'whitespace-pre-wrap text-sm h-full overflow-auto'
+const props = withDefaults(defineProps<TextCommentableProps>(), {
+    contentClass: 'whitespace-pre-wrap text-sm h-full overflow-auto',
+    initialComments: () => []
 });
+
+const emit = defineEmits<TextCommentableEmits>();
 
 // Composables
 const useTextSelection = () => {
@@ -152,31 +138,49 @@ const useTextSelection = () => {
     };
 };
 
+function makeid(length: number) {
+    var result = '';
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for (var i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+}
+
 const useComments = () => {
     const comments = ref<Comment[]>([]);
     const nextCommentId = ref(1);
+
+    // Initialize comments from props
+    const initializeComments = (initialComments: Comment[]) => {
+        comments.value = [...initialComments];
+        // Set nextCommentId to be higher than any existing comment ID
+    };
 
     const addComment = (selection: Selection, commentText: string) => {
         if (!selection || !commentText.trim()) return null;
 
         const comment: Comment = {
-            id: nextCommentId.value++,
+            id: makeid(7),
             text: commentText.trim(),
             selectedText: selection.text,
             startOffset: selection.startOffset,
             endOffset: selection.endOffset,
-            timestamp: new Date().toLocaleString()
+            unixTimestampMs: new Date().getTime()
         };
 
         comments.value.push(comment);
+        emit('commentAdded', comment);
         return comment;
     };
 
-    const deleteComment = (commentId: number) => {
+    const deleteComment = (commentId: string) => {
         comments.value = comments.value.filter(c => c.id !== commentId);
+        emit('commentDeleted', commentId);
     };
 
-    const getCommentById = (commentId: number) => {
+    const getCommentById = (commentId: string) => {
         return comments.value.find(c => c.id === commentId);
     };
 
@@ -184,12 +188,13 @@ const useComments = () => {
         comments,
         addComment,
         deleteComment,
-        getCommentById
+        getCommentById,
+        initializeComments
     };
 };
 
 const useHighlights = (comments: any, originalContent: any) => {
-    const activeHighlightId = ref<number | null>(null);
+    const activeHighlightId = ref<string | null>(null);
 
     const escapeHtml = (text: string) => {
         const div = document.createElement('div');
@@ -208,7 +213,7 @@ const useHighlights = (comments: any, originalContent: any) => {
 
         // Create an array of characters with their comment associations
         const chars = originalContent.value.split('');
-        const charComments: number[][] = new Array(chars.length).fill(null).map(() => []);
+        const charComments: string[][] = new Array(chars.length).fill(null).map(() => []);
 
         // Mark which characters belong to which comments
         comments.value.forEach((comment: Comment) => {
@@ -221,7 +226,7 @@ const useHighlights = (comments: any, originalContent: any) => {
 
         // Build the result by processing each character
         let result = '';
-        let currentCommentIds: number[] = [];
+        let currentCommentIds: string[] = [];
 
         for (let i = 0; i < chars.length; i++) {
             const newCommentIds = charComments[i];
@@ -266,14 +271,14 @@ const useHighlights = (comments: any, originalContent: any) => {
     });
 
     // Helper function to compare arrays
-    const arraysEqual = (a: number[], b: number[]): boolean => {
+    const arraysEqual = (a: string[], b: string[]): boolean => {
         if (a.length !== b.length) return false;
         const sortedA = [...a].sort();
         const sortedB = [...b].sort();
         return sortedA.every((val, index) => val === sortedB[index]);
     };
 
-    const activateHighlight = (commentId: number, duration = 2000) => {
+    const activateHighlight = (commentId: string, duration = 2000) => {
         activeHighlightId.value = commentId;
         // setTimeout(() => {
         // activeHighlightId.value = null;
@@ -293,7 +298,7 @@ const commentTextarea = ref<HTMLTextAreaElement | null>(null);
 const originalContent = ref('');
 const showCommentForm = ref(false);
 const commentText = ref('');
-const activeCommentId = ref<number | null>(null);
+const activeCommentId = ref<string | null>(null);
 
 // Composables
 const {
@@ -309,7 +314,8 @@ const {
     comments,
     addComment,
     deleteComment,
-    getCommentById
+    getCommentById,
+    initializeComments
 } = useComments();
 
 const {
@@ -364,7 +370,7 @@ const cancelComment = () => {
     window.getSelection()?.removeAllRanges();
 };
 
-const scrollToHighlight = (commentId: number) => {
+const scrollToHighlight = (commentId: string) => {
     const highlightElement = textElement.value?.querySelector(`[data-comment-id="${commentId}"]`);
     if (highlightElement) {
         highlightElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -378,7 +384,7 @@ const scrollToHighlight = (commentId: number) => {
     }
 };
 
-const scrollToComment = (commentId: number) => {
+const scrollToComment = (commentId: string) => {
     const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
     if (commentElement) {
         commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -393,16 +399,16 @@ const handleHighlightClick = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
     const highlight = target.closest('.highlight') as HTMLElement;
     if (highlight) {
-        const commentId = parseInt(highlight.dataset.commentId || '0');
+        const commentId = highlight.dataset.commentId || '';
         scrollToComment(commentId);
     }
 };
 
-const highlightComment = (commentId: number) => {
+const highlightComment = (commentId: string) => {
     activateHighlight(commentId, 0); // 0 duration means it stays highlighted until unhighlighted
 };
 
-const unhighlightComment = (commentId: number) => {
+const unhighlightComment = (commentId: string) => {
     if (activeHighlightId.value === commentId) {
         activeHighlightId.value = null;
     }
@@ -417,6 +423,7 @@ const handleClickOutside = (e: MouseEvent) => {
 // Lifecycle
 onMounted(() => {
     originalContent.value = props.content;
+    initializeComments(props.initialComments);
     document.addEventListener('click', handleClickOutside);
 });
 
@@ -429,12 +436,16 @@ watch(() => props.content, (newContent) => {
     originalContent.value = newContent;
 });
 
+watch(() => props.initialComments, (newComments) => {
+    initializeComments(newComments);
+}, { deep: true });
+
 watch(activeHighlightId, (newId) => {
     // Update highlight visual state
     const highlights = textElement.value?.querySelectorAll('.highlight');
     highlights?.forEach(highlight => {
         highlight.classList.remove('active');
-        if (newId && parseInt((highlight as HTMLElement).dataset.commentId || '0') === newId) {
+        if (newId && ((highlight as HTMLElement).dataset.commentId || '') === newId) {
             highlight.classList.add('active');
         }
     });

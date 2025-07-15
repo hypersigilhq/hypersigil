@@ -130,8 +130,8 @@
             <div v-if="execution.result" class="flex flex-col min-h-0">
                 <Label class="mb-2">Result</Label>
                 <div v-if="showComments" class="flex-1 overflow-hidden">
-                    <TextCommentable :content="execution.result"
-                        content-class="whitespace-pre-wrap text-sm h-full overflow-auto">
+                    <TextCommentable :content="execution.result" @comment-added="console.log"
+                        @comment-deleted="console.log" content-class="whitespace-pre-wrap text-sm h-full overflow-auto">
                         <template #default="{ renderedContent, contentClass }">
                             <pre v-html="renderedContent" :class="contentClass"></pre>
                         </template>
