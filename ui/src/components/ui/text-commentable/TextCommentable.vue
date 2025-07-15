@@ -2,12 +2,8 @@
     <div class="text-commentable">
         <div class="stats-bar">
             <div class="stats-item">
-                <span>Comments</span>
-                <span class="stats-badge">{{ comments.length }}</span>
-            </div>
-            <div class="stats-item">
-                <span>Total Characters</span>
-                <span class="stats-badge">{{ originalContent.length }}</span>
+                <span class="text-sm font-medium">Comments</span>
+                <Badge variant="default">{{ comments.length }}</Badge>
             </div>
         </div>
 
@@ -26,23 +22,23 @@
                     <div class="selected-text-preview">
                         {{ currentSelection?.text || '' }}
                     </div>
-                    <textarea v-model="commentText" placeholder="Add your comment..." @keydown.esc="cancelComment"
-                        @keydown.ctrl.enter="saveComment" ref="commentTextarea"></textarea>
+                    <Textarea v-model="commentText" placeholder="Add your comment..." @keydown.esc="cancelComment"
+                        @keydown.ctrl.enter="saveComment" ref="commentTextarea" class="min-h-[80px]" />
                     <div class="comment-form-actions">
-                        <button class="btn btn-primary" @click="saveComment" :disabled="!commentText.trim()">
-                            💬 Save Comment
-                        </button>
-                        <button class="btn btn-secondary" @click="cancelComment">
-                            ❌ Cancel
-                        </button>
+                        <Button @click="saveComment" :disabled="!commentText.trim()" size="sm">
+                            Save Comment
+                        </Button>
+                        <Button variant="outline" @click="cancelComment" size="sm">
+                            Cancel
+                        </Button>
                     </div>
                 </div>
 
                 <div v-if="comments.length === 0" class="no-comments">
-                    🎯 Select text to add your first comment
+                    Select text to add your first comment
                 </div>
 
-                <div v-else>
+                <div v-else class="space-y-3">
                     <div v-for="comment in comments" :key="comment.id"
                         :class="['comment-item', { active: activeCommentId === comment.id }]"
                         :data-comment-id="comment.id" @click="scrollToHighlight(comment.id)"
@@ -54,13 +50,10 @@
                             {{ comment.text }}
                         </div>
                         <div class="comment-meta">
-                            <span>{{ comment.timestamp }}</span>
-                            <span class="comment-id">#{{ comment.id }}</span>
-                        </div>
-                        <div class="comment-actions">
-                            <button class="btn btn-danger" @click.stop="deleteComment(comment.id)">
+                            <span class="text-xs text-muted-foreground">{{ comment.timestamp }}</span>
+                            <Button variant="destructive" size="sm" @click.stop="deleteComment(comment.id)" class="">
                                 🗑️ Delete
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -68,13 +61,16 @@
         </div>
 
         <div v-if="showTooltip" class="selection-tooltip" :style="tooltipStyle" @click="openCommentForm">
-            💬 Add Comment
+            Add Comment
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 
 interface Comment {
     id: number;
@@ -451,15 +447,11 @@ watch(activeHighlightId, (newId) => {
 }
 
 .stats-bar {
-    @apply flex items-center gap-4 p-2 bg-muted/50 border-b text-sm;
+    @apply flex items-center gap-4 p-3 bg-muted/30 border-b border-border;
 }
 
 .stats-item {
     @apply flex items-center gap-2;
-}
-
-.stats-badge {
-    @apply bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-medium;
 }
 
 .text-commentable-content {
@@ -467,15 +459,15 @@ watch(activeHighlightId, (newId) => {
 }
 
 .text-content {
-    @apply flex-1 p-3 bg-muted rounded-l-md overflow-hidden relative;
+    @apply flex-1 p-4 bg-card rounded-l-lg overflow-hidden relative border-r;
 }
 
 .comments-sidebar {
-    @apply w-80 bg-background border-l p-3 overflow-y-auto;
+    @apply w-80 bg-card border-l p-4 overflow-y-auto;
 }
 
 .comment-form {
-    @apply mb-4 p-3 bg-muted rounded-md;
+    @apply mb-4 p-4 bg-muted/50 rounded-lg border;
 }
 
 .comment-form.hidden {
@@ -483,67 +475,35 @@ watch(activeHighlightId, (newId) => {
 }
 
 .selected-text-preview {
-    @apply text-sm text-muted-foreground mb-2 p-2 bg-background rounded italic;
-}
-
-.comment-form textarea {
-    @apply w-full p-2 border rounded-md resize-none h-20 mb-2;
+    @apply text-sm text-muted-foreground mb-3 p-3 bg-background rounded-md italic border;
 }
 
 .comment-form-actions {
-    @apply flex gap-2;
-}
-
-.btn {
-    @apply px-3 py-1 rounded-md text-sm font-medium transition-colors;
-}
-
-.btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90;
-}
-
-.btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
-}
-
-.btn-success {
-    @apply bg-green-600 text-white hover:bg-green-700;
-}
-
-.btn-danger {
-    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
-}
-
-.btn:disabled {
-    @apply opacity-50 cursor-not-allowed;
+    @apply flex gap-2 mt-3;
 }
 
 .no-comments {
-    @apply text-center text-muted-foreground py-8;
+    @apply text-center text-muted-foreground py-8 text-sm;
 }
 
 .comment-item {
-    @apply mb-3 p-3 bg-muted rounded-md border transition-all cursor-pointer;
-}
-
-.comment-item:hover {
-    @apply bg-muted/80 border-primary/50;
+    @apply p-4 bg-muted/30 rounded-lg border transition-all cursor-pointer hover:bg-muted/50 hover:border-primary/30;
 }
 
 .comment-item.active {
-    @apply border-primary bg-primary/10;
+    @apply border-primary bg-primary/5;
 }
 
 .comment-preview {
-    @apply text-sm text-muted-foreground mb-2 italic;
+    @apply text-sm text-muted-foreground mb-2 italic font-medium;
 }
 
 .comment-text {
-    @apply text-sm mb-2;
+    @apply text-sm mb-3 leading-relaxed;
 }
 
 .comment-meta {
-    @apply flex justify-between text-xs text-muted-foreground mb-2;
+    @apply flex justify-between items-center mb-3;
 }
 
 .comment-actions {
@@ -566,7 +526,7 @@ watch(activeHighlightId, (newId) => {
 }
 
 :deep(.highlight:hover) {
-    @apply bg-yellow-300;
+    @apply bg-primary/20;
 }
 
 :deep(.highlight.active) {
