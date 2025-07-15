@@ -2,6 +2,7 @@ import { Model } from '../database/base-model';
 import { BaseDocument } from '../database/types';
 import { db } from '../database/manager';
 import { ExecutionOptions, ExecutionResult } from '../providers/base-provider';
+import { ExecutionUpdateRequest } from '../api/definitions/execution';
 
 // Execution interface extending BaseDocument
 export interface Execution extends BaseDocument {
@@ -20,6 +21,8 @@ export interface Execution extends BaseDocument {
     started_at?: Date;
     completed_at?: Date;
     options?: ExecutionOptions;
+    starred?: boolean;
+    user_status?: string;
 
     test_data_group_id?: string | undefined;
     test_data_item_id?: string | undefined;
@@ -86,6 +89,7 @@ export class ExecutionModel extends Model<Execution> {
         status?: Execution['status'];
         provider?: string;
         promptId?: string;
+        starred?: boolean;
         ids?: string[];
         orderBy?: string;
         orderDirection?: 'ASC' | 'DESC';
@@ -98,13 +102,13 @@ export class ExecutionModel extends Model<Execution> {
         hasNext: boolean;
         hasPrev: boolean;
     }> {
-        const { page, limit, status, provider, promptId, orderBy = 'created_at', orderDirection = 'DESC', ids } = options;
-
+        const { page, limit, status, provider, promptId, orderBy = 'created_at', orderDirection = 'DESC', ids, starred } = options;
         // Build where clause
         const where: any = {};
         if (status) where.status = status;
         if (provider) where.provider = provider;
         if (promptId) where.prompt_id = promptId;
+        if (starred !== undefined) where.starred = starred
         if (ids) where.id = ids;
 
         return this.findWithPagination({
@@ -167,6 +171,11 @@ export class ExecutionModel extends Model<Execution> {
         const result = stmt.run(cutoffDate.toISOString());
 
         return result.changes;
+    }
+
+    // Method to update user-specific properties (starred, user_status)
+    public async updateUserProperties(id: string, updates: { starred?: boolean | undefined, userStatus?: string | undefined }): Promise<Execution | null> {
+        return this.updateJsonProperties(id, updates);
     }
 }
 

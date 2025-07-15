@@ -58,6 +58,7 @@ export const ExecutionResponseSchema = z.object({
     completed_at: z.string().optional(),
     created_at: z.string(),
     updated_at: z.string(),
+    starred: z.boolean().optional(),
     options: ExecutionOptionsSchema.optional()
 });
 
@@ -133,6 +134,7 @@ export const ExecutionListQuerySchema = PaginationQuerySchema.extend({
     status: ExecutionStatusSchema.optional(),
     provider: z.string().optional(),
     promptId: z.string().uuid().optional(),
+    starred: z.boolean().optional(),
     ids: z.string().optional().transform(v => v?.split(',')),
     orderBy: z.enum(['created_at', 'updated_at', 'started_at', 'completed_at']).optional().default('created_at'),
     orderDirection: OrderDirectionSchema.optional().default('DESC')
@@ -146,6 +148,12 @@ export const ExecutionParamsSchema = z.object({
 });
 
 export type ExecutionParams = z.infer<typeof ExecutionParamsSchema>;
+
+export const ExecutionUpdateRequestSchema = z.object({
+    starred: z.boolean().optional(),
+    userStatus: z.string().optional()
+})
+export type ExecutionUpdateRequest = z.infer<typeof ExecutionUpdateRequestSchema>;
 
 export const ExecutionApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/executions',
@@ -185,6 +193,18 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 body: z.object({}),
                 responses: CreateResponses({
                     200: ExecutionResponseSchema,
+                    404: ErrorResponseSchema,
+                    500: ErrorResponseSchema
+                })
+            },
+
+            update: {
+                method: 'POST',
+                path: '/update-fields/:id',
+                params: ExecutionParamsSchema,
+                body: ExecutionUpdateRequestSchema,
+                responses: CreateResponses({
+                    201: z.object({}),
                     404: ErrorResponseSchema,
                     500: ErrorResponseSchema
                 })

@@ -17,6 +17,16 @@
                         <SelectItem value="failed">Failed</SelectItem>
                     </SelectContent>
                 </Select>
+                <Select v-model="starred">
+                    <SelectTrigger class="w-40">
+                        <SelectValue placeholder="Starred" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                    </SelectContent>
+                </Select>
                 <Select v-model="orderBy">
                     <SelectTrigger class="w-40">
                         <SelectValue placeholder="Sort by" />
@@ -93,6 +103,7 @@
                         <TableHead>User Input</TableHead>
                         <TableHead>Provider/Model</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Starred</TableHead>
                         <TableHead>Result valid</TableHead>
                         <TableHead>Started</TableHead>
                         <TableHead>Completed</TableHead>
@@ -133,6 +144,9 @@
                                     class="w-2 h-2 bg-current rounded-full animate-pulse"></div>
                                 {{ execution.status }}
                             </Badge>
+                        </TableCell>
+                        <TableCell>
+                            <Star :color="'gold'" :fill="'gold'" v-if="execution.starred" />
                         </TableCell>
                         <TableCell>
                             <template v-if="['completed', 'failed'].includes(execution.status)">
@@ -218,7 +232,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { debounce } from 'lodash-es'
-import { RefreshCw, Eye, X, Copy } from 'lucide-vue-next'
+import { RefreshCw, Eye, X, Copy, Star } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -261,6 +275,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
 const promptId = ref('')
+const starred = ref<'yes' | 'no' | 'all'>('all')
 const statusFilter = ref<'pending' | 'running' | 'completed' | 'failed' | 'all'>('all')
 const orderBy = ref<'created_at' | 'updated_at' | 'started_at' | 'completed_at'>('created_at')
 const orderDirection = ref<'ASC' | 'DESC'>('DESC')
@@ -322,7 +337,8 @@ const loadExecutions = async () => {
                 status: st || undefined,
                 orderBy: orderBy.value,
                 orderDirection: orderDirection.value,
-                ...(promptId.value && { promptId: promptId.value })
+                ...(promptId.value && { promptId: promptId.value }),
+                ...(starred.value !== 'all' && { starred: starred.value === 'yes' })
             }
         })
 
@@ -483,7 +499,7 @@ const formatDuration = (execution: ExecutionResponse) => {
 }
 
 // Watchers
-watch([statusFilter, orderBy, orderDirection, promptId], () => {
+watch([statusFilter, orderBy, orderDirection, promptId, starred], () => {
     currentPage.value = 1
     loadExecutions()
 })

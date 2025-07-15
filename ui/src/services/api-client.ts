@@ -1,6 +1,6 @@
 import { ApiClient } from 'ts-typed-api/client';
 import { PromptApiDefinition, type CreatePromptRequest } from './definitions/prompt';
-import { ExecutionApiDefinition, type CreateExecutionRequest } from './definitions/execution';
+import { ExecutionApiDefinition, type CreateExecutionRequest, type ExecutionUpdateRequest } from './definitions/execution';
 import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './definitions/execution-bundle';
 import { TestDataApiDefinition } from './definitions/test-data';
 
@@ -108,6 +108,7 @@ export const executionsApi = {
             status?: 'pending' | 'running' | 'completed' | 'failed';
             provider?: string;
             promptId?: string;
+            starred?: boolean;
             ids?: string;
             orderBy?: 'created_at' | 'updated_at' | 'started_at' | 'completed_at';
             orderDirection?: 'ASC' | 'DESC'
@@ -132,6 +133,14 @@ export const executionsApi = {
     getById: (id: string) =>
         executionApiClient.callApi('executions', 'getById', { params: { id } }, {
             200: (payload) => payload.data,
+            404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
+            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
+    update: (id: string, body: ExecutionUpdateRequest) =>
+        executionApiClient.callApi('executions', 'update', { params: { id }, body: body }, {
+            201: (payload) => payload.data,
             404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
             500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
             422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }

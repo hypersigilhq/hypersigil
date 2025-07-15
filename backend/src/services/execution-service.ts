@@ -222,6 +222,7 @@ export class ExecutionService {
         status?: Execution['status'];
         provider?: string;
         promptId?: string;
+        starred?: boolean;
         orderBy?: string;
         orderDirection?: 'ASC' | 'DESC';
         ids?: string[];

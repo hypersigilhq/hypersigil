@@ -6,7 +6,7 @@ import app from '../../app';
 import { ExecutionOptions } from '../../providers/base-provider';
 import { promptModel } from '../../models/prompt';
 import { ExecutionApiDefinition, ExecutionResponse } from '../definitions/execution';
-import { testDataGroupModel, testDataItemModel, executionBundleModel } from '../../models';
+import { testDataGroupModel, testDataItemModel, executionBundleModel, executionModel } from '../../models';
 
 // Provider cache - simple in-memory cache with no TTL
 let providerHealthCache: any = null;
@@ -145,9 +145,32 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
         },
 
+        update: async (req, res) => {
+            try {
+                const { id } = req.params;
+                // Use the model method to update user properties
+                const updatedExecution = await executionModel.updateUserProperties(id, req.body);
+
+                if (!updatedExecution) {
+                    return res.respond(404, {
+                        error: 'Execution not found',
+                        message: `Execution with id ${id} not found`
+                    });
+                }
+
+                res.respond(201, {});
+            } catch (error) {
+                console.error('Error updating execution:', error);
+                res.respond(500, {
+                    error: 'Internal server error',
+                    message: 'Failed to update execution'
+                });
+            }
+        },
+
         list: async (req, res) => {
             try {
-                const { page, limit, status, provider, promptId, orderBy, orderDirection, ids } = req.query;
+                const { page, limit, status, provider, promptId, orderBy, orderDirection, ids, starred } = req.query;
 
                 const result = await executionService.getExecutions({
                     page,
@@ -155,6 +178,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     ...(status && { status }),
                     ...(provider && { provider }),
                     ...(promptId && { promptId }),
+                    ...(starred !== undefined && { starred }),
                     ...(ids && { ids }),
                     orderBy,
                     orderDirection
@@ -210,7 +234,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                                 version: pv.version
                             },
                             result_valid: execution.result_valid,
-                            result_validation_message: execution.result_validation_message
+                            result_validation_message: execution.result_validation_message,
+                            starred: execution.starred
                         }
                     })
                 };
@@ -240,7 +265,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                 const prompt = await promptModel.findById(execution.prompt_id);
 
                 let pv = prompt!.versions.find((v: any) => v.version === execution.prompt_version)
-                const response = {
+                const response: ExecutionResponse = {
                     id: execution.id!,
                     prompt_id: execution.prompt_id,
                     prompt_version: execution.prompt_version,
@@ -258,7 +283,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     completed_at: execution.completed_at?.toISOString(),
                     created_at: execution.created_at!.toISOString(),
                     updated_at: execution.updated_at!.toISOString(),
-                    options: execution.options
+                    options: execution.options,
+                    starred: execution.starred
                 };
 
                 res.respond(200, response);

@@ -43,6 +43,17 @@
                 <div class="mt-1 text-sm">{{ execution.input_tokens_used }} / {{
                     execution.output_tokens_used }}</div>
             </div>
+            <div>
+                <Label>Starred</Label>
+                <div class="mt-1 text-sm">
+                    <template v-if="execution.starred">
+                        <Star :color="'gold'" :fill="'gold'" @click="toggleStar(false)" />
+                    </template>
+                    <template v-else>
+                        <Star :color="'black'" @click="toggleStar(true)" />
+                    </template>
+                </div>
+            </div>
         </div>
 
         <div v-if="execution.error_message" class="flex-shrink-0">
@@ -132,8 +143,9 @@
 import { ref, watch, computed } from 'vue'
 import type { ExecutionResponse } from '@/services/definitions/execution'
 import type { PromptResponse } from '@/services/definitions/prompt'
-import { promptsApi } from '@/services/api-client'
+import { executionsApi, promptsApi } from '@/services/api-client'
 
+import { Star } from 'lucide-vue-next'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -180,6 +192,14 @@ const onPromptSwitchChange = async (checked: boolean) => {
     if (checked && !prompt.value && props.execution?.prompt_id) {
         await fetchPrompt()
     }
+}
+
+const toggleStar = async (val: boolean) => {
+    if (!props.execution) {
+        return
+    }
+    await executionsApi.update(props.execution.id, { starred: val })
+    props.execution.starred = val
 }
 
 const fetchPrompt = async () => {

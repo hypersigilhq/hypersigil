@@ -99,7 +99,11 @@ export abstract class Model<T extends BaseDocument> {
                     }
                 } else {
                     conditions.push('JSON_EXTRACT(data, ?) = ?');
-                    params.push(`$.${key}`, value);
+                    if (typeof value === 'boolean') {
+                        params.push(`$.${key}`, value === true ? 1 : 0);
+                    } else {
+                        params.push(`$.${key}`, value);
+                    }
                 }
             }
         }
@@ -367,6 +371,56 @@ export abstract class Model<T extends BaseDocument> {
             return rows.map(row => this.deserializeDocument(row));
         } catch (error) {
             console.error(`Error finding documents by JSON path in ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    // Method for updating multiple JSON properties using SQLite JSON_SET
+    public async updateJsonProperties(id: string, properties: Record<string, any>): Promise<T | null> {
+        // Check if document exists
+        const existing = await this.findById(id);
+        if (!existing) {
+            return null;
+        }
+
+        const propertyKeys = Object.keys(properties);
+        if (propertyKeys.length === 0) {
+            return existing;
+        }
+
+        // Build the SQL query using chained JSON_SET calls
+        const params: any[] = [new Date().toISOString()];
+        let dataUpdate = 'data';
+
+        // Chain JSON_SET calls for each property
+        for (const key of propertyKeys) {
+            const value = properties[key];
+
+            if (value === null || value === undefined) {
+                // Handle null values directly
+                dataUpdate = `JSON_SET(${dataUpdate}, ?, NULL)`;
+                params.push(`$.${key}`);
+            } else {
+                // Use SQLite's json() function to properly handle JSON values
+                dataUpdate = `JSON_SET(${dataUpdate}, ?, json(?))`;
+                params.push(`$.${key}`, JSON.stringify(value));
+            }
+        }
+
+        const sql = `UPDATE ${this.tableName} SET updated_at = ?, data = ${dataUpdate} WHERE id = ?`;
+        params.push(id);
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const result = stmt.run(...params);
+
+            if (result.changes === 0) {
+                return null;
+            }
+
+            return this.findById(id);
+        } catch (error) {
+            console.error(`Error updating JSON properties in ${this.tableName}:`, error);
             throw error;
         }
     }
