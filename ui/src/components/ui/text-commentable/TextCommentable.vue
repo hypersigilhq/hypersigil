@@ -212,35 +212,72 @@ const useHighlights = (comments: any, originalContent: any) => {
             return escapeHtml(originalContent.value);
         }
 
-        // First escape the entire content
-        const escapedContent = escapeHtml(originalContent.value);
+        // Create an array of characters with their comment associations
+        const chars = originalContent.value.split('');
+        const charComments: number[][] = new Array(chars.length).fill(null).map(() => []);
 
-        // Sort comments by start offset in descending order to avoid offset issues
-        const sortedComments = [...comments.value].sort((a: Comment, b: Comment) => b.startOffset - a.startOffset);
-
-        let result = escapedContent;
-
-        sortedComments.forEach((comment: Comment) => {
-            // Calculate positions in the escaped content
-            const beforeText = originalContent.value.substring(0, comment.startOffset);
-            const highlightText = originalContent.value.substring(comment.startOffset, comment.endOffset);
-            const afterText = originalContent.value.substring(comment.endOffset);
-
-            const escapedBefore = escapeHtml(beforeText);
-            const escapedHighlight = escapeHtml(highlightText);
-            const escapedAfter = escapeHtml(afterText);
-
-            // Find the position in the escaped content
-            const beforeLength = escapedBefore.length;
-            const highlightLength = escapedHighlight.length;
-
-            // Replace the highlighted portion with the span
-            const highlightSpan = `<span class="highlight" data-comment-id="${comment.id}">${escapedHighlight}</span>`;
-            result = result.substring(0, beforeLength) + highlightSpan + result.substring(beforeLength + highlightLength);
+        // Mark which characters belong to which comments
+        comments.value.forEach((comment: Comment) => {
+            for (let i = comment.startOffset; i < comment.endOffset; i++) {
+                if (i < charComments.length) {
+                    charComments[i].push(comment.id);
+                }
+            }
         });
+
+        // Build the result by processing each character
+        let result = '';
+        let currentCommentIds: number[] = [];
+
+        for (let i = 0; i < chars.length; i++) {
+            const newCommentIds = charComments[i];
+
+            // Check if comment set has changed
+            const commentSetChanged = !arraysEqual(currentCommentIds, newCommentIds);
+
+            if (commentSetChanged) {
+                // Close any open spans
+                for (let j = currentCommentIds.length - 1; j >= 0; j--) {
+                    result += '</span>';
+                }
+
+                // Open new spans (innermost first for proper nesting)
+                const sortedNewIds = [...newCommentIds].sort((a, b) => {
+                    const commentA = comments.value.find((c: Comment) => c.id === a);
+                    const commentB = comments.value.find((c: Comment) => c.id === b);
+                    if (!commentA || !commentB) return 0;
+                    // Sort by range size (smaller ranges nested inside larger ones)
+                    const sizeA = commentA.endOffset - commentA.startOffset;
+                    const sizeB = commentB.endOffset - commentB.startOffset;
+                    return sizeB - sizeA;
+                });
+
+                sortedNewIds.forEach(commentId => {
+                    result += `<span class="highlight" data-comment-id="${commentId}">`;
+                });
+
+                currentCommentIds = newCommentIds;
+            }
+
+            // Add the escaped character
+            result += escapeHtml(chars[i]);
+        }
+
+        // Close any remaining open spans
+        for (let j = currentCommentIds.length - 1; j >= 0; j--) {
+            result += '</span>';
+        }
 
         return result;
     });
+
+    // Helper function to compare arrays
+    const arraysEqual = (a: number[], b: number[]): boolean => {
+        if (a.length !== b.length) return false;
+        const sortedA = [...a].sort();
+        const sortedB = [...b].sort();
+        return sortedA.every((val, index) => val === sortedB[index]);
+    };
 
     const activateHighlight = (commentId: number, duration = 2000) => {
         activeHighlightId.value = commentId;
@@ -511,6 +548,7 @@ watch(activeHighlightId, (newId) => {
 
 :deep(.highlight) {
     @apply bg-yellow-200 cursor-pointer transition-all;
+    position: relative;
 }
 
 :deep(.highlight:hover) {
@@ -519,5 +557,32 @@ watch(activeHighlightId, (newId) => {
 
 :deep(.highlight.active) {
     @apply bg-yellow-400 animate-pulse;
+}
+
+/* Nested highlights - darker shades for overlapping comments */
+:deep(.highlight .highlight) {
+    @apply bg-orange-200;
+}
+
+:deep(.highlight .highlight:hover) {
+    @apply bg-orange-300;
+}
+
+:deep(.highlight .highlight .highlight) {
+    @apply bg-red-200;
+}
+
+:deep(.highlight .highlight .highlight:hover) {
+    @apply bg-red-300;
+}
+
+:deep(.highlight .highlight .highlight .highlight:hover) {
+    @apply bg-red-400;
+}
+
+/* Add a subtle border to help distinguish nested highlights */
+:deep(.highlight .highlight) {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
 }
 </style>
