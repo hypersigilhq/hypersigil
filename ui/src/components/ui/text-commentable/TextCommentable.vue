@@ -23,7 +23,7 @@
                         {{ currentSelection?.text || '' }}
                     </div>
                     <Textarea v-model="commentText" placeholder="Add your comment..." @keydown.esc="cancelComment"
-                        @keydown.ctrl.enter="saveComment" :ref="'commentTextarea'" class="min-h-[80px]" />
+                        @keydown.ctrl.enter="saveComment" ref="commentTextarea" class="min-h-[80px]" />
                     <div class="comment-form-actions">
                         <Button @click="saveComment" :disabled="!commentText.trim()" size="sm">
                             Save Comment
@@ -52,7 +52,7 @@
                         <div class="comment-meta">
                             <span class="text-xs text-muted-foreground">{{ new
                                 Date(comment.unixTimestampMs).toLocaleString()
-                            }}</span>
+                                }}</span>
                             <Button variant="destructive" size="sm" @click.stop="deleteComment(comment.id)" class="">
                                 Delete
                             </Button>
@@ -294,7 +294,7 @@ const useHighlights = (comments: any, originalContent: any) => {
 
 // Refs
 const textElement = ref<HTMLElement | null>(null);
-const commentTextarea = ref<HTMLTextAreaElement | null>(null);
+const commentTextarea = ref<any>(null);
 const originalContent = ref('');
 const showCommentForm = ref(false);
 const commentText = ref('');
@@ -345,7 +345,7 @@ const openCommentForm = () => {
     showCommentForm.value = true;
     hideTooltip();
     nextTick(() => {
-        commentTextarea.value?.focus();
+        commentTextarea.value?.$el?.focus();
     });
 };
 
