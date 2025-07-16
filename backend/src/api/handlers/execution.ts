@@ -220,7 +220,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             execution.prompt_version?.toString() || '',
                             execution.model || '',
                             pv?.name || '',
-                            pv?.prompt || '',
+                            pv?.prompt.replace(/"/g, '""') || '',
                             execution.user_input.replace(/"/g, '""'),
                             execution.status || '',
                             execution.result_valid?.toString() || '',

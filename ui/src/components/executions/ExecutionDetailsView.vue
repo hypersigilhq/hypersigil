@@ -1,6 +1,6 @@
 <template>
     <div v-if="execution" class="flex-1 overflow-hidden flex flex-col space-y-4 p-4">
-        <div class="flex-shrink-0 grid grid-cols-2 gap-4">
+        <div class="flex-shrink-0 grid grid-cols-3 gap-2">
             <div>
                 <Label>Status</Label>
                 <div class="mt-1">
@@ -15,6 +15,12 @@
                 <Label>Provider/Model</Label>
                 <div class="mt-1 text-sm">
                     {{ execution.provider }}:{{ execution.model }}
+                </div>
+            </div>
+            <div>
+                <Label>Prompt</Label>
+                <div class="mt-1 text-sm">
+                    {{ execution.prompt?.name }} (#{{ execution.prompt?.version }})
                 </div>
             </div>
         </div>

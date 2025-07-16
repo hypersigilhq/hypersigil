@@ -104,7 +104,6 @@
                     <TableRow>
                         <TableHead>ID</TableHead>
                         <TableHead>Prompt</TableHead>
-                        <TableHead>User Input</TableHead>
                         <TableHead>Provider/Model</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Starred</TableHead>
@@ -129,11 +128,6 @@
                         <TableCell class="max-w-xs">
                             <div class="truncate" :title="execution.user_input">
                                 {{ execution.prompt?.name }} (#{{ execution.prompt?.version }})
-                            </div>
-                        </TableCell>
-                        <TableCell class="max-w-xs">
-                            <div class="truncate" :title="execution.user_input">
-                                {{ execution.user_input }}
                             </div>
                         </TableCell>
                         <TableCell>
