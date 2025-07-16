@@ -49,6 +49,10 @@
                 </Select>
             </div>
             <div class="flex items-center space-x-2">
+                <Button @click="clearFilters" variant="destructive" size="sm">
+                    <CircleX class="w-4 h-4 mr-2" />
+                    Clear filters
+                </Button>
                 <Button @click="loadExecutions($event, true)" variant="default" size="sm">
                     <Download class="w-4 h-4 mr-2" />
                     Export
@@ -230,7 +234,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { debounce } from 'lodash-es'
-import { RefreshCw, Eye, X, Copy, Star, Download } from 'lucide-vue-next'
+import { RefreshCw, Eye, X, Copy, Star, Download, CircleX } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -315,6 +319,16 @@ const debouncedSearch = debounce(() => {
     currentPage.value = 1
     loadExecutions()
 }, 300)
+
+const clearFilters = () => {
+    searchQuery.value = ''
+    promptId.value = ''
+    starred.value = 'all'
+    statusFilter.value = 'all'
+    orderBy.value = 'created_at'
+    orderDirection.value = 'DESC'
+    currentPage.value = 1
+}
 
 // Load executions
 const loadExecutions = async ($event = null, download: boolean = false) => {
@@ -528,14 +542,14 @@ const stopAutoRefresh = () => {
 
 // Initialize
 onMounted(() => {
-    loadExecutions()
-    loadStats()
-    startAutoRefresh()
-
     let promptIdQuery = router.currentRoute.value.query.prompt_id as string
     if (promptIdQuery) {
         promptId.value = promptIdQuery
     }
+
+    loadExecutions()
+    loadStats()
+    startAutoRefresh()
 })
 
 onUnmounted(() => {

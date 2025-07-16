@@ -1,5 +1,5 @@
 <template>
-    <div class="container mx-auto p-6">
+    <div class="h-full flex flex-col">
         <div class="space-y-6">
             <!-- Header with breadcrumb -->
             <div class="flex items-center justify-between">

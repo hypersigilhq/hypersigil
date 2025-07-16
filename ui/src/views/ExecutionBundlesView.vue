@@ -386,15 +386,6 @@ const getResultValidVariant = (valid: boolean) => {
     return valid ? 'default' : 'destructive'
 }
 
-const formatJsonResult = (result: string) => {
-    try {
-        const parsed = JSON.parse(result)
-        return JSON.stringify(parsed, null, 2)
-    } catch {
-        return result
-    }
-}
-
 // Initialize
 onMounted(() => {
     loadBundles()
