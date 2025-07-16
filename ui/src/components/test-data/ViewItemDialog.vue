@@ -11,7 +11,9 @@
 
             <div v-if="item" class="flex-1 overflow-hidden flex flex-col space-y-4 p-4">
                 <div class="flex-1 flex flex-col min-h-0">
-                    <Label>Content</Label>
+                    <Label>Content
+                        <CopyToClipboard :text="item.content"></CopyToClipboard>
+                    </Label>
                     <div class="mt-1 p-3 bg-muted rounded-md overflow-auto flex-1">
                         <pre class="whitespace-pre-wrap text-sm">{{ item.content }}</pre>
                     </div>
@@ -39,6 +41,7 @@ import {
 } from '@/components/ui/dialog'
 
 import type { TestDataItemResponse } from '../../services/definitions/test-data'
+import CopyToClipboard from '../ui/copy-to-clipboard/CopyToClipboard.vue'
 
 interface Props {
     open: boolean

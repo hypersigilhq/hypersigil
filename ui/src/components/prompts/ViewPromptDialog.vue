@@ -150,10 +150,8 @@ const formatDate = (dateString: string) => {
 watch(() => props.open, (newOpen) => {
     if (newOpen) {
         window.addEventListener('keydown', handleKeydown)
-
     } else {
         window.removeEventListener('keydown', handleKeydown)
-
     }
 })
 

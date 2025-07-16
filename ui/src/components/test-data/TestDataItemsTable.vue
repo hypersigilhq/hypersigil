@@ -100,16 +100,16 @@
                         <TableCell class="text-right">
                             <div class="flex justify-end space-x-2">
                                 <Button variant="ghost" size="sm" @click="scheduleItem(item)"
-                                    title="Schedule execution">
+                                    v-tooltip="'Schedule execution'" title="Schedule execution">
                                     <Play class="w-4 h-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" @click="viewItem(item)">
+                                <Button variant="ghost" size="sm" @click="viewItem(item)" v-tooltip="'View item'">
                                     <Eye class="w-4 h-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" @click="editItem(item)">
+                                <Button variant="ghost" size="sm" @click="editItem(item)" v-tooltip="'Edit item'">
                                     <Edit class="w-4 h-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" @click="deleteItem(item)"
+                                <Button variant="ghost" size="sm" @click="deleteItem(item)" v-tooltip="'Delete item'"
                                     class="text-destructive hover:text-destructive">
                                     <Trash2 class="w-4 h-4" />
                                 </Button>

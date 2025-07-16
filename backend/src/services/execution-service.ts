@@ -289,7 +289,6 @@ export class ExecutionService {
                     result_valid: true
                 };
             } else {
-                console.log(validate.errors)
                 // Generate error message
                 const errorDetails = validate.errors?.map(err =>
                     `${err.instancePath} ${err.message}`
@@ -373,7 +372,7 @@ export class ExecutionService {
                 execution.model,
                 options
             );
-            console.log("result", result.output)
+
             let vr: {
                 result_valid: boolean;
                 result_validation_message?: string

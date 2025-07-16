@@ -102,7 +102,9 @@
             <!-- User Input Column -->
             <div v-if="showUserInput" class="flex flex-col min-h-0">
                 <div class="flex items-center justify-between mb-2">
-                    <Label>User Input</Label>
+                    <Label>User Input
+                        <CopyToClipboard :text="execution.user_input"></CopyToClipboard>
+                    </Label>
                 </div>
                 <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
                     <pre class="whitespace-pre-wrap text-sm h-full overflow-auto">{{ execution.user_input }}</pre>
@@ -112,7 +114,9 @@
             <!-- Prompt Column -->
             <div v-if="showPrompt" class="flex flex-col min-h-0">
                 <div class="flex items-center justify-between mb-2">
-                    <Label>Prompt</Label>
+                    <Label>Prompt
+                        <CopyToClipboard v-if="prompt" :text="prompt?.prompt"></CopyToClipboard>
+                    </Label>
                 </div>
                 <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
                     <div v-if="promptLoading" class="flex items-center justify-center h-full">
@@ -134,7 +138,9 @@
 
             <!-- Result Column (Always visible) -->
             <div v-if="execution.result" class="flex flex-col min-h-0">
-                <Label class="mb-2">Result</Label>
+                <Label class="mb-2">Result
+                    <CopyToClipboard :text="execution.result"></CopyToClipboard>
+                </Label>
                 <div v-if="showComments" class="flex-1 overflow-hidden">
                     <TextCommentable :content="execution.result"
                         content-class="whitespace-pre-wrap text-sm h-full overflow-auto">
@@ -169,6 +175,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { TextCommentable } from '@/components/ui/text-commentable'
+import CopyToClipboard from '@/components/ui/copy-to-clipboard/CopyToClipboard.vue'
 
 interface Props {
     execution: ExecutionResponse | null
@@ -238,12 +245,13 @@ const fetchPrompt = async () => {
 }
 
 // Reset state when execution changes
-watch(() => props.execution, () => {
-    showUserInput.value = true
-    showPrompt.value = false
-    showComments.value = false
+watch(() => props.execution, async () => {
     prompt.value = null
     promptError.value = null
+
+    if (showPrompt.value) {
+        await fetchPrompt()
+    }
 })
 
 // Utility functions

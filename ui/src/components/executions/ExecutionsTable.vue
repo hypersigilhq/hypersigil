@@ -356,7 +356,6 @@ const loadExecutions = async ($event = null, download: boolean = false) => {
         })
 
         if (download) {
-            console.log(response.body)
             return
         }
 
