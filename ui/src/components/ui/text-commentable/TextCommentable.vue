@@ -19,7 +19,7 @@
 
             <div class="resize-handle" @mousedown="startResize" :class="{ 'resize-active': isResizing }"></div>
 
-            <div class="comments-sidebar" :style="{ width: `${sidebarWidth}px` }">
+            <div ref="commentsSidebar" class="comments-sidebar" :style="{ width: `${sidebarWidth}px` }">
                 <div :class="['comment-form', { hidden: !showCommentForm }]">
                     <div class="selected-text-preview">
                         {{ currentSelection?.text || '' }}
@@ -177,6 +177,7 @@ const useComments = () => {
         };
 
         comments.value.push(comment);
+        emit('commentAdded', comment)
         return comment;
     };
 
@@ -302,6 +303,7 @@ const useHighlights = (comments: any, originalContent: any) => {
 // Refs
 const textElement = ref<HTMLElement | null>(null);
 const commentTextarea = ref<any>(null);
+const commentsSidebar = ref<HTMLElement | null>(null);
 const originalContent = ref('');
 const showCommentForm = ref(false);
 const commentText = ref('');
@@ -398,9 +400,19 @@ const scrollToHighlight = (commentId: string) => {
 };
 
 const scrollToComment = (commentId: string) => {
-    const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+    if (!commentsSidebar.value) return;
+
+    // Find the comment element within the comments sidebar
+    const commentElement = commentsSidebar.value.querySelector(`[data-comment-id="${commentId}"]`);
     if (commentElement) {
-        commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Scroll the comment into view within the sidebar container
+        commentElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+        });
+
+        // Highlight the comment temporarily
         activeCommentId.value = commentId;
         setTimeout(() => {
             activeCommentId.value = null;
