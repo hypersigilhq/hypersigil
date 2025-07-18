@@ -1,7 +1,7 @@
 <template>
     <div class="flex h-full flex-col bg-white border-r transition-all duration-300 ease-in-out relative" :class="[
         isCollapsed ? 'w-16' : 'w-64',
-        isHovered && isCollapsed ? 'shadow-lg z-[9999]' : ''
+        isHovered && isCollapsed ? 'shadow-lg' : ''
     ]" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
         <!-- Overlay expanded sidebar when collapsed and hovered -->
         <div v-if="isCollapsed && isHovered"
@@ -141,6 +141,7 @@ onMounted(() => {
     const saved = localStorage.getItem('sidebar-collapsed')
     if (saved !== null) {
         isCollapsed.value = JSON.parse(saved)
+        emit('collapse-change', isCollapsed.value)
     }
 })
 

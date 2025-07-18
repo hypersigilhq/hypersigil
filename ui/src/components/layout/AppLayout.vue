@@ -19,15 +19,15 @@
             <!-- Desktop sidebar -->
             <div class="hidden lg:block lg:flex-shrink-0 transition-all duration-300 ease-in-out"
                 :class="sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'">
-                <div class="fixed inset-y-0 left-0 transition-all duration-300 ease-in-out"
+                <div class="fixed inset-y-0 left-0 transition-all duration-300 ease-in-out z-50"
                     :class="sidebarCollapsed ? 'w-16' : 'w-64'">
                     <AppSidebar @collapse-change="handleSidebarCollapseChange" />
                 </div>
             </div>
 
             <!-- Main content -->
-            <div class="flex-1 transition-all duration-300 ease-in-out">
-                <main class="p-6">
+            <div class="flex-1 transition-all duration-300 ease-in-out relative">
+                <main class="p-6 overflow-hidden">
                     <router-view />
                 </main>
             </div>
