@@ -17,14 +17,16 @@
         <!-- Desktop layout -->
         <div class="lg:flex">
             <!-- Desktop sidebar -->
-            <div class="hidden lg:block lg:w-64 lg:flex-shrink-0">
-                <div class="fixed inset-y-0 left-0 w-64">
-                    <AppSidebar />
+            <div class="hidden lg:block lg:flex-shrink-0 transition-all duration-300 ease-in-out"
+                :class="sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'">
+                <div class="fixed inset-y-0 left-0 transition-all duration-300 ease-in-out"
+                    :class="sidebarCollapsed ? 'w-16' : 'w-64'">
+                    <AppSidebar @collapse-change="handleSidebarCollapseChange" />
                 </div>
             </div>
 
             <!-- Main content -->
-            <div class="flex-1">
+            <div class="flex-1 transition-all duration-300 ease-in-out">
                 <main class="p-6">
                     <router-view />
                 </main>
@@ -41,8 +43,13 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import AppSidebar from './AppSidebar.vue'
 
 const isMobileMenuOpen = ref(false)
+const sidebarCollapsed = ref(false)
 
 const closeMobileMenu = () => {
     isMobileMenuOpen.value = false
+}
+
+const handleSidebarCollapseChange = (collapsed: boolean) => {
+    sidebarCollapsed.value = collapsed
 }
 </script>
