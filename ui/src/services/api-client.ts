@@ -2,7 +2,7 @@ import { ApiClient } from 'ts-typed-api/client';
 import { PromptApiDefinition, type CreatePromptRequest } from './definitions/prompt';
 import { ExecutionApiDefinition, type CreateExecutionRequest, type ExecutionUpdateRequest } from './definitions/execution';
 import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './definitions/execution-bundle';
-import { TestDataApiDefinition } from './definitions/test-data';
+import { TestDataApiDefinition, type CreateTestDataGroupRequest } from './definitions/test-data';
 
 // Create the API client with the base URL
 export const apiClient = new ApiClient(
@@ -223,7 +223,7 @@ export const testDataApi = {
                 422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
-        create: (body: { name: string; description?: string }) =>
+        create: (body: CreateTestDataGroupRequest) =>
             testDataApiClient.callApi('groups', 'create', { body }, {
                 201: (payload) => payload.data,
                 400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
@@ -239,7 +239,7 @@ export const testDataApi = {
                 422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
-        update: (id: string, body: { name?: string; description?: string }) =>
+        update: (id: string, body: CreateTestDataGroupRequest) =>
             testDataApiClient.callApi('groups', 'update', { params: { id }, body }, {
                 200: (payload) => payload.data,
                 400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
@@ -277,7 +277,7 @@ export const testDataApi = {
         bulkCreateItems: (groupId: string, body: { items: Array<{ name?: string; content: string }> }) =>
             testDataApiClient.callApi('groups', 'bulkCreateItems', { params: { groupId }, body }, {
                 201: (payload) => payload.data,
-                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
+                400: (payload) => payload.data,
                 404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
                 500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
                 422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
@@ -306,6 +306,15 @@ export const testDataApi = {
         delete: (id: string) =>
             testDataApiClient.callApi('items', 'delete', { params: { id } }, {
                 204: () => undefined,
+                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
+                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+            }),
+
+        compilePrompt: (body: { promptId: string; testDataItemId: string; promptVersion?: number }) =>
+            testDataApiClient.callApi('items', 'compilePrompt', { body }, {
+                200: (payload) => payload.data,
+                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
                 404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
                 500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
                 422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }

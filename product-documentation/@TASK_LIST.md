@@ -44,6 +44,10 @@
 - [todo] Create execution templates and presets
 - [todo] Add execution scheduling and batch processing
 
+- [done] Implement prompt compilation with test data using Mustache templating engine
+- [done] Add prompt compilation UI to test data item dialog for JSON mode groups
+- [done] Improve test data item dialog with two-column layout and automatic prompt compilation
+
 - [todo] Implement user management (create organization as well), detect if there are no users in the system and prompt for registration on first visit
 - [todo] Token cost settings
 - [todo] API keys settings

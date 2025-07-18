@@ -49,6 +49,7 @@
                 <TableHeader>
                     <TableRow>
                         <TableHead>Name</TableHead>
+                        <TableHead>Mode</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead>Updated</TableHead>
@@ -63,6 +64,7 @@
                     </TableRow>
                     <TableRow v-for="group in groups" :key="group.id">
                         <TableCell class="font-medium">{{ group.name }}</TableCell>
+                        <TableHead>{{ group.mode }}</TableHead>
                         <TableCell class="max-w-xs">
                             <div class="truncate" :title="group.description">
                                 {{ group.description || 'No description' }}
@@ -152,7 +154,7 @@ const searchQuery = ref('')
 const orderBy = ref<'name' | 'created_at' | 'updated_at'>('created_at')
 const orderDirection = ref<'ASC' | 'DESC'>('DESC')
 const currentPage = ref(1)
-const pageLimit = ref(10)
+const pageLimit = ref(100)
 
 const pagination = ref<{
     total: number

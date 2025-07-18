@@ -1,6 +1,7 @@
 import type { FileParser, ImportResult, ImportProgress } from './types'
 import type { CreateTestDataItemRequest, BulkCreateTestDataItemsRequest } from '../definitions/test-data'
 import { MarkdownParser } from './parsers/MarkdownParser'
+import { CsvParser } from './parsers/CsvParser'
 
 export class FileImportService {
     private parsers: FileParser[] = []
@@ -11,6 +12,7 @@ export class FileImportService {
 
     private registerDefaultParsers(): void {
         this.parsers.push(new MarkdownParser())
+        this.parsers.push(new CsvParser())
     }
 
     registerParser(parser: FileParser): void {

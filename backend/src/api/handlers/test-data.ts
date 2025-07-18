@@ -1,7 +1,7 @@
 import { RegisterHandlers } from 'ts-typed-api';
 import app, { loggingMiddleware, timingMiddleware } from '../../app';
 import { TestDataApiDefinition } from '../definitions/test-data';
-import { testDataGroupModel, testDataItemModel } from '../../models';
+import { TestDataGroup, testDataGroupModel, testDataItemModel, promptModel } from '../../models';
 import { executionService } from '../../services/execution-service';
 
 // Helper function to format test data group for response
@@ -9,6 +9,7 @@ const formatTestDataGroupForResponse = (group: any) => ({
     id: group.id,
     name: group.name,
     description: group.description,
+    mode: group.mode,
     created_at: group.created_at instanceof Date ? group.created_at.toISOString() : group.created_at,
     updated_at: group.updated_at instanceof Date ? group.updated_at.toISOString() : group.updated_at
 });
@@ -64,7 +65,7 @@ RegisterHandlers(app, TestDataApiDefinition, {
 
         create: async (req, res) => {
             try {
-                const { name, description } = req.body;
+                const { name, description, mode } = req.body;
 
                 // Check if group with same name already exists
                 const existingGroup = await testDataGroupModel.findByName(name);
@@ -76,7 +77,7 @@ RegisterHandlers(app, TestDataApiDefinition, {
                     return;
                 }
 
-                const groupData: any = { name };
+                const groupData: TestDataGroup = { name, mode };
                 if (description !== undefined) {
                     groupData.description = description;
                 }
@@ -262,6 +263,18 @@ RegisterHandlers(app, TestDataApiDefinition, {
                     return;
                 }
 
+                if (group.mode === 'json') {
+                    try {
+                        JSON.parse(content)
+                    } catch (e) {
+                        res.respond(400, {
+                            error: 'Invalid format',
+                            message: 'Expected JSON format'
+                        });
+                        return;
+                    }
+                }
+
                 const itemData: any = {
                     group_id: groupId,
                     content
@@ -295,6 +308,21 @@ RegisterHandlers(app, TestDataApiDefinition, {
                         message: 'Test data group not found'
                     });
                     return;
+                }
+
+
+                if (group.mode === 'json') {
+                    for (let i of items) {
+                        try {
+                            JSON.parse(i.content)
+                        } catch (e) {
+                            res.respond(400, {
+                                error: 'Invalid format',
+                                message: 'Expected JSON format in: ' + i.name
+                            });
+                            return;
+                        }
+                    }
                 }
 
                 // Add group_id to each item and filter undefined values
@@ -403,6 +431,55 @@ RegisterHandlers(app, TestDataApiDefinition, {
                 res.respond(500, {
                     error: 'Internal server error',
                     message: 'Failed to delete test data item'
+                });
+            }
+        },
+
+        compilePrompt: async (req, res) => {
+            try {
+                const { promptId, testDataItemId, promptVersion } = req.body;
+
+                // Get the prompt
+                const prompt = await promptModel.findById(promptId);
+                if (!prompt) {
+                    res.respond(404, {
+                        error: 'Not found',
+                        message: 'Prompt not found'
+                    });
+                    return;
+                }
+
+                // Get the test data item
+                const testDataItem = await testDataItemModel.findById(testDataItemId);
+                if (!testDataItem) {
+                    res.respond(404, {
+                        error: 'Not found',
+                        message: 'Test data item not found'
+                    });
+                    return;
+                }
+
+                // Get the specific prompt version or use current version
+                const versionToUse = promptVersion || prompt.current_version;
+                const promptVersionData = promptModel.getVersion(prompt, versionToUse);
+
+                if (!promptVersionData) {
+                    res.respond(404, {
+                        error: 'Not found',
+                        message: `Prompt version ${versionToUse} not found`
+                    });
+                    return;
+                }
+
+                // Compile the prompt
+                const result = promptModel.compilePrompt(testDataItem, promptVersionData);
+
+                res.respond(200, result);
+            } catch (error) {
+                console.error('Error compiling prompt:', error);
+                res.respond(500, {
+                    error: 'Internal server error',
+                    message: 'Failed to compile prompt'
                 });
             }
         }

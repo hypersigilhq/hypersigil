@@ -228,15 +228,17 @@ const startImport = async () => {
         if (bulkRequest.items.length > 0) {
             const response = await testDataApi.groups.bulkCreateItems(props.groupId, bulkRequest)
 
-            // Handle any creation errors
-            if (response.errors.length > 0) {
-                console.warn('Some items failed to create:', response.errors)
+            // Check if this is an error response (has 'error' property)
+            if ('error' in response) {
+                throw new Error(response.error + ":" + response.message)
             }
+
             emit('success')
         }
 
         completed.value = true
     } catch (err) {
+        console.log(err)
         error.value = err instanceof Error ? err.message : 'Failed to import files'
     } finally {
         processing.value = false

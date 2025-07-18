@@ -13,12 +13,14 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@types/papaparse": "^5.3.16",
     "@vee-validate/zod": "^4.15.1",
     "@vueuse/core": "^13.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "floating-vue": "^5.2.2",
     "lucide-vue-next": "^0.525.0",
+    "papaparse": "^5.5.3",
     "reka-ui": "^2.3.2",
     "tailwind-merge": "^3.3.1",
     "ts-typed-api": "^0.1.8",

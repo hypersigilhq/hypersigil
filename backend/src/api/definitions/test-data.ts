@@ -6,6 +6,7 @@ import { ErrorResponseSchema, createPaginationResponseSchema, PaginationQuerySch
 export const TestDataGroupResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
+    mode: z.enum(['raw', 'json']),
     description: z.string().optional(),
     created_at: z.string(),
     updated_at: z.string()
@@ -15,14 +16,16 @@ export type TestDataGroupResponse = z.infer<typeof TestDataGroupResponseSchema>;
 
 export const CreateTestDataGroupRequestSchema = z.object({
     name: z.string().min(1).max(255),
-    description: z.string().optional()
+    description: z.string().optional(),
+    mode: z.enum(['raw', 'json'])
 });
 
 export type CreateTestDataGroupRequest = z.infer<typeof CreateTestDataGroupRequestSchema>;
 
 export const UpdateTestDataGroupRequestSchema = z.object({
     name: z.string().min(1).max(255).optional(),
-    description: z.string().optional()
+    description: z.string().optional(),
+    mode: z.enum(['raw', 'json'])
 });
 
 export type UpdateTestDataGroupRequest = z.infer<typeof UpdateTestDataGroupRequestSchema>;
@@ -149,6 +152,23 @@ export const BatchExecutionResponseSchema = z.object({
 });
 
 export type BatchExecutionResponse = z.infer<typeof BatchExecutionResponseSchema>;
+
+// Prompt compilation schemas
+export const CompilePromptRequestSchema = z.object({
+    promptId: z.string().uuid(),
+    testDataItemId: z.string().uuid(),
+    promptVersion: z.number().optional()
+});
+
+export type CompilePromptRequest = z.infer<typeof CompilePromptRequestSchema>;
+
+export const CompilePromptResponseSchema = z.object({
+    success: z.boolean(),
+    compiledPrompt: z.string().optional(),
+    error: z.string().optional()
+});
+
+export type CompilePromptResponse = z.infer<typeof CompilePromptResponseSchema>;
 
 export const TestDataApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/test-data',
@@ -308,6 +328,20 @@ export const TestDataApiDefinition = CreateApiDefinition({
                 body: z.object({}),
                 responses: CreateResponses({
                     204: z.object({}),
+                    404: ErrorResponseSchema,
+                    500: ErrorResponseSchema
+                })
+            },
+
+            compilePrompt: {
+                method: 'POST',
+                path: '/compile-prompt',
+                params: z.object({}),
+                query: z.object({}),
+                body: CompilePromptRequestSchema,
+                responses: CreateResponses({
+                    200: CompilePromptResponseSchema,
+                    400: ErrorResponseSchema,
                     404: ErrorResponseSchema,
                     500: ErrorResponseSchema
                 })

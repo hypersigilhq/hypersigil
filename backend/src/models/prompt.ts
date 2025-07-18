@@ -1,6 +1,8 @@
 import { Model } from '../database/base-model';
 import { BaseDocument } from '../database/types';
 import { db } from '../database/manager';
+import * as mustache from 'mustache';
+import { TestDataItem } from './test-data-item';
 
 // Utility function to recursively add "additionalProperties": false to all objects in a JSON schema
 function addAdditionalPropertiesFalse(obj: any): any {
@@ -215,6 +217,35 @@ export class PromptModel extends Model<Prompt> {
                 orderBy,
                 orderDirection
             });
+        }
+    }
+
+    // Method to compile a prompt with test data using mustache
+    public compilePrompt(testDataItem: TestDataItem, promptVersion: PromptVersion): { success: true; compiledPrompt: string } | { success: false; error: string } {
+        try {
+            // Parse the test data item content as JSON
+            let testData: any;
+            try {
+                testData = JSON.parse(testDataItem.content);
+            } catch (parseError) {
+                return {
+                    success: false,
+                    error: `Invalid JSON in test data item content: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`
+                };
+            }
+
+            // Compile the prompt using mustache
+            const compiledPrompt = mustache.render(promptVersion.prompt, testData);
+
+            return {
+                success: true,
+                compiledPrompt
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: `Error compiling prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
+            };
         }
     }
 }

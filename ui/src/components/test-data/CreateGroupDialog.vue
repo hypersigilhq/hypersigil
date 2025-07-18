@@ -16,6 +16,11 @@
                     <Label for="name">Name</Label>
                     <Input id="name" v-model="formData.name" placeholder="Enter group name" required />
                 </div>
+                <div v-if="!editingGroup">
+                    <Label for="name">JSON Mode</Label>
+                    <Switch id="user-input-switch" class="ml-3" :model-value="formData.mode === 'json'"
+                        @update:model-value="(value: boolean) => formData.mode = value ? 'json' : 'raw'" />
+                </div>
 
                 <div>
                     <Label for="description">Description (Optional)</Label>
@@ -53,6 +58,7 @@ import {
 
 import { testDataApi } from '@/services/api-client'
 import type { TestDataGroupResponse, CreateTestDataGroupRequest } from '../../services/definitions/test-data'
+import Switch from '../ui/switch/Switch.vue'
 
 interface Props {
     open: boolean
@@ -77,7 +83,8 @@ const error = ref<string | null>(null)
 // Form data
 const formData = reactive<CreateTestDataGroupRequest>({
     name: '',
-    description: ''
+    description: '',
+    mode: 'raw'
 })
 
 // Computed
@@ -91,9 +98,11 @@ watch(() => props.editingGroup, (group) => {
     if (group) {
         formData.name = group.name
         formData.description = group.description || ''
+        formData.mode = group.mode
     } else {
         formData.name = ''
         formData.description = ''
+        formData.mode = 'raw'
     }
     error.value = null
 }, { immediate: true })
@@ -113,7 +122,8 @@ const saveGroup = async () => {
     try {
         const groupData = {
             name: formData.name,
-            description: formData.description || undefined
+            description: formData.description || undefined,
+            mode: formData.mode
         }
 
         if (props.editingGroup) {

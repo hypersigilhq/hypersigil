@@ -1,6 +1,6 @@
 <template>
     <div>
-        <Label v-if="label" for="prompt">Prompt (Required)</Label>
+        <Label v-if="props.label !== ''" for="prompt">{{ label }}</Label>
         <Select v-model="selectedPromptId" required>
             <SelectTrigger>
                 <SelectValue placeholder="Select a prompt" />

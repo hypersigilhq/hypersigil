@@ -6,6 +6,7 @@ import { db } from '../database/manager';
 export interface TestDataGroup extends BaseDocument {
     name: string;
     description?: string;
+    mode: "raw" | "json";
 }
 
 export class TestDataGroupModel extends Model<TestDataGroup> {

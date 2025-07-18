@@ -12,7 +12,7 @@ export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 // Shared pagination query parameters
 export const PaginationQuerySchema = z.object({
     page: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).optional().default('1'),
-    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(100)).optional().default('10')
+    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1)).optional().default('10')
 });
 
 export type PaginationQuery = z.infer<typeof PaginationQuerySchema>;

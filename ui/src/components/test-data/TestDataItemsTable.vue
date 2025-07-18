@@ -147,7 +147,7 @@
             @success="onItemSaved" />
 
         <!-- View Dialog -->
-        <ViewItemDialog v-model:open="showViewDialog" :item="viewingItem" />
+        <ViewItemDialog v-model:open="showViewDialog" :item="viewingItem" :group="group" />
 
         <!-- Import Dialog -->
         <ImportItemsDialog v-model:open="showImportDialog" :group-id="groupId" @success="onImportSuccess" />
@@ -183,7 +183,7 @@ import {
 } from '@/components/ui/select'
 
 import { testDataApi } from '@/services/api-client'
-import type { TestDataItemResponse } from '../../services/definitions/test-data'
+import { type TestDataGroupResponse, type TestDataItemResponse } from '../../services/definitions/test-data'
 import CreateItemDialog from './CreateItemDialog.vue'
 import ViewItemDialog from './ViewItemDialog.vue'
 import ImportItemsDialog from './ImportItemsDialog.vue'
@@ -208,7 +208,8 @@ const searchQuery = ref('')
 const orderBy = ref<'name' | 'created_at' | 'updated_at'>('created_at')
 const orderDirection = ref<'ASC' | 'DESC'>('DESC')
 const currentPage = ref(1)
-const pageLimit = ref(100)
+const pageLimit = ref(1000)
+const group = ref<TestDataGroupResponse>()
 
 // Selection state
 const selectedItems = ref<Set<string>>(new Set())
@@ -278,8 +279,8 @@ const loadItems = async () => {
 // Load group info
 const loadGroupInfo = async () => {
     try {
-        const group = await testDataApi.groups.getById(props.groupId)
-        emit('group-loaded', group.name)
+        group.value = await testDataApi.groups.getById(props.groupId)
+        emit('group-loaded', group.value.name)
     } catch (err) {
         // Ignore error for group info
     }
