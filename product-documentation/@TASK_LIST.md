@@ -31,6 +31,7 @@
 - [done] Add schedule execution action to prompts table with execution creation dialog
 - [done] Implement test data management UI interface with table views and modal dialogs
 - [done] Implement extensible file import feature for test data items with markdown support
+- [done] Implement toast notification service and modal confirmation dialog system
 
 ## Future Tasks
 - [todo] Add authentication and authorization

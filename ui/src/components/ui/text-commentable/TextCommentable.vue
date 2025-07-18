@@ -8,7 +8,7 @@
         </div>
 
         <div class="text-commentable-content">
-            <div class="text-content">
+            <div class="text-content" :style="{ width: `calc(100% - ${sidebarWidth}px)` }">
                 <div ref="textElement" @mouseup="handleTextSelection" @selectstart="hideTooltip"
                     @click="handleHighlightClick" class="commentable-wrapper">
                     <slot :rendered-content="renderedContent" :content-class="contentClass">
@@ -17,7 +17,9 @@
                 </div>
             </div>
 
-            <div class="comments-sidebar">
+            <div class="resize-handle" @mousedown="startResize" :class="{ 'resize-active': isResizing }"></div>
+
+            <div class="comments-sidebar" :style="{ width: `${sidebarWidth}px` }">
                 <div :class="['comment-form', { hidden: !showCommentForm }]">
                     <div class="selected-text-preview">
                         {{ currentSelection?.text || '' }}
@@ -43,17 +45,18 @@
                         :class="['comment-item', { active: activeCommentId === comment.id }]"
                         :data-comment-id="comment.id" @click="scrollToHighlight(comment.id)"
                         @mouseenter="highlightComment(comment.id)" @mouseleave="unhighlightComment(comment.id)">
-                        <div class="comment-preview">
+                        <!-- <div class="comment-preview">
                             "{{ comment.selectedText }}"
-                        </div>
+                        </div> -->
                         <div class="comment-text">
                             {{ comment.text }}
                         </div>
                         <div class="comment-meta">
-                            <span class="text-xs text-muted-foreground">{{ new
+                            <span class="text-[11px] text-muted-foreground">{{ new
                                 Date(comment.unixTimestampMs).toLocaleString()
-                                }}</span>
-                            <Button variant="destructive" size="sm" @click.stop="deleteComment(comment.id)" class="">
+                            }}</span>
+                            <Button variant="destructive" size="sm" :class="'text-[12px] h-6'"
+                                @click.stop="deleteComment(comment.id)" class="">
                                 Delete
                             </Button>
                         </div>
@@ -74,6 +77,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import type { Comment, Selection, TextCommentableProps, TextCommentableEmits } from './types'
+import { useUI } from "@/services/ui";
+
+const ui = useUI()
 
 const props = withDefaults(defineProps<TextCommentableProps>(), {
     contentClass: 'whitespace-pre-wrap text-sm h-full overflow-auto',
@@ -171,13 +177,14 @@ const useComments = () => {
         };
 
         comments.value.push(comment);
-        emit('commentAdded', comment);
         return comment;
     };
 
-    const deleteComment = (commentId: string) => {
-        comments.value = comments.value.filter(c => c.id !== commentId);
-        emit('commentDeleted', commentId);
+    const deleteComment = async (commentId: string) => {
+        if (await ui.confirm('Confirm deleting the comment')) {
+            comments.value = comments.value.filter(c => c.id !== commentId);
+            emit('commentDeleted', commentId);
+        }
     };
 
     const getCommentById = (commentId: string) => {
@@ -300,6 +307,12 @@ const showCommentForm = ref(false);
 const commentText = ref('');
 const activeCommentId = ref<string | null>(null);
 
+// Resize functionality
+const sidebarWidth = ref(320); // Default width (equivalent to w-80)
+const isResizing = ref(false);
+const minSidebarWidth = 200;
+const maxSidebarWidth = 1600;
+
 // Composables
 const {
     currentSelection,
@@ -420,6 +433,36 @@ const handleClickOutside = (e: MouseEvent) => {
     }
 };
 
+// Resize functionality
+const startResize = (e: MouseEvent) => {
+    isResizing.value = true;
+    const startX = e.clientX;
+    const startWidth = sidebarWidth.value;
+
+    const handleMouseMove = (e: MouseEvent) => {
+        if (!isResizing.value) return;
+
+        const deltaX = startX - e.clientX;
+        const newWidth = Math.max(minSidebarWidth, Math.min(maxSidebarWidth, startWidth + deltaX));
+        sidebarWidth.value = newWidth;
+    };
+
+    const handleMouseUp = () => {
+        isResizing.value = false;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    e.preventDefault();
+};
+
 // Lifecycle
 onMounted(() => {
     originalContent.value = props.content;
@@ -473,8 +516,17 @@ watch(activeHighlightId, (newId) => {
     @apply flex-1 p-4 bg-card rounded-l-lg overflow-hidden relative border-r;
 }
 
+.resize-handle {
+    @apply w-1 bg-border hover:bg-primary/50 cursor-col-resize transition-colors;
+    min-width: 4px;
+}
+
+.resize-handle.resize-active {
+    @apply bg-primary;
+}
+
 .comments-sidebar {
-    @apply w-80 bg-card border-l p-4 overflow-y-auto;
+    @apply bg-card border-l p-4 overflow-y-auto;
 }
 
 .comment-form {
@@ -498,7 +550,7 @@ watch(activeHighlightId, (newId) => {
 }
 
 .comment-item {
-    @apply p-4 bg-muted/30 rounded-lg border transition-all cursor-pointer hover:bg-muted/50 hover:border-primary/30;
+    @apply p-1 pl-2 bg-muted/30 rounded-lg border transition-all cursor-pointer hover:bg-muted/50 hover:border-primary/30;
 }
 
 .comment-item.active {
@@ -510,11 +562,11 @@ watch(activeHighlightId, (newId) => {
 }
 
 .comment-text {
-    @apply text-sm mb-3 leading-relaxed;
+    @apply text-sm leading-relaxed;
 }
 
 .comment-meta {
-    @apply flex justify-between items-center mb-3;
+    @apply flex justify-between items-center;
 }
 
 .comment-actions {

@@ -169,7 +169,6 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import type { ExecutionResponse } from '@/services/definitions/execution'
 import type { PromptResponse } from '@/services/definitions/prompt'
-import type { CommentResponse } from '@/services/definitions/comment'
 import type { Comment } from '@/components/ui/text-commentable/types'
 import { executionsApi, promptsApi, commentsApi } from '@/services/api-client'
 
@@ -198,7 +197,7 @@ const commentsError = ref<string | null>(null)
 // Column visibility state
 const showUserInput = ref(true)
 const showPrompt = ref(false)
-const showComments = ref(false)
+const showComments = ref(true)
 
 // Computed property for dynamic grid classes
 const gridClasses = computed(() => {
