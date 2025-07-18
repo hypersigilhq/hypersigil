@@ -1,6 +1,6 @@
 <template>
     <Dialog :open="isOpen" @update:open="handleOpenChange">
-        <DialogContent class="sm:max-w-[425px]">
+        <ConfirmationDialogContent class="sm:max-w-[425px]">
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-3">
                     <component :is="iconComponent" v-if="iconComponent" :class="iconClasses" class="h-5 w-5" />
@@ -18,7 +18,7 @@
                     {{ confirmText }}
                 </Button>
             </DialogFooter>
-        </DialogContent>
+        </ConfirmationDialogContent>
     </Dialog>
 </template>
 
@@ -27,13 +27,13 @@ import { computed } from 'vue'
 import { AlertTriangle, HelpCircle, Info, XCircle } from 'lucide-vue-next'
 import {
     Dialog,
-    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import ConfirmationDialogContent from './ConfirmationDialogContent.vue'
 import type { ConfirmationOptions } from './index'
 
 interface Props {
