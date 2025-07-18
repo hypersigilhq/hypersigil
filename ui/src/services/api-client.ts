@@ -3,6 +3,7 @@ import { PromptApiDefinition, type CreatePromptRequest } from './definitions/pro
 import { ExecutionApiDefinition, type CreateExecutionRequest, type ExecutionUpdateRequest } from './definitions/execution';
 import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './definitions/execution-bundle';
 import { TestDataApiDefinition, type CreateTestDataGroupRequest } from './definitions/test-data';
+import { CommentApiDefinition, type CreateCommentRequest, type CommentListQuery } from './definitions/comment';
 
 // Create the API client with the base URL
 export const apiClient = new ApiClient(
@@ -25,11 +26,17 @@ export const testDataApiClient = new ApiClient(
     TestDataApiDefinition
 );
 
+export const commentApiClient = new ApiClient(
+    document.location.origin, // Adjust this to match your backend URL
+    CommentApiDefinition
+);
+
 // Set default headers
 apiClient.setHeader('Content-Type', 'application/json');
 executionApiClient.setHeader('Content-Type', 'application/json');
 executionBundleApiClient.setHeader('Content-Type', 'application/json');
 testDataApiClient.setHeader('Content-Type', 'application/json');
+commentApiClient.setHeader('Content-Type', 'application/json');
 
 // Helper functions for prompts API
 export const promptsApi = {
@@ -319,5 +326,33 @@ export const testDataApi = {
                 500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
                 422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             })
+    }
+};
+
+// Helper functions for comments API
+export const commentsApi = {
+    create: (body: CreateCommentRequest) =>
+        commentApiClient.callApi('comments', 'create', { body }, {
+            201: (payload) => payload.data,
+            400: (payload: any) => { throw new Error(payload.data?.error || 'Bad request'); },
+            500: (payload: any) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload: any) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
+    list: (options?: { query?: CommentListQuery }) =>
+        commentApiClient.callApi('comments', 'list', options, {
+            200: (payload) => payload.data,
+            400: (payload: any) => { throw new Error(payload.data?.error || 'Bad request'); },
+            500: (payload: any) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload: any) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
+    delete: (id: string) => {
+        commentApiClient.callApi('comments', 'delete', { params: { id } }, {
+            204: (payload) => { },
+            404: (payload: any) => { throw new Error(payload.data?.error || 'Bad request'); },
+            500: (payload: any) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload: any) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        })
     }
 };

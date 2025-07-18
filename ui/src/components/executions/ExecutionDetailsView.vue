@@ -91,9 +91,9 @@
                     <Switch id="prompt-switch" :model-value="showPrompt" @update:model-value="onPromptSwitchChange" />
                 </div>
                 <div class="flex items-center space-x-2">
-                    <Label for="comments-switch" class="text-sm font-medium">Comments</Label>
+                    <Label for="comments-switch" class="text-sm font-medium">Comments ({{ comments.length }})</Label>
                     <Switch id="comments-switch" :model-value="showComments"
-                        @update:model-value="(value: boolean) => showComments = value" />
+                        @update:model-value="onCommentsSwitchChange" />
                 </div>
             </div>
         </div>
@@ -142,7 +142,8 @@
                     <CopyToClipboard :text="execution.result"></CopyToClipboard>
                 </Label>
                 <div v-if="showComments" class="flex-1 overflow-hidden">
-                    <TextCommentable :content="execution.result"
+                    <TextCommentable :content="execution.result" :initial-comments="comments"
+                        @comment-added="commentAdded" @comment-deleted="commentDeleted"
                         content-class="whitespace-pre-wrap text-sm h-full overflow-auto">
                         <template #default="{ renderedContent, contentClass }">
                             <pre v-html="renderedContent" :class="contentClass"></pre>
@@ -165,10 +166,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import type { ExecutionResponse } from '@/services/definitions/execution'
 import type { PromptResponse } from '@/services/definitions/prompt'
-import { executionsApi, promptsApi } from '@/services/api-client'
+import type { CommentResponse } from '@/services/definitions/comment'
+import type { Comment } from '@/components/ui/text-commentable/types'
+import { executionsApi, promptsApi, commentsApi } from '@/services/api-client'
 
 import { Star } from 'lucide-vue-next'
 import { Label } from '@/components/ui/label'
@@ -186,6 +189,11 @@ const props = defineProps<Props>()
 const prompt = ref<PromptResponse | null>(null)
 const promptLoading = ref(false)
 const promptError = ref<string | null>(null)
+
+// Comments state
+const comments = ref<Comment[]>([])
+const commentsLoading = ref(false)
+const commentsError = ref<string | null>(null)
 
 // Column visibility state
 const showUserInput = ref(true)
@@ -222,6 +230,14 @@ const onPromptSwitchChange = async (checked: boolean) => {
     }
 }
 
+// Function to handle comments switch change
+const onCommentsSwitchChange = async (checked: boolean) => {
+    showComments.value = checked
+    if (checked && comments.value.length === 0 && props.execution?.id) {
+        await fetchComments()
+    }
+}
+
 const toggleStar = async (val: boolean) => {
     if (!props.execution) {
         return
@@ -244,14 +260,58 @@ const fetchPrompt = async () => {
     }
 }
 
+const fetchComments = async () => {
+    if (!props.execution?.id) return
+
+    try {
+        commentsLoading.value = true
+        commentsError.value = null
+        const apiComments = await commentsApi.list({ query: { execution_id: props.execution.id } })
+
+        // Transform API comments to TextCommentable format
+        comments.value = apiComments
+            .filter(comment => comment.data.type === 'execution')
+            .map((comment): Comment => {
+                if (comment.data.type === 'execution') {
+                    return {
+                        id: comment.id,
+                        text: comment.text,
+                        selectedText: comment.data.selected_text,
+                        startOffset: comment.data.start_offset,
+                        endOffset: comment.data.end_offset,
+                        unixTimestampMs: new Date(comment.created_at).getTime()
+                    }
+                }
+                else {
+                    throw new Error('invalid type??')
+                }
+            }
+            )
+    } catch (error) {
+        commentsError.value = error instanceof Error ? error.message : 'Failed to load comments'
+    } finally {
+        commentsLoading.value = false
+    }
+}
+
 // Reset state when execution changes
 watch(() => props.execution, async () => {
     prompt.value = null
     promptError.value = null
+    comments.value = []
+    commentsError.value = null
+
+    // Always fetch comments to show accurate count
+    await fetchComments()
 
     if (showPrompt.value) {
         await fetchPrompt()
     }
+})
+
+onMounted(async () => {
+    //fetch comments on component mount
+    await fetchComments()
 })
 
 // Utility functions
@@ -300,6 +360,43 @@ const getStatusVariant = (status: string) => {
             return 'destructive'
         default:
             return 'secondary'
+    }
+}
+
+// Comment handling functions
+const commentAdded = async (commentData: { text: string; selectedText: string; startOffset: number; endOffset: number }) => {
+    if (!props.execution) return
+
+    try {
+        const createCommentRequest = {
+            text: commentData.text,
+            data: {
+                type: 'execution' as const,
+                selected_text: commentData.selectedText,
+                start_offset: commentData.startOffset,
+                end_offset: commentData.endOffset
+            },
+            execution_id: props.execution.id,
+            prompt_id: props.execution.prompt_id
+        }
+
+        await commentsApi.create(createCommentRequest)
+        // Refresh comments to show the new comment
+        await fetchComments()
+    } catch (error) {
+        console.error('Failed to create comment:', error)
+        // You might want to show a toast notification here
+    }
+}
+
+const commentDeleted = async (commentId: string) => {
+    try {
+        await commentsApi.delete(commentId)
+        // Refresh comments to remove the deleted comment
+        await fetchComments()
+    } catch (error) {
+        console.error('Failed to delete comment:', error)
+        // You might want to show a toast notification here
     }
 }
 </script>
