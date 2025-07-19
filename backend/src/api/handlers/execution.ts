@@ -4,7 +4,7 @@ import { providerRegistry } from '../../providers/provider-registry';
 import { loggingMiddleware, timingMiddleware } from '../../app';
 import app from '../../app';
 import { ExecutionOptions } from '../../providers/base-provider';
-import { Prompt, promptModel } from '../../models/prompt';
+import { Prompt, promptModel, PromptVersion } from '../../models/prompt';
 import { ExecutionApiDefinition, ExecutionResponse } from '../definitions/execution';
 import { testDataGroupModel, testDataItemModel, executionBundleModel, executionModel } from '../../models';
 
@@ -24,7 +24,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
     executions: {
         create: async (req, res) => {
             let executionIds: string[] = []
-            const { promptId, promptVersion, testDataGroupId, options } = req.body;
+            const { promptId, promptVersion, testDataGroupId, options, promptText } = req.body;
             try {
                 for (let i in req.body.providerModel) {
                     let providerModel = req.body.providerModel[i]!
@@ -95,6 +95,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                         const execution = await executionService.createExecution({
                             promptId,
                             ...(promptVersion !== undefined && { promptVersion }),
+                            promptText,
                             userInput: userInput!,
                             providerModel,
                             options: options as ExecutionOptions
@@ -129,7 +130,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             } finally {
                 res.respond(201, { executionIds });
                 // Create ExecutionBundle if executions were created successfully
-                if (executionIds.length > 0 && testDataGroupId) {
+                if (executionIds.length > 0 && testDataGroupId && promptId) {
                     try {
                         await executionBundleModel.create({
                             test_group_id: testDataGroupId,
@@ -194,7 +195,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
                 if (promptIds.length > 0) {
                     const prompts = await Promise.all(
-                        promptIds.map(async (id) => {
+                        promptIds.filter(id => id !== undefined).map(async (id) => {
                             const prompt = await promptModel.findById(id);
                             return prompt ? { ...prompt, id } : null;
                         })
@@ -209,7 +210,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
                 if (req.query.downloadCsv) {
                     // Generate CSV content
-                    const csvHeaders = ['id', 'prompt_id', 'prompt_version', 'model', 'prompt_name', 'prompt_value', 'user_input', 'status', 'result_valid', 'result'];
+                    const csvHeaders = ['id', 'prompt_id', 'prompt_version', 'prompt_text', 'model', 'prompt_name', 'prompt_value', 'user_input', 'status', 'result_valid', 'result'];
                     const csvRows = result.data.map(execution => {
                         const prompt = promptsMap.get(execution.prompt_id);
                         const pv = <Prompt['versions'][0]>prompt?.versions.find((v: Prompt['versions'][0]) => v.version === execution.prompt_version);
@@ -218,6 +219,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             execution.id || '',
                             execution.prompt_id || '',
                             execution.prompt_version?.toString() || '',
+                            execution.prompt_text || '',
                             execution.model || '',
                             pv?.name || '',
                             pv?.prompt.replace(/"/g, '""') || '',
@@ -246,13 +248,20 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     ...result,
                     data: result.data.map(execution => {
 
-                        let prompt = promptsMap.get(execution.prompt_id)
-                        let pv = prompt.versions.find((v: any) => v.version === execution.prompt_version)
+                        let prompt: Prompt | undefined = undefined
+                        let pv: PromptVersion | undefined = undefined
+                        if (execution.prompt_id) {
+                            prompt = promptsMap.get(execution.prompt_id)
+                            if (prompt) {
+                                pv = prompt.versions.find((v: any) => v.version === execution.prompt_version)
+                            }
+                        }
 
                         return <ExecutionResponse>{
                             id: execution.id!,
                             prompt_id: execution.prompt_id,
                             prompt_version: execution.prompt_version,
+                            prompt_text: execution.prompt_text,
                             user_input: execution.user_input,
                             provider: execution.provider,
                             model: execution.model,
@@ -268,7 +277,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             created_at: execution.created_at!.toISOString(),
                             updated_at: execution.updated_at!.toISOString(),
                             options: execution.options,
-                            prompt: prompt && {
+                            prompt: prompt && pv && {
                                 name: pv.name!,
                                 version: pv.version
                             },
@@ -301,13 +310,17 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     });
                 }
 
-                const prompt = await promptModel.findById(execution.prompt_id);
+                let prompt: Prompt | null = null
+                if (execution.prompt_id) {
+                    prompt = await promptModel.findById(execution.prompt_id);
+                }
 
                 let pv = prompt!.versions.find((v: any) => v.version === execution.prompt_version)
                 const response: ExecutionResponse = {
                     id: execution.id!,
                     prompt_id: execution.prompt_id,
                     prompt_version: execution.prompt_version,
+                    prompt_text: execution.prompt_text,
                     prompt: prompt && {
                         name: pv!.name!,
                         version: pv!.version

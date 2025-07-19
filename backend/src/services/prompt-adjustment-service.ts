@@ -26,7 +26,8 @@ export class PromptAdjustmentService {
      */
     public async generateAdjustmentPrompt(
         commentIds: string[],
-        promptId: string
+        promptId: string,
+        summarize: boolean = false
     ): Promise<AdjustmentPromptResult> {
         // Validate prompt exists
         const prompt = await promptModel.findById(promptId);
@@ -56,7 +57,8 @@ export class PromptAdjustmentService {
             currentVersion.prompt,
             executionResults,
             executionComments,
-            genericComments
+            genericComments,
+            summarize
         );
 
         return {
@@ -157,15 +159,24 @@ export class PromptAdjustmentService {
         originalPrompt: string,
         executionResults: Map<string, Execution>,
         executionComments: Map<string, Comment[]>,
-        genericComments: Comment[]
+        genericComments: Comment[],
+        summarize: boolean = false
     ): string {
-        const template = `
-<Instructions>
-You are an experienced prompt engineer. Your task is to calibrate <OriginalPrompt> based on the <Execution> list provided.
 
-Calibration means reviewing all the comments and feedback, then applying necessary changes to the original prompt to address the issues and improve performance. You should analyze each comment, understand what went wrong or could be improved, and modify the original prompt accordingly.
+        let task = `Your task is to calibrate <OriginalPrompt> based on the <Execution> list provided.
+Calibration means reviewing all the comments and feedback, then applying necessary changes to the original prompt to address the issues and improve performance. You should analyze each comment, understand what went wrong or could be improved, and modify the original prompt accordingly. You must only provide feedback related to comments.`
 
-<Execution> is a result of running an <OriginalPrompt> where <Result> is an LLM model output. The <Result> has been reviewed and a list of <Comment> was created.
+        if (summarize) {
+            task = `Your task is to summarize changes for the <OriginalPrompt> based on the <Execution> list provided.
+Summarize means reviewing all the comments and feedback and providing a consolidate list of proposed changes to the <OriginalPrompt>.ś`
+        }
+
+        const template = `<Instructions>
+You are an experienced prompt engineer.
+
+${task}
+
+<Execution> is a result of running an <OriginalPrompt> where <Result> is an LLM model output, since the prompt can contain template placeholders, the <UserInput> contains the placeholder values. The <Result> has been reviewed and a list of <Comment> was created.
 Each <Comment> is supplied with <ReviewerComment> as an original comment from a reviewer and <ResultQuote> which is a part of the <Result> that has been referenced by the reviewer when writing that comment.
 You are also supplied with a list of <GenericComment> which is a comment without any quotation.
 
@@ -178,6 +189,7 @@ After reviewing all feedback, provide a revised version of the original prompt t
 {{#hasExecutionComments}}
 {{#executionSections}}
 <Execution>
+    <UserInput>{{{userInput}}}</UserInput>
     <Result>{{{result}}}</Result>
     {{#comments}}
         <Comment>
@@ -185,7 +197,7 @@ After reviewing all feedback, provide a revised version of the original prompt t
             <ReviewerComment>{{{text}}}</ReviewerComment>
         </Comment>
     {{/comments}}
-    </Execution>
+</Execution>
 {{/executionSections}}
 {{/hasExecutionComments}}
 
@@ -200,6 +212,7 @@ After reviewing all feedback, provide a revised version of the original prompt t
             const execution = executionResults.get(executionId)!;
             return {
                 executionId,
+                userInput: execution.user_input,
                 result: execution.result,
                 comments: comments.map(comment => ({
                     text: comment.text,

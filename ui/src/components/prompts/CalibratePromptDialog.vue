@@ -6,6 +6,13 @@
                 <DialogDescription>
                     Generate adjustment suggestions based on selected comments
                 </DialogDescription>
+                <div class="flex items-center space-x-2 mt-4">
+                    <Switch :checked="summarize" @update:model-value="(v: boolean) => summarize = v"
+                        id="summarize-switch" />
+                    <Label for="summarize-switch" class="text-sm font-medium">
+                        Summarize comments
+                    </Label>
+                </div>
             </DialogHeader>
 
             <div class="flex-1 overflow-hidden flex flex-col space-y-4 p-4">
@@ -50,11 +57,15 @@
 
             <DialogFooter>
                 <Button variant="outline" @click="$emit('close')">Close</Button>
-                <Button v-if="adjustmentResult && !loading" @click="copyAdjustmentPrompt" class="ml-2">
-                    Copy Adjustment
+                <Button v-if="adjustmentResult && !loading" @click="scheduleAdjustment" class="ml-2">
+                    Schedule adjustment
                 </Button>
             </DialogFooter>
         </DialogContent>
+
+        <!-- Schedule Execution Dialog -->
+        <ScheduleExecutionDialog :open="scheduleDialogOpen" @update:open="scheduleDialogOpen = $event" :mode="'text'"
+            :initial-prompt-text="adjustmentResult?.adjustmentPrompt" @success="onScheduleSuccess" />
     </Dialog>
 </template>
 
@@ -64,6 +75,7 @@ import { type GenerateAdjustmentResponse } from '@/services/definitions/prompt'
 import { promptsApi } from '@/services/api-client'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
     Dialog,
     DialogContent,
@@ -72,6 +84,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import ScheduleExecutionDialog from '@/components/executions/ScheduleExecutionDialog.vue'
 
 const props = defineProps<{
     open: boolean
@@ -87,6 +100,8 @@ const emit = defineEmits<{
 const loading = ref(false)
 const error = ref<string | null>(null)
 const adjustmentResult = ref<GenerateAdjustmentResponse | null>(null)
+const summarize = ref(false)
+const scheduleDialogOpen = ref(false)
 
 // Methods
 const onDialogOpenChange = (open: boolean) => {
@@ -107,7 +122,8 @@ const generateAdjustment = async () => {
 
     try {
         const result = await promptsApi.generateAdjustment(props.promptId, {
-            commentIds: props.selectedCommentIds
+            commentIds: props.selectedCommentIds,
+            summarize: summarize.value
         })
         adjustmentResult.value = result
     } catch (err) {
@@ -129,6 +145,16 @@ const copyAdjustmentPrompt = async () => {
     }
 }
 
+const scheduleAdjustment = () => {
+    scheduleDialogOpen.value = true
+}
+
+const onScheduleSuccess = (executionId: string) => {
+    scheduleDialogOpen.value = false
+    // You could add a toast notification here if available
+    console.log('Execution scheduled successfully:', executionId)
+}
+
 // Watch for dialog opening to trigger adjustment generation
 watch(() => props.open, (newOpen) => {
     if (newOpen && props.promptId && props.selectedCommentIds.length > 0) {
@@ -138,6 +164,13 @@ watch(() => props.open, (newOpen) => {
         loading.value = false
         error.value = null
         adjustmentResult.value = null
+    }
+})
+
+// Watch for summarize toggle to refresh adjustment
+watch(() => summarize.value, () => {
+    if (props.open && props.promptId && props.selectedCommentIds.length > 0) {
+        generateAdjustment()
     }
 })
 </script>

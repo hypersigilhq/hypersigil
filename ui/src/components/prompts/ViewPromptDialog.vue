@@ -51,15 +51,17 @@
                     </div>
 
                     <div class="flex flex-col min-h-0">
-                        <Label>JSON Schema Response</Label>
-                        <div class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
-                            <pre
-                                class="whitespace-pre-wrap text-sm">{{ JSON.stringify(currentDisplayVersion.json_schema_response || {}, null, 2) }}</pre>
-                        </div>
+                        <template v-if="currentDisplayVersion.json_schema_response">
+                            <Label>JSON Schema Response</Label>
+                            <div class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
+                                <pre
+                                    class="whitespace-pre-wrap text-sm">{{ JSON.stringify(currentDisplayVersion.json_schema_response || {}, null, 2) }}</pre>
+                            </div>
+                        </template>
                         <div class="flex items-center justify-between my-2">
                             <Label>Comments</Label>
                             <div class="flex items-center space-x-2">
-                                <Button v-if="hasSelectedComments" size="sm" @click="openCalibrateDialog"
+                                <Button :disabled="!hasSelectedComments" size="sm" @click="openCalibrateDialog"
                                     class="text-xs">
                                     Calibrate prompt
                                 </Button>
@@ -83,7 +85,8 @@
                                         class="mt-0.5" />
                                     <div class="flex-1 min-w-0">
                                         <p class="text-sm break-words bg-slate-200 p-2 italic"
-                                            v-if="comment.data.type === 'execution'">{{ comment.data.selected_text }}
+                                            v-if="comment.data.type === 'execution'">{{
+                                                comment.data.selected_text }}
                                         </p>
                                         <p class="text-sm break-words pt-2">{{ comment.text }}</p>
                                         <div class="flex items-center space-x-2 mt-1">

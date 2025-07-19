@@ -6,8 +6,9 @@ import { ExecutionUpdateRequest } from '../api/definitions/execution';
 
 // Execution interface extending BaseDocument
 export interface Execution extends BaseDocument {
-    prompt_id: string;
-    prompt_version: number;
+    prompt_id?: string | undefined;
+    prompt_version?: number | undefined;
+    prompt_text?: string | undefined;
     user_input: string;
     provider: string;  // e.g., "ollama"
     model: string;     // e.g., "qwen2.5:6b"
@@ -20,7 +21,7 @@ export interface Execution extends BaseDocument {
     error_message?: string;
     started_at?: Date;
     completed_at?: Date;
-    options?: ExecutionOptions;
+    options?: ExecutionOptions | undefined;
     starred?: boolean;
     user_status?: string;
 

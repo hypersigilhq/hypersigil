@@ -1,6 +1,6 @@
 <template>
-    <div v-if="execution" class="flex-1 overflow-hidden flex flex-col space-y-4 p-4">
-        <div class="flex-shrink-0 grid grid-cols-3 gap-2">
+    <div v-if="execution" class="flex-1 overflow-hidden flex flex-col space-y-4 px-4">
+        <div class="flex-shrink-0 grid grid-cols-9 gap-2">
             <div>
                 <Label>Status</Label>
                 <div class="mt-1">
@@ -19,13 +19,24 @@
             </div>
             <div>
                 <Label>Prompt</Label>
-                <div class="mt-1 text-sm">
+                <div class="mt-1 text-sm" v-if="execution.prompt">
                     {{ execution.prompt?.name }} (#{{ execution.prompt?.version }})
                 </div>
+                <Badge :variant="'secondary'" class="flex items-center gap-1" v-if="execution.prompt_text">
+                    Custom
+                </Badge>
             </div>
-        </div>
-
-        <div class="flex-shrink-0 grid grid-cols-5 gap-2">
+            <div>
+                <Label>Starred</Label>
+                <div class="mt-1 text-sm">
+                    <template v-if="execution.starred">
+                        <Star :color="'gold'" :fill="'gold'" @click="toggleStar(false)" />
+                    </template>
+                    <template v-else>
+                        <Star :color="'black'" @click="toggleStar(true)" />
+                    </template>
+                </div>
+            </div>
             <div>
                 <Label>Created</Label>
                 <div class="mt-1 text-sm">{{ formatDate(execution.created_at) }}</div>
@@ -48,17 +59,6 @@
                 <Label>Input / Output tokens used</Label>
                 <div class="mt-1 text-sm">{{ execution.input_tokens_used }} / {{
                     execution.output_tokens_used }}</div>
-            </div>
-            <div>
-                <Label>Starred</Label>
-                <div class="mt-1 text-sm">
-                    <template v-if="execution.starred">
-                        <Star :color="'gold'" :fill="'gold'" @click="toggleStar(false)" />
-                    </template>
-                    <template v-else>
-                        <Star :color="'black'" @click="toggleStar(true)" />
-                    </template>
-                </div>
             </div>
         </div>
 
@@ -86,7 +86,7 @@
                     <Switch id="user-input-switch" :model-value="showUserInput"
                         @update:model-value="(value: boolean) => showUserInput = value" />
                 </div>
-                <div v-if="execution.prompt_id" class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2">
                     <Label for="prompt-switch" class="text-sm font-medium">Prompt</Label>
                     <Switch id="prompt-switch" :model-value="showPrompt" @update:model-value="onPromptSwitchChange" />
                 </div>
@@ -94,6 +94,11 @@
                     <Label for="comments-switch" class="text-sm font-medium">Comments ({{ comments.length }})</Label>
                     <Switch id="comments-switch" :model-value="showComments"
                         @update:model-value="onCommentsSwitchChange" />
+                </div>
+                <div class="flex items-center space-x-2">
+                    <Label for="comments-switch" class="text-sm font-medium">Execution options</Label>
+                    <Switch id="comments-switch" :model-value="showExecutionOptions"
+                        @update:model-value="(v: boolean) => showExecutionOptions = v" />
                 </div>
             </div>
         </div>
@@ -115,20 +120,21 @@
             <div v-if="showPrompt" class="flex flex-col min-h-0">
                 <div class="flex items-center justify-between mb-2">
                     <Label>Prompt
-                        <CopyToClipboard v-if="prompt" :text="prompt?.prompt"></CopyToClipboard>
+                        <CopyToClipboard v-if="prompt" :text="prompt?.prompt || execution.prompt_text || ''">
+                        </CopyToClipboard>
                     </Label>
                 </div>
-                <div class="flex-1 p-3 bg-muted rounded-md overflow-hidden">
+                <div class="flex-1 p-2 bg-muted rounded-md overflow-hidden">
                     <div v-if="promptLoading" class="flex items-center justify-center h-full">
                         <span class="text-sm text-muted-foreground">Loading prompt...</span>
                     </div>
                     <div v-else-if="promptError" class="text-destructive text-sm">
                         {{ promptError }}
                     </div>
-                    <div v-else-if="prompt" class="h-full">
-                        <div class="text-sm font-semibold mb-2">Prompt name: {{ prompt.name }}</div>
-                        <pre
-                            class="whitespace-pre-wrap text-sm h-[calc(100%-2rem)] overflow-auto">{{ prompt.prompt }}</pre>
+                    <div v-else-if="prompt || execution.prompt_text" class="h-full">
+                        <div class="text-sm font-semibold mb-2" v-if="prompt">Prompt name: {{ prompt.name }}</div>
+                        <pre class="whitespace-pre-wrap text-[13px] h-[calc(100%-2rem)] overflow-auto">{{ prompt?.prompt ||
+                            execution.prompt_text || '' }}</pre>
                     </div>
                     <div v-else class="flex items-center justify-center h-full text-sm text-muted-foreground">
                         No prompt available
@@ -156,7 +162,7 @@
             </div>
         </div>
 
-        <div v-if="execution.options" class="flex-shrink-0">
+        <div v-if="execution.options && showExecutionOptions" class="flex-shrink-0">
             <Label>Execution Options</Label>
             <div class="mt-1 p-3 bg-muted rounded-md max-h-32 overflow-auto">
                 <pre class="text-sm">{{ JSON.stringify(execution.options, null, 2) }}</pre>
@@ -198,6 +204,7 @@ const commentsError = ref<string | null>(null)
 const showUserInput = ref(true)
 const showPrompt = ref(false)
 const showComments = ref(true)
+const showExecutionOptions = ref(false)
 
 // Computed property for dynamic grid classes
 const gridClasses = computed(() => {
@@ -300,17 +307,21 @@ watch(() => props.execution, async () => {
     comments.value = []
     commentsError.value = null
 
-    // Always fetch comments to show accurate count
-    await fetchComments()
-
     if (showPrompt.value) {
         await fetchPrompt()
     }
+
+    await onLoad()
 })
 
-onMounted(async () => {
-    //fetch comments on component mount
+const onLoad = async () => {
     await fetchComments()
+    showUserInput.value = !!props.execution?.user_input
+    showPrompt.value = !!props.execution?.prompt_text
+}
+
+onMounted(async () => {
+    await onLoad()
 })
 
 // Utility functions

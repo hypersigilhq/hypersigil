@@ -6,8 +6,9 @@ import Ajv from 'ajv';
 import addFormats from "ajv-formats"
 
 export interface CreateExecutionRequest {
-    promptId: string;
+    promptId?: string | undefined;
     promptVersion?: number;
+    promptText?: string | undefined;
     userInput: string;
     providerModel: string; // Format: "provider:model" e.g., "ollama:qwen2.5:6b"
     options?: ExecutionOptions;
@@ -164,19 +165,28 @@ export class ExecutionService {
      * Create a new execution (will be picked up by polling)
      */
     public async createExecution(request: CreateExecutionRequest): Promise<Execution> {
-        // Validate prompt exists
-        const prompt = await promptModel.findById(request.promptId);
-        if (!prompt) {
-            throw new Error(`Prompt not found: ${request.promptId}`);
+        // Validate that either promptId or promptText is provided
+        if (!request.promptId && !request.promptText) {
+            throw new Error('Either promptId or promptText must be provided');
         }
 
-        // Determine version to execute
-        const versionToExecute = request.promptVersion || prompt.current_version || 1;
+        let versionToExecute: number | undefined;
 
-        // Validate version exists
-        const promptVersion = promptModel.getVersion(prompt, versionToExecute);
-        if (!promptVersion) {
-            throw new Error(`Prompt version ${versionToExecute} not found`);
+        // If promptId is provided, validate prompt exists and get version info
+        if (request.promptId) {
+            const prompt = await promptModel.findById(request.promptId);
+            if (!prompt) {
+                throw new Error(`Prompt not found: ${request.promptId}`);
+            }
+
+            // Determine version to execute
+            versionToExecute = request.promptVersion || prompt.current_version || 1;
+
+            // Validate version exists
+            const promptVersion = promptModel.getVersion(prompt, versionToExecute);
+            if (!promptVersion) {
+                throw new Error(`Prompt version ${versionToExecute} not found`);
+            }
         }
 
         // Parse and validate provider:model format
@@ -186,22 +196,23 @@ export class ExecutionService {
         const executionData: Omit<Execution, 'id' | 'created_at' | 'updated_at'> = {
             prompt_id: request.promptId,
             prompt_version: versionToExecute,
+            prompt_text: request.promptText,
             user_input: request.userInput,
             provider: providerName,
             model: model,
             status: 'pending',
             test_data_group_id: request.testDataGroupId,
             test_data_item_id: request.testDataItemId,
+            options: request.options,
         };
-
-        if (request.options) {
-            executionData.options = request.options;
-        }
 
         const execution = await executionModel.create(executionData);
 
         // Execution will be picked up by the polling mechanism
-        console.log(`Created execution ${execution.id} for prompt version ${versionToExecute} - will be processed by polling`);
+        const logMessage = request.promptText
+            ? `Created execution ${execution.id} with direct prompt text - will be processed by polling`
+            : `Created execution ${execution.id} for prompt version ${versionToExecute} - will be processed by polling`;
+        console.log(logMessage);
 
         return execution;
     }
@@ -332,20 +343,38 @@ export class ExecutionService {
                 console.log(`Resuming interrupted execution ${executionId} with status: ${execution.status}`);
             }
 
-            // Get prompt
-            const prompt = await promptModel.findById(execution.prompt_id);
-            if (!prompt) {
-                await executionModel.updateStatus(executionId, 'failed', {
-                    error_message: `Prompt not found: ${execution.prompt_id}`
-                });
-                return;
-            }
+            // Determine prompt text and schema to use
+            let promptText: string;
+            let jsonSchemaResponse: any = undefined;
 
-            // Get the specific version to execute
-            const promptVersion = promptModel.getVersion(prompt, execution.prompt_version);
-            if (!promptVersion) {
+            if (execution.prompt_text) {
+                // Use direct prompt text
+                promptText = execution.prompt_text;
+                // No schema validation for direct prompt text
+            } else if (execution.prompt_id && execution.prompt_version !== undefined) {
+                // Use prompt from database
+                const prompt = await promptModel.findById(execution.prompt_id);
+                if (!prompt) {
+                    await executionModel.updateStatus(executionId, 'failed', {
+                        error_message: `Prompt not found: ${execution.prompt_id}`
+                    });
+                    return;
+                }
+
+                // Get the specific version to execute
+                const promptVersion = promptModel.getVersion(prompt, execution.prompt_version);
+                if (!promptVersion) {
+                    await executionModel.updateStatus(executionId, 'failed', {
+                        error_message: `Prompt version ${execution.prompt_version} not found`
+                    });
+                    return;
+                }
+
+                promptText = promptVersion.prompt;
+                jsonSchemaResponse = promptVersion.json_schema_response;
+            } else {
                 await executionModel.updateStatus(executionId, 'failed', {
-                    error_message: `Prompt version ${execution.prompt_version} not found`
+                    error_message: 'Either prompt_text or both prompt_id and prompt_version must be provided'
                 });
                 return;
             }
@@ -360,14 +389,13 @@ export class ExecutionService {
             }
 
             let options: ExecutionOptions = { ...execution.options }
-            if (promptVersion.json_schema_response) {
-                options.schema = promptVersion.json_schema_response as JSONSchema
+            if (jsonSchemaResponse) {
+                options.schema = jsonSchemaResponse as JSONSchema
             }
 
-
-            // Execute the prompt using the specific version
+            // Execute the prompt using the extracted prompt text
             const result = await provider.execute(
-                promptVersion.prompt,
+                promptText,
                 execution.user_input,
                 execution.model,
                 options
@@ -382,7 +410,7 @@ export class ExecutionService {
 
             let parsedOutput: object = {}
             let resultOutput: string
-            if (promptVersion.json_schema_response) {
+            if (jsonSchemaResponse) {
                 try {
                     parsedOutput = JSON.parse(result.output)
                     // Clean the output by removing null values
@@ -391,7 +419,7 @@ export class ExecutionService {
                     // Validate the result
                     vr = this.validateExecutionResult(
                         cleanedOutput,
-                        promptVersion.json_schema_response as JSONSchema
+                        jsonSchemaResponse as JSONSchema
                     );
                     resultOutput = vr.result_valid ? JSON.stringify(cleanedOutput, null, "\t") : result.output
                 } catch (e) {

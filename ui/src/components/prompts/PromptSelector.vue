@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select'
 
 import { promptsApi } from '@/services/api-client'
+import Badge from '../ui/badge/Badge.vue'
 
 interface Props {
     modelValue?: string,

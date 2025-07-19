@@ -39,8 +39,9 @@ export type ExecutionStatus = z.infer<typeof ExecutionStatusSchema>;
 // Response schemas
 export const ExecutionResponseSchema = z.object({
     id: z.string(),
-    prompt_id: z.string(),
-    prompt_version: z.number(),
+    prompt_id: z.string().optional(),
+    prompt_version: z.number().optional(),
+    prompt_text: z.string().optional(),
     prompt: z.object({ name: z.string(), version: z.number() }).optional(),
     test_data_group_id: z.string().optional(),
     test_data_item_id: z.string().optional(),
@@ -60,7 +61,9 @@ export const ExecutionResponseSchema = z.object({
     updated_at: z.string(),
     starred: z.boolean().optional(),
     options: ExecutionOptionsSchema.optional()
-});
+}).refine(input => {
+    return input.prompt_id || input.prompt_text
+}, { message: "Missing prompt_id and prompt_text" });
 
 export type ExecutionResponse = z.infer<typeof ExecutionResponseSchema>;
 
@@ -73,15 +76,21 @@ export type CreateExecutionResponse = z.infer<typeof CreateExecutionResponseSche
 
 // Request schemas
 export const CreateExecutionRequestSchema = z.object({
-    promptId: z.string().uuid(),
+    promptId: z.string().uuid().optional(),
     promptVersion: z.number().optional(),
+    promptText: z.string().optional(),
     userInput: z.string().optional(),
     testDataGroupId: z.string().optional(),
     providerModel: z.array(z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model')),
     options: ExecutionOptionsSchema.optional()
-}).refine(input => {
-    return input.testDataGroupId || input.userInput
-}, { message: "userInput or testDataGroupId is required" });
+}).superRefine((val, ctx) => {
+    if (!val.promptId && !val.promptText) {
+        ctx.addIssue({ message: 'promptId or promptText is required', code: 'custom' })
+    }
+    if (val.promptId && !val.testDataGroupId && !val.userInput) {
+        ctx.addIssue({ message: 'userInput or testDataGroupId is required', code: 'custom' })
+    }
+})
 
 export type CreateExecutionRequest = z.infer<typeof CreateExecutionRequestSchema>;
 

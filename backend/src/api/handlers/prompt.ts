@@ -256,7 +256,7 @@ RegisterHandlers(app, PromptApiDefinition, {
         generateAdjustment: async (req, res) => {
             try {
                 const { id } = req.params;
-                const { commentIds } = req.body;
+                const { commentIds, summarize } = req.body;
 
                 // Validate input
                 if (!commentIds || commentIds.length === 0) {
@@ -266,7 +266,7 @@ RegisterHandlers(app, PromptApiDefinition, {
                     });
                 }
 
-                const result = await promptAdjustmentService.generateAdjustmentPrompt(commentIds, id);
+                const result = await promptAdjustmentService.generateAdjustmentPrompt(commentIds, id, summarize);
                 res.respond(200, result);
             } catch (error) {
                 console.error('Error generating adjustment prompt:', error);

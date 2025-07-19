@@ -28,8 +28,15 @@
                     <PromptSelector v-model="formData.promptId" required />
                 </div>
 
+                <!-- Prompt Text Input (for text mode) -->
+                <div v-if="mode === 'text'">
+                    <Label for="promptText">Prompt Text</Label>
+                    <Textarea id="promptText" v-model="formData.promptText"
+                        placeholder="Enter the prompt text to execute" rows="6" required />
+                </div>
+
                 <!-- Test Data Group Selection (for group mode) -->
-                <div v-if="mode !== 'item'">
+                <div v-if="mode !== 'item' && mode !== 'text'">
                     <Label for="testDataGroup">Test Data Group (Optional)</Label>
                     <Select v-model="formData.testDataGroupId">
                         <SelectTrigger>
@@ -57,7 +64,7 @@
                     <template v-else>
                         <Label for="userInput">User Input</Label>
                         <Textarea id="userInput" v-model="formData.userInput"
-                            placeholder="Enter the input text to process with this prompt" rows="4" required />
+                            placeholder="Enter the input text to process with this prompt" rows="4" />
                     </template>
                 </div>
 
@@ -159,8 +166,7 @@
                     <Button type="button" variant="outline" @click="closeDialog">
                         Cancel
                     </Button>
-                    <Button type="submit"
-                        :disabled="submitting || loadingModels || formData.providerModel.length === 0">
+                    <Button type="submit" :disabled="scheduleExecutionDisabled">
                         {{ submitting ? 'Scheduling...' : (isCloning ? 'Clone Execution' : 'Schedule Execution') }}
                     </Button>
                 </DialogFooter>
@@ -198,9 +204,10 @@ import PromptSelector from '@/components/prompts/PromptSelector.vue'
 // Props
 interface Props {
     open: boolean
-    mode?: 'group' | 'item'
+    mode?: 'group' | 'item' | 'text'
     promptId?: string
     promptName?: string
+    initialPromptText?: string
     initialUserInput?: string[]
     // For cloning - pre-populate with existing execution data
     initialData?: {
@@ -226,6 +233,15 @@ const props = withDefaults(defineProps<Props>(), {
     open: false
 })
 
+const scheduleExecutionDisabled = computed(() => {
+
+    if (props.mode === 'text' && (!formData.promptText.trim())) {
+        return true
+    }
+
+    return submitting.value || loadingModels.value || formData.providerModel.length === 0
+})
+
 const emit = defineEmits<Emits>()
 
 // Reactive state
@@ -240,6 +256,7 @@ const modelSearchQuery = ref('')
 // Form data
 const formData = reactive({
     promptId: '',
+    promptText: '',
     userInput: '',
     userInputs: [] as string[],
     providerModel: <string[]>[],
@@ -322,6 +339,7 @@ const loadTestDataGroups = async () => {
 }
 
 const resetForm = () => {
+    formData.promptText = ''
     formData.userInput = ''
     formData.providerModel = []
     formData.testDataGroupId = ''
@@ -355,6 +373,12 @@ const populateForm = () => {
         }
     } else {
         resetForm()
+    }
+
+    if (props.mode === 'text') {
+        if (props.initialPromptText) {
+            formData.promptText = props.initialPromptText
+        }
     }
 
     // Handle item mode specific initialization
@@ -400,12 +424,19 @@ const closeDialog = () => {
 }
 
 const submitScheduleExecution = async () => {
-    // Determine which prompt ID to use based on mode
-    const promptId = props.mode === 'item' ? formData.promptId : props.promptId
-
-    if (!promptId) {
-        console.error('No prompt ID provided')
-        return
+    // Validation based on mode
+    if (props.mode === 'text') {
+        if (!formData.promptText.trim()) {
+            console.error('No prompt text provided')
+            return
+        }
+    } else {
+        // Determine which prompt ID to use based on mode
+        const promptId = props.mode === 'item' ? formData.promptId : props.promptId
+        if (!promptId) {
+            console.error('No prompt ID provided')
+            return
+        }
     }
 
     if (formData.providerModel.length === 0) {
@@ -432,19 +463,29 @@ const submitScheduleExecution = async () => {
         }
 
         const executionData: any = {
-            promptId: promptId,
             providerModel: formData.providerModel,
             options: Object.keys(options).length > 0 ? options : undefined
         }
 
-        if (formData.testDataGroupId) {
-            // test data group selected
+        // Handle different modes
+        if (props.mode === 'text') {
+            // Text mode - use promptText instead of promptId
+            executionData.promptText = formData.promptText
+            executionData.userInput = formData.userInput
+        } else {
+            // Item/Group modes - use promptId
+            const promptId = props.mode === 'item' ? formData.promptId : props.promptId
+            executionData.promptId = promptId
+        }
+
+        if (formData.testDataGroupId && props.mode !== 'text') {
+            // test data group selected (not available in text mode)
             executionData.testDataGroupId = formData.testDataGroupId
             const execution = await executionsApi.create(executionData)
             successMessage.value = `Execution ${isCloning.value ? 'cloned' : 'scheduled'} successfully! Execution IDs: ${execution.executionIds.join(', ')}`
             emit('success', execution.executionIds[0])
-        } else if (multipleUserInputs.value) {
-            // Create multiple executions for each user input
+        } else if (multipleUserInputs.value && props.mode !== 'text') {
+            // Create multiple executions for each user input (not available in text mode)
             const executions = await Promise.all(formData.userInputs.map(async (input) => {
                 const data = { ...executionData, userInput: input }
                 return executionsApi.create(data)
@@ -454,8 +495,10 @@ const submitScheduleExecution = async () => {
             successMessage.value = `${isCloning.value ? 'Cloned' : 'Scheduled'} ${allExecutionIds.length} executions successfully! Execution IDs: ${allExecutionIds.join(', ')}`
             emit('success', allExecutionIds[0])
         } else {
-            // prompt selected
-            executionData.userInput = formData.userInput
+            // Single execution with user input
+            if (props.mode !== 'text') {
+                executionData.userInput = formData.userInput
+            }
             const execution = await executionsApi.create(executionData)
             successMessage.value = `Execution ${isCloning.value ? 'cloned' : 'scheduled'} successfully! Execution IDs: ${execution.executionIds.join(', ')}`
             emit('success', execution.executionIds[0])

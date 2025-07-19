@@ -92,7 +92,8 @@ export type PromptSelectListResponse = z.infer<typeof PromptSelectListSchema>;
 
 // Prompt adjustment schemas
 export const GenerateAdjustmentRequestSchema = z.object({
-    commentIds: z.array(z.string().uuid())
+    commentIds: z.array(z.string().uuid()),
+    summarize: z.boolean().optional()
 });
 
 export type GenerateAdjustmentRequest = z.infer<typeof GenerateAdjustmentRequestSchema>;

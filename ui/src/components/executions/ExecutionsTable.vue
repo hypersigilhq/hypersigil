@@ -61,6 +61,10 @@
                     <RefreshCw class="w-4 h-4 mr-2" />
                     Refresh
                 </Button>
+                <Button @click="showScheduleExecutionDialog = true" variant="outline" size="sm">
+                    <Plus class="w-4 h-4 mr-2" />
+                    Schedule
+                </Button>
             </div>
         </div>
 
@@ -130,9 +134,12 @@
                             {{ execution.id.substring(0, 8) }}...
                         </TableCell>
                         <TableCell class="max-w-xs">
-                            <div class="truncate" :title="execution.user_input">
+                            <div class="truncate" v-if="execution.prompt_id">
                                 {{ execution.prompt?.name }} (#{{ execution.prompt?.version }})
                             </div>
+                            <Badge :variant="'secondary'" class="flex items-center gap-1" v-if="execution.prompt_text">
+                                Custom
+                            </Badge>
                         </TableCell>
                         <TableCell>
                             <div class="text-sm">
@@ -221,6 +228,8 @@
             </div>
         </div>
 
+        <ScheduleExecutionDialog :mode="'text'" v-model:open="showScheduleExecutionDialog"></ScheduleExecutionDialog>
+
         <!-- Clone Execution Dialog -->
         <ScheduleExecutionDialog v-model:open="showCloneDialog" :prompt-id="cloningExecution?.prompt_id"
             :initial-data="cloneInitialData" :source-execution-id="cloningExecution?.id" @success="onCloneSuccess" />
@@ -234,7 +243,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { debounce } from 'lodash-es'
-import { RefreshCw, Eye, X, Copy, Star, Download, CircleX } from 'lucide-vue-next'
+import { RefreshCw, Eye, X, Copy, Star, Download, CircleX, Plus } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -297,6 +306,7 @@ const pagination = ref<{
 // Dialog state
 const showViewDialog = ref(false)
 const showCloneDialog = ref(false)
+const showScheduleExecutionDialog = ref(false)
 const viewingExecution = ref<ExecutionResponse | null>(null)
 const cloningExecution = ref<ExecutionResponse | null>(null)
 const currentExecutionIndex = ref(-1)
@@ -312,7 +322,7 @@ const cloneInitialData = ref<{
 } | undefined>(undefined)
 
 // Auto-refresh interval
-let refreshInterval: number | null = null
+let refreshInterval: ReturnType<typeof setInterval> | null = null
 
 // Debounced search
 const debouncedSearch = debounce(() => {

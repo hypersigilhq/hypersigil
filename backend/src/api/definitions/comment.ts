@@ -40,9 +40,11 @@ export type CommentResponse = z.infer<typeof CommentResponseSchema>;
 export const CreateCommentRequestSchema = z.object({
     text: z.string().min(1),
     data: CommentDataSchema,
-    execution_id: z.string().uuid(),
-    prompt_id: z.string().uuid()
-});
+    execution_id: z.string().uuid().optional(),
+    prompt_id: z.string().uuid().optional()
+}).refine(input => {
+    return input.execution_id || input.prompt_id
+}, { message: 'Either execution_id or prompt_id is needed' });
 
 export type CreateCommentRequest = z.infer<typeof CreateCommentRequestSchema>;
 

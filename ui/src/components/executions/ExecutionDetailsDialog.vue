@@ -1,18 +1,13 @@
 <template>
     <Dialog v-model:open="open">
         <DialogContent class="w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
-            <DialogHeader class="flex-shrink-0 border-b pb-4">
+            <DialogHeader class="flex-shrink-0 border-b pb-1">
                 <DialogTitle>Execution Details</DialogTitle>
                 <DialogDescription>
                     ID: {{ execution?.id }}
                 </DialogDescription>
             </DialogHeader>
-
             <ExecutionDetailsView :execution="execution" />
-
-            <DialogFooter class="flex-shrink-0 border-t pt-4">
-                <Button @click="$emit('close')">Close</Button>
-            </DialogFooter>
         </DialogContent>
     </Dialog>
 </template>
