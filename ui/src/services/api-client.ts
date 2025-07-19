@@ -1,5 +1,5 @@
 import { ApiClient } from 'ts-typed-api/client';
-import { PromptApiDefinition, type CreatePromptRequest } from './definitions/prompt';
+import { PromptApiDefinition, type CreatePromptRequest, type GenerateAdjustmentRequest } from './definitions/prompt';
 import { ExecutionApiDefinition, type CreateExecutionRequest, type ExecutionUpdateRequest } from './definitions/execution';
 import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './definitions/execution-bundle';
 import { TestDataApiDefinition, type CreateTestDataGroupRequest } from './definitions/test-data';
@@ -101,6 +101,15 @@ export const promptsApi = {
         apiClient.callApi('prompts', 'getRecent', options, {
             200: (payload) => payload.data,
             400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
+            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
+    generateAdjustment: (id: string, body: GenerateAdjustmentRequest) =>
+        apiClient.callApi('prompts', 'generateAdjustment', { params: { id }, body }, {
+            200: (payload) => payload.data,
+            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
+            404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
             500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
             422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         })

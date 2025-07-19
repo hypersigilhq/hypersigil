@@ -28,6 +28,8 @@ export const CommentResponseSchema = z.object({
     id: z.string(),
     text: z.string(),
     data: CommentDataSchema,
+    prompt_id: z.string().optional(),
+    execution_id: z.string().optional(),
     created_at: z.string(),
     updated_at: z.string()
 });

@@ -55,3 +55,6 @@
 - [todo] Execution user status, rating
 - [todo] Prompt user status, rating
 - [todo] Notifications?
+- [done] Add comments section to ViewPromptDialog with checkboxes for comment selection
+- [done] Implement prompt adjustment service that generates adjustment prompts based on comments and execution results
+- [done] Implement prompt calibration UI with "Calibrate prompt" button and dedicated dialog for displaying adjustment suggestions

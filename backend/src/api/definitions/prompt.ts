@@ -90,6 +90,21 @@ export const PromptSelectListSchema = z.object({
 
 export type PromptSelectListResponse = z.infer<typeof PromptSelectListSchema>;
 
+// Prompt adjustment schemas
+export const GenerateAdjustmentRequestSchema = z.object({
+    commentIds: z.array(z.string().uuid())
+});
+
+export type GenerateAdjustmentRequest = z.infer<typeof GenerateAdjustmentRequestSchema>;
+
+export const GenerateAdjustmentResponseSchema = z.object({
+    adjustmentPrompt: z.string(),
+    originalPrompt: z.string(),
+    commentsProcessed: z.number()
+});
+
+export type GenerateAdjustmentResponse = z.infer<typeof GenerateAdjustmentResponseSchema>;
+
 export const PromptApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/prompts',
     endpoints: {
@@ -194,6 +209,20 @@ export const PromptApiDefinition = CreateApiDefinition({
                 responses: CreateResponses({
                     200: z.array(PromptResponseSchema),
                     400: ErrorResponseSchema,
+                    500: ErrorResponseSchema
+                })
+            },
+
+            generateAdjustment: {
+                method: 'POST',
+                path: '/:id/generate-adjustment',
+                params: PromptParamsSchema,
+                query: z.object({}),
+                body: GenerateAdjustmentRequestSchema,
+                responses: CreateResponses({
+                    200: GenerateAdjustmentResponseSchema,
+                    400: ErrorResponseSchema,
+                    404: ErrorResponseSchema,
                     500: ErrorResponseSchema
                 })
             }

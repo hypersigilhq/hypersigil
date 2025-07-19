@@ -56,6 +56,52 @@
                             <pre
                                 class="whitespace-pre-wrap text-sm">{{ JSON.stringify(currentDisplayVersion.json_schema_response || {}, null, 2) }}</pre>
                         </div>
+                        <div class="flex items-center justify-between my-2">
+                            <Label>Comments</Label>
+                            <div class="flex items-center space-x-2">
+                                <Button v-if="hasSelectedComments" size="sm" @click="openCalibrateDialog"
+                                    class="text-xs">
+                                    Calibrate prompt
+                                </Button>
+                                <div class="text-xs text-muted-foreground">
+                                    {{ comments.length }} comment{{ comments.length !== 1 ? 's' : '' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-muted rounded-md overflow-auto">
+                            <div v-if="loadingComments" class="flex items-center justify-center py-4">
+                                <div class="text-sm text-muted-foreground">Loading comments...</div>
+                            </div>
+                            <div v-else-if="comments.length === 0" class="flex items-center justify-center py-4">
+                                <div class="text-sm text-muted-foreground">No comments available</div>
+                            </div>
+                            <div v-else class="space-y-3">
+                                <div v-for="comment in comments" :key="comment.id"
+                                    class="flex items-start space-x-3 p-2 bg-background rounded border">
+                                    <Checkbox :checked="selectedComments.has(comment.id)"
+                                        @update:model-value="(v: any) => toggleCommentSelection(comment.id, v)"
+                                        class="mt-0.5" />
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm break-words bg-slate-200 p-2 italic"
+                                            v-if="comment.data.type === 'execution'">{{ comment.data.selected_text }}
+                                        </p>
+                                        <p class="text-sm break-words pt-2">{{ comment.text }}</p>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <div class="text-xs text-muted-foreground">
+                                                {{ formatDate(comment.created_at) }}
+                                            </div>
+                                            <div v-if="comment.data.type === 'execution'"
+                                                class="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                                                Execution {{ comment.execution_id }}
+                                            </div>
+                                            <div v-else class="px-1.5 py-0.5 bg-gray-100 text-gray-800 text-xs rounded">
+                                                General
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -65,14 +111,21 @@
             </DialogFooter>
         </DialogContent>
     </Dialog>
+
+    <!-- Calibrate Prompt Dialog -->
+    <CalibratePromptDialog :open="showCalibrateDialog" :prompt-id="prompt?.id || null"
+        :selected-comment-ids="selectedCommentIds" @close="closeCalibrateDialog" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { type PromptResponse, type PromptVersion } from '@/services/definitions/prompt'
+import { type CommentResponse } from '@/services/definitions/comment'
+import { commentsApi } from '@/services/api-client'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
     Dialog,
     DialogContent,
@@ -81,6 +134,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import CalibratePromptDialog from './CalibratePromptDialog.vue'
 
 const props = defineProps<{
     open: boolean
@@ -93,6 +147,14 @@ const emit = defineEmits<{
 
 // Version navigation state
 const selectedVersionIndex = ref(0)
+
+// Comments state
+const comments = ref<CommentResponse[]>([])
+const loadingComments = ref(false)
+const selectedComments = ref<Set<string>>(new Set())
+
+// Calibration dialog state
+const showCalibrateDialog = ref(false)
 
 // Computed properties
 const sortedVersions = computed(() => {
@@ -107,6 +169,9 @@ const currentDisplayVersion = computed(() => {
 
 const canGoPrevious = computed(() => selectedVersionIndex.value > 0)
 const canGoNext = computed(() => selectedVersionIndex.value < sortedVersions.value.length - 1)
+
+const hasSelectedComments = computed(() => selectedComments.value.size > 0)
+const selectedCommentIds = computed(() => Array.from(selectedComments.value))
 
 // Methods
 const goToPreviousVersion = () => {
@@ -147,6 +212,41 @@ const formatDate = (dateString: string) => {
     })
 }
 
+// Comments methods
+const fetchComments = async (promptId: string) => {
+    if (!promptId) return
+
+    loadingComments.value = true
+    try {
+        comments.value = await commentsApi.list({
+            query: { prompt_id: promptId }
+        })
+    } catch (error) {
+        console.error('Failed to fetch comments:', error)
+        comments.value = []
+    } finally {
+        loadingComments.value = false
+    }
+}
+
+const toggleCommentSelection = (commentId: string, checked: boolean) => {
+    console.log(commentId, checked)
+    if (checked) {
+        selectedComments.value.add(commentId)
+    } else {
+        selectedComments.value.delete(commentId)
+    }
+}
+
+// Calibration methods
+const openCalibrateDialog = () => {
+    showCalibrateDialog.value = true
+}
+
+const closeCalibrateDialog = () => {
+    showCalibrateDialog.value = false
+}
+
 watch(() => props.open, (newOpen) => {
     if (newOpen) {
         window.addEventListener('keydown', handleKeydown)
@@ -166,5 +266,23 @@ watch(() => props.prompt, (newPrompt) => {
     } else {
         selectedVersionIndex.value = 0
     }
+
+    // Fetch comments when prompt changes
+    if (newPrompt?.id) {
+        fetchComments(newPrompt.id)
+    } else {
+        comments.value = []
+        selectedComments.value.clear()
+    }
 }, { immediate: true })
+
+// Fetch comments when dialog opens
+watch(() => props.open, (newOpen) => {
+    if (newOpen && props.prompt?.id) {
+        fetchComments(props.prompt.id)
+    } else if (!newOpen) {
+        // Clear selection when dialog closes
+        selectedComments.value.clear()
+    }
+})
 </script>

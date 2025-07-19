@@ -1,6 +1,7 @@
 import { RegisterHandlers, EndpointMiddleware } from 'ts-typed-api';
 import app, { loggingMiddleware, timingMiddleware } from '../../app';
 import { Prompt, promptModel } from '../../models/prompt';
+import { promptAdjustmentService } from '../../services/prompt-adjustment-service';
 import { z } from 'zod';
 import { PromptApiDefinition } from '../definitions/prompt';
 
@@ -248,6 +249,58 @@ RegisterHandlers(app, PromptApiDefinition, {
                 res.respond(500, {
                     error: 'Internal Server Error',
                     message: 'Failed to retrieve recent prompts'
+                });
+            }
+        },
+
+        generateAdjustment: async (req, res) => {
+            try {
+                const { id } = req.params;
+                const { commentIds } = req.body;
+
+                // Validate input
+                if (!commentIds || commentIds.length === 0) {
+                    return res.respond(400, {
+                        error: 'Validation Error',
+                        message: 'At least one comment ID must be provided'
+                    });
+                }
+
+                const result = await promptAdjustmentService.generateAdjustmentPrompt(commentIds, id);
+                res.respond(200, result);
+            } catch (error) {
+                console.error('Error generating adjustment prompt:', error);
+
+                if (error instanceof z.ZodError) {
+                    return res.respond(400, {
+                        error: 'Validation Error',
+                        message: 'Invalid input data',
+                        details: error.errors
+                    });
+                }
+
+                if (error instanceof Error) {
+                    // Handle specific error cases
+                    if (error.message.includes('not found')) {
+                        return res.respond(404, {
+                            error: 'Not Found',
+                            message: error.message
+                        });
+                    }
+
+                    if (error.message.includes('does not belong to prompt') ||
+                        error.message.includes('has not completed successfully') ||
+                        error.message.includes('has no result')) {
+                        return res.respond(400, {
+                            error: 'Validation Error',
+                            message: error.message
+                        });
+                    }
+                }
+
+                res.respond(500, {
+                    error: 'Internal Server Error',
+                    message: 'Failed to generate adjustment prompt'
                 });
             }
         }

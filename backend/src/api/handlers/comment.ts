@@ -1,16 +1,18 @@
 import { RegisterHandlers } from 'ts-typed-api';
 import app, { loggingMiddleware, timingMiddleware } from '../../app';
-import { commentModel } from '../../models/comment';
+import { Comment, commentModel } from '../../models/comment';
 import { z } from 'zod';
-import { CommentApiDefinition } from '../definitions/comment';
+import { CommentApiDefinition, CommentResponse } from '../definitions/comment';
 
-function formatCommentForResponse(comment: any) {
+function formatCommentForResponse(comment: Comment): CommentResponse {
     return {
-        id: comment.id,
+        id: comment.id!,
         text: comment.text,
         data: comment.data,
-        created_at: comment.created_at instanceof Date ? comment.created_at.toISOString() : comment.created_at,
-        updated_at: comment.updated_at instanceof Date ? comment.updated_at.toISOString() : comment.updated_at
+        created_at: comment.created_at!.toISOString(),
+        updated_at: comment.updated_at!.toISOString(),
+        execution_id: comment.execution_id,
+        prompt_id: comment.prompt_id
     };
 }
 

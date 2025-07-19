@@ -5,8 +5,8 @@ import { BaseDocument } from '../database/types';
 export interface Comment extends BaseDocument {
     text: string;
     data: ExecutionComment | GenericComment;
-    execution_id: string;
-    prompt_id: string;
+    execution_id?: string;
+    prompt_id?: string;
 }
 // Execution comment interface - extends base comment
 export interface GenericComment {
