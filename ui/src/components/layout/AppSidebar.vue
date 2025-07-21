@@ -95,11 +95,6 @@ const route = useRoute()
 
 const navigationItems = computed<NavigationItemType[]>(() => [
     {
-        name: 'Dashboard',
-        path: '/',
-        icon: Home,
-    },
-    {
         name: 'Prompts',
         path: '/prompts',
         icon: FileText,
@@ -115,15 +110,10 @@ const navigationItems = computed<NavigationItemType[]>(() => [
         icon: Database,
     },
     {
-        name: 'About',
-        path: '/about',
-        icon: Info,
-    },
-    {
         name: 'Settings',
         path: '/settings',
         icon: Settings,
-        badge: 'New'
+        // badge: 'New'
     },
 ])
 

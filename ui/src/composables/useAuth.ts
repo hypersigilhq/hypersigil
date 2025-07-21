@@ -86,8 +86,6 @@ export function useAuth() {
                 logout()
             }
         }
-
-        console.log(isAuthenticated.value)
     }
 
     return {
