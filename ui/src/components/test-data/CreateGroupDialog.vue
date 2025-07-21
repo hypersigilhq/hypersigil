@@ -84,7 +84,7 @@ const error = ref<string | null>(null)
 const formData = reactive<CreateTestDataGroupRequest>({
     name: '',
     description: '',
-    mode: 'raw'
+    mode: 'json'
 })
 
 // Computed
@@ -102,7 +102,7 @@ watch(() => props.editingGroup, (group) => {
     } else {
         formData.name = ''
         formData.description = ''
-        formData.mode = 'raw'
+        formData.mode = 'json'
     }
     error.value = null
 }, { immediate: true })

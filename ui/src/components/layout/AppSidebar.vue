@@ -8,7 +8,7 @@
             class="absolute left-0 top-0 w-64 h-full bg-white border-r shadow-xl z-10 flex flex-col backdrop-blur-sm">
             <!-- Logo/Brand - Expanded -->
             <div class="flex h-16 items-center px-6 border-b">
-                <h1 class="text-xl font-semibold">Hypesigil</h1>
+                <h1 class="text-xl font-semibold">Hypersigil</h1>
                 <Button variant="ghost" size="icon" class="ml-auto" @click="toggleCollapse"
                     :aria-label="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
                     <PanelLeftClose v-if="!isCollapsed" class="h-4 w-4" />
