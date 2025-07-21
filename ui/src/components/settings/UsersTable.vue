@@ -81,10 +81,15 @@
                             {{ user.last_login ? new Date(user.last_login).toLocaleString() : 'Never' }}
                         </TableCell>
                         <TableCell>
-                            <Button v-if="user.status === 'pending'" variant="outline" size="sm"
-                                @click="showInvitationLink(user.id)" :disabled="loadingInvitation">
-                                {{ loadingInvitation === user.id ? 'Loading...' : 'Show Link' }}
-                            </Button>
+                            <div class="flex items-center space-x-2">
+                                <Button v-if="user.status === 'pending'" variant="outline" size="sm"
+                                    @click="showInvitationLink(user.id)" :disabled="loadingInvitation">
+                                    {{ loadingInvitation === user.id ? 'Loading...' : 'Show Link' }}
+                                </Button>
+                                <Button variant="outline" size="sm" @click="editUser(user)">
+                                    Edit
+                                </Button>
+                            </div>
                         </TableCell>
                     </TableRow>
                 </TableBody>
@@ -119,6 +124,9 @@
         <!-- Show Invitation Link Dialog -->
         <CreateUserDialog v-model:open="showInvitationDialog" :invitation-data="invitationDialogData"
             @success="handleInvitationDialogClose" />
+
+        <!-- Edit User Dialog -->
+        <EditUserDialog v-model:open="showEditDialog" :user="selectedUser" @success="handleUserUpdated" />
     </div>
 </template>
 
@@ -148,6 +156,7 @@ import {
 import { userApi } from '@/services/api-client'
 import type { UserSummary, ListUsersResponse } from '@/services/definitions/user'
 import CreateUserDialog from './CreateUserDialog.vue'
+import EditUserDialog from './EditUserDialog.vue'
 
 // Reactive state
 const users = ref<UserSummary[]>([])
@@ -162,6 +171,8 @@ const showCreateDialog = ref(false)
 const loadingInvitation = ref<string | null>(null)
 const showInvitationDialog = ref(false)
 const invitationDialogData = ref<any>(null)
+const showEditDialog = ref(false)
+const selectedUser = ref<UserSummary | null>(null)
 
 const pagination = ref<{
     total: number
@@ -248,6 +259,19 @@ const showInvitationLink = async (userId: string) => {
 const handleInvitationDialogClose = () => {
     showInvitationDialog.value = false
     invitationDialogData.value = null
+}
+
+// Edit user
+const editUser = (user: UserSummary) => {
+    selectedUser.value = user
+    showEditDialog.value = true
+}
+
+// Handle user update success
+const handleUserUpdated = () => {
+    showEditDialog.value = false
+    selectedUser.value = null
+    loadUsers() // Refresh the users list
 }
 
 // Badge variants

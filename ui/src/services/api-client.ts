@@ -398,4 +398,10 @@ export const userApi = {
             ...errorHandle,
             201: (payload) => payload.data,
         }),
+
+    update: (options: { params: { id: string }; body: { name?: string; role?: 'admin' | 'user' | 'viewer'; status?: 'active' | 'inactive' | 'pending'; profile?: any } }) =>
+        userApiClient.callApi('users', 'update', options, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
 };

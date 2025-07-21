@@ -55,6 +55,7 @@
                 <NavigationItem v-for="item in navigationItems" :key="item.name" :item="item"
                     :is-collapsed="isCollapsed && !isHovered" @navigate="handleNavigate" />
             </nav>
+            <Button v-if="!isCollapsed" @click="useAuth().logout()">Logout</Button>
 
             <!-- Footer -->
             <div class="border-t" :class="isCollapsed ? 'p-2' : 'p-4'">

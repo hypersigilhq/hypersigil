@@ -101,6 +101,10 @@ export class UserModel extends Model<UserDocument> {
             return null;
         }
 
+        if (user.status == 'inactive') {
+            return null
+        }
+
         const updateData: Partial<Omit<UserDocument, 'id' | 'created_at'>> = {
             status: 'active'
         };
