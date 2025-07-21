@@ -2,7 +2,7 @@ import { RegisterHandlers } from 'ts-typed-api';
 import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import { UserDocument, userModel, UserModel } from '../../models/user';
 import { z } from 'zod';
-import { UserApiDefinition } from '../definitions/user';
+import { UserApiDefinition, UserSummary } from '../definitions/user';
 
 /**
  * Convert UserDocument to response format with proper date serialization
@@ -27,17 +27,18 @@ function formatUserForResponse(user: any) {
 /**
  * Convert UserDocument to UserSummary format for list responses
  */
-function formatUserSummaryForResponse(user: any) {
+function formatUserSummaryForResponse(user: UserDocument): UserSummary {
     return {
-        id: user.id,
+        id: user.id!,
         email: user.email,
         name: user.name,
         role: user.role,
         status: user.status,
+        last_login: user.auth?.last_login?.toISOString(),
         profile: user.profile ? {
         } : undefined,
-        created_at: user.created_at instanceof Date ? user.created_at.toISOString() : user.created_at,
-        updated_at: user.updated_at instanceof Date ? user.updated_at.toISOString() : user.updated_at
+        created_at: user.created_at instanceof Date ? user.created_at.toISOString() : '',
+        updated_at: user.updated_at instanceof Date ? user.updated_at.toISOString() : ''
     };
 }
 

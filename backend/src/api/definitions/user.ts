@@ -44,8 +44,8 @@ export const UserSchema = z.object({
     profile: UserProfileSchema.optional(),
     auth: UserAuthSchema.optional(),
     invitation: UserInvitationSchema.optional(),
-    created_at: z.date(),
-    updated_at: z.date()
+    created_at: z.string(),
+    updated_at: z.string()
 });
 export type User = z.infer<typeof UserSchema>;
 
@@ -65,8 +65,9 @@ export const UserSummarySchema = z.object({
         last_name: z.string().optional(),
         avatar_url: z.string().url().optional()
     }).optional(),
-    created_at: z.date(),
-    updated_at: z.date()
+    last_login: z.string().optional(),
+    created_at: z.string(),
+    updated_at: z.string()
 });
 export type UserSummary = z.infer<typeof UserSummarySchema>;
 

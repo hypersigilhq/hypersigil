@@ -42,7 +42,7 @@
             <div class="flex h-16 items-center border-b" :class="isCollapsed ? 'px-3 justify-center' : 'px-6'">
                 <h1 v-if="!isCollapsed" class="text-xl font-semibold">Vue App</h1>
                 <div v-else class="w-8 h-8 bg-primary rounded flex items-center justify-center">
-                    <Package class="w-4 h-4 text-primary-foreground" />
+                    <Terminal class="w-4 h-4 text-primary-foreground" />
                 </div>
                 <Button v-if="!isCollapsed" variant="ghost" size="icon" class="ml-auto" @click="toggleCollapse"
                     :aria-label="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Home, Settings, Info, User, FileText, Play, Database, Package, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
+import { Home, Settings, Info, User, FileText, Play, Database, Package, PanelLeftClose, PanelLeftOpen, Terminal } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import NavigationItem from './NavigationItem.vue'
 import { useAuth } from '@/composables/useAuth'

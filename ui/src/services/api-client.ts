@@ -5,7 +5,7 @@ import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './d
 import { TestDataApiDefinition, type CreateTestDataGroupRequest } from './definitions/test-data';
 import { CommentApiDefinition, type CreateCommentRequest, type CommentListQuery } from './definitions/comment';
 import { AuthApiDefinition, type LoginRequest, type RegisterFirstAdminRequest } from './definitions/auth';
-import { UserApiDefinition } from './definitions/user';
+import { UserApiDefinition, type ListUsersQuery, type ListUsersResponse, type UserSummary } from './definitions/user';
 
 // Create the API client with the base URL
 export const apiClient = new ApiClient(
@@ -445,6 +445,14 @@ export const userApi = {
     me: () =>
         userApiClient.callApi('users', 'me', {}, {
             200: (payload) => payload.data,
+            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
+    list: (options?: { query?: { page?: string; limit?: string; search?: string; role?: 'admin' | 'user' | 'viewer'; status?: 'active' | 'inactive' | 'pending' } }) =>
+        userApiClient.callApi('users', 'list', options, {
+            200: (payload) => payload.data,
+            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
             500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
             422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),

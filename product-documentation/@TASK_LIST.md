@@ -51,6 +51,7 @@
 - [done] Improve test data item dialog with two-column layout and automatic prompt compilation
 
 - [done] Implement user management with invitation-based registration, role-based access control, and profile management
+- [done] Implement settings tabbed view with Users table displaying name, email, role, status, and last login columns
 - [todo] Token cost settings
 - [todo] API keys settings
 - [todo] Execution user status, rating

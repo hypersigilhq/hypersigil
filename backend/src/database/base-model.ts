@@ -42,9 +42,10 @@ export abstract class Model<T extends BaseDocument> {
             /_at$/,     // ends with _at (started_at, completed_at, etc.)
             /_date$/,   // ends with _date
             /^date_/,   // starts with date_
-            /timestamp/ // contains timestamp
+            /timestamp/, // contains timestamp
+            /^last_/,
+            /_until$/
         ];
-
         for (const [key, value] of Object.entries(document)) {
             if (value && typeof value === 'string' && this.isDateField(key, dateFieldPatterns)) {
                 try {
@@ -55,6 +56,10 @@ export abstract class Model<T extends BaseDocument> {
                 } catch (error) {
                     // Ignore conversion errors, keep original value
                 }
+            }
+
+            if (value && typeof value === 'object') {
+                this.convertDateFields(value)
             }
         }
     }
