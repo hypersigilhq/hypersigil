@@ -8,7 +8,7 @@
             class="absolute left-0 top-0 w-64 h-full bg-white border-r shadow-xl z-10 flex flex-col backdrop-blur-sm">
             <!-- Logo/Brand - Expanded -->
             <div class="flex h-16 items-center px-6 border-b">
-                <h1 class="text-xl font-semibold">Vue App</h1>
+                <h1 class="text-xl font-semibold">Hypesigil</h1>
                 <Button variant="ghost" size="icon" class="ml-auto" @click="toggleCollapse"
                     :aria-label="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
                     <PanelLeftClose v-if="!isCollapsed" class="h-4 w-4" />
@@ -40,7 +40,7 @@
         <div class="flex flex-col h-full">
             <!-- Logo/Brand -->
             <div class="flex h-16 items-center border-b" :class="isCollapsed ? 'px-3 justify-center' : 'px-6'">
-                <h1 v-if="!isCollapsed" class="text-xl font-semibold">Vue App</h1>
+                <h1 v-if="!isCollapsed" class="text-xl font-semibold">Hypersigil</h1>
                 <div v-else class="w-8 h-8 bg-primary rounded flex items-center justify-center">
                     <Terminal class="w-4 h-4 text-primary-foreground" />
                 </div>
@@ -80,7 +80,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Home, Settings, Info, User, FileText, Play, Database, Package, PanelLeftClose, PanelLeftOpen, Terminal } from 'lucide-vue-next'
+import { Settings, User, FileText, Play, Database, PanelLeftClose, PanelLeftOpen, Terminal } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import NavigationItem from './NavigationItem.vue'
 import { useAuth } from '@/composables/useAuth'
