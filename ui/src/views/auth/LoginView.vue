@@ -80,7 +80,7 @@ const handleSubmit = async () => {
         } else if (error.status === 400) {
             errorMessage.value = 'Invalid input data'
         } else {
-            errorMessage.value = 'An unexpected error occurred'
+            errorMessage.value = error
             console.error('Login error:', error)
         }
     }

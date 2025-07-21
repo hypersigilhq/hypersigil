@@ -28,9 +28,9 @@ export type UserAuth = z.infer<typeof UserAuthSchema>;
 // User invitation schema
 export const UserInvitationSchema = z.object({
     token: z.string().optional(),
-    expires_at: z.date().optional(),
+    expires_at: z.string().optional(),
     invited_by: z.string().optional(),
-    invited_at: z.date().optional()
+    invited_at: z.string().optional()
 });
 export type UserInvitation = z.infer<typeof UserInvitationSchema>;
 

@@ -27,6 +27,9 @@
                     </SelectContent>
                 </Select>
             </div>
+            <Button @click="showCreateDialog = true">
+                Invite User
+            </Button>
         </div>
 
         <!-- Loading state -->
@@ -52,11 +55,12 @@
                         <TableHead>Role</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Last Login</TableHead>
+                        <TableHead>Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     <TableRow v-if="users.length === 0">
-                        <TableCell colspan="5" class="text-center py-8 text-muted-foreground">
+                        <TableCell colspan="6" class="text-center py-8 text-muted-foreground">
                             No users found
                         </TableCell>
                     </TableRow>
@@ -75,6 +79,12 @@
                         </TableCell>
                         <TableCell>
                             {{ user.last_login ? new Date(user.last_login).toLocaleString() : 'Never' }}
+                        </TableCell>
+                        <TableCell>
+                            <Button v-if="user.status === 'pending'" variant="outline" size="sm"
+                                @click="showInvitationLink(user.id)" :disabled="loadingInvitation">
+                                {{ loadingInvitation === user.id ? 'Loading...' : 'Show Link' }}
+                            </Button>
                         </TableCell>
                     </TableRow>
                 </TableBody>
@@ -102,6 +112,13 @@
                 </Button>
             </div>
         </div>
+
+        <!-- Create User Dialog -->
+        <CreateUserDialog v-model:open="showCreateDialog" @success="handleUserCreated" />
+
+        <!-- Show Invitation Link Dialog -->
+        <CreateUserDialog v-model:open="showInvitationDialog" :invitation-data="invitationDialogData"
+            @success="handleInvitationDialogClose" />
     </div>
 </template>
 
@@ -130,6 +147,7 @@ import {
 
 import { userApi } from '@/services/api-client'
 import type { UserSummary, ListUsersResponse } from '@/services/definitions/user'
+import CreateUserDialog from './CreateUserDialog.vue'
 
 // Reactive state
 const users = ref<UserSummary[]>([])
@@ -140,6 +158,10 @@ const roleFilter = ref<'admin' | 'user' | 'viewer' | ''>('')
 const statusFilter = ref<'active' | 'inactive' | 'pending' | ''>('')
 const currentPage = ref(1)
 const pageLimit = ref(10)
+const showCreateDialog = ref(false)
+const loadingInvitation = ref<string | null>(null)
+const showInvitationDialog = ref(false)
+const invitationDialogData = ref<any>(null)
 
 const pagination = ref<{
     total: number
@@ -191,6 +213,41 @@ const loadUsers = async () => {
 const goToPage = (page: number) => {
     currentPage.value = page
     loadUsers()
+}
+
+// Handle user creation success
+const handleUserCreated = () => {
+    showCreateDialog.value = false
+    loadUsers() // Refresh the users list
+}
+
+// Show invitation link for pending user
+const showInvitationLink = async (userId: string) => {
+    loadingInvitation.value = userId
+    try {
+        const user = await userApi.getById({ params: { id: userId } })
+
+        if (user.invitation?.token) {
+            // Set up the dialog data to show the invitation link
+            invitationDialogData.value = {
+                user: user,
+                invitation_token: user.invitation.token
+            }
+            showInvitationDialog.value = true
+        } else {
+            error.value = 'No invitation token found for this user'
+        }
+    } catch (err) {
+        error.value = err instanceof Error ? err.message : 'Failed to load user invitation'
+    } finally {
+        loadingInvitation.value = null
+    }
+}
+
+// Handle invitation dialog close
+const handleInvitationDialogClose = () => {
+    showInvitationDialog.value = false
+    invitationDialogData.value = null
 }
 
 // Badge variants

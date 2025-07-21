@@ -85,80 +85,70 @@ testDataApiClient.setHeader('Content-Type', 'application/json');
 commentApiClient.setHeader('Content-Type', 'application/json');
 authApiClient.setHeader('Content-Type', 'application/json');
 
+
+let errorHandle = {
+    400: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message || 'Bad request'); },
+    401: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message || 'Unauthorzed'); },
+    409: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message || 'Conflict'); },
+    500: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error || 'Server error'); },
+    422: (payload: { error: any }) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); },
+    404: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error || 'Not found'); },
+}
+
 // Helper functions for prompts API
 export const promptsApi = {
     selectList: () =>
         apiClient.callApi('prompts', 'selectList', {}, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     list: (options?: { query?: { page?: string; limit?: string; search?: string; orderBy?: 'name' | 'created_at' | 'updated_at'; orderDirection?: 'ASC' | 'DESC' } }) =>
         apiClient.callApi('prompts', 'list', options, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     create: (body: CreatePromptRequest) =>
         apiClient.callApi('prompts', 'create', { body }, {
+            ...errorHandle,
             201: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     getById: (id: string) =>
         apiClient.callApi('prompts', 'getById', { params: { id } }, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     update: (id: string, body: CreatePromptRequest) =>
         apiClient.callApi('prompts', 'update', { params: { id }, body }, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     delete: (id: string) =>
         apiClient.callApi('prompts', 'delete', { params: { id } }, {
+            ...errorHandle,
             204: () => undefined,
-            404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     searchByName: (pattern: string) =>
         apiClient.callApi('prompts', 'searchByName', { params: { pattern } }, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     getRecent: (options?: { query?: { limit?: string } }) =>
         apiClient.callApi('prompts', 'getRecent', options, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     generateAdjustment: (id: string, body: GenerateAdjustmentRequest) =>
         apiClient.callApi('prompts', 'generateAdjustment', { params: { id }, body }, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         })
 };
 
@@ -179,79 +169,62 @@ export const executionsApi = {
         }
     }) =>
         executionApiClient.callApi('executions', 'list', options, {
+            ...errorHandle,
             200: (payload) => options?.query?.downloadCsv ? payload.rawResponse : payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     create: (body: CreateExecutionRequest) =>
         executionApiClient.callApi('executions', 'create', { body }, {
+            ...errorHandle,
             201: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     getById: (id: string) =>
         executionApiClient.callApi('executions', 'getById', { params: { id } }, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     update: (id: string, body: ExecutionUpdateRequest) =>
         executionApiClient.callApi('executions', 'update', { params: { id }, body: body }, {
+            ...errorHandle,
             201: (payload) => payload.data,
-            404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     cancel: (id: string) =>
         executionApiClient.callApi('executions', 'cancel', { params: { id } }, {
+            ...errorHandle,
             204: () => undefined,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     getStats: () =>
         executionApiClient.callApi('executions', 'getStats', {}, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     getQueueStatus: () =>
         executionApiClient.callApi('executions', 'getQueueStatus', {}, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     getProviderHealth: () =>
         executionApiClient.callApi('providers', 'getProviderHealth', {}, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     listProviders: () =>
         executionApiClient.callApi('providers', 'listProviders', {}, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     getAvailableModels: () =>
         executionApiClient.callApi('providers', 'getAvailableModels', {}, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         })
 };
 
@@ -259,10 +232,8 @@ export const executionsApi = {
 export const executionBundlesApi = {
     list: (options?: { query?: ExecutionBundleListQuery }) =>
         executionBundleApiClient.callApi('executionBundles', 'list', options, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         })
 };
 
@@ -272,78 +243,57 @@ export const testDataApi = {
     groups: {
         selectList: () =>
             testDataApiClient.callApi('groups', 'selectList', {}, {
+                ...errorHandle,
                 200: (payload) => payload.data,
-                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         list: (options?: { query?: { page?: string; limit?: string; search?: string; orderBy?: 'name' | 'created_at' | 'updated_at'; orderDirection?: 'ASC' | 'DESC' } }) =>
             testDataApiClient.callApi('groups', 'list', options, {
+                ...errorHandle,
                 200: (payload) => payload.data,
-                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         create: (body: CreateTestDataGroupRequest) =>
             testDataApiClient.callApi('groups', 'create', { body }, {
+                ...errorHandle,
                 201: (payload) => payload.data,
-                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         getById: (id: string) =>
             testDataApiClient.callApi('groups', 'getById', { params: { id } }, {
+                ...errorHandle,
                 200: (payload) => payload.data,
-                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         update: (id: string, body: CreateTestDataGroupRequest) =>
             testDataApiClient.callApi('groups', 'update', { params: { id }, body }, {
+                ...errorHandle,
                 200: (payload) => payload.data,
-                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         delete: (id: string) =>
             testDataApiClient.callApi('groups', 'delete', { params: { id } }, {
+                ...errorHandle,
                 204: () => undefined,
-                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         listItems: (groupId: string, options?: { query?: { page?: string; limit?: string; search?: string; orderBy?: 'name' | 'created_at' | 'updated_at'; orderDirection?: 'ASC' | 'DESC' } }) =>
             testDataApiClient.callApi('groups', 'listItems', { params: { groupId }, ...options }, {
+                ...errorHandle,
                 200: (payload) => payload.data,
-                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         createItem: (groupId: string, body: { name?: string; content: string }) =>
             testDataApiClient.callApi('groups', 'createItem', { params: { groupId }, body }, {
+                ...errorHandle,
                 201: (payload) => payload.data,
-                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         bulkCreateItems: (groupId: string, body: { items: Array<{ name?: string; content: string }> }) =>
             testDataApiClient.callApi('groups', 'bulkCreateItems', { params: { groupId }, body }, {
+                ...errorHandle,
                 201: (payload) => payload.data,
                 400: (payload) => payload.data,
-                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             })
     },
 
@@ -351,36 +301,26 @@ export const testDataApi = {
     items: {
         getById: (id: string) =>
             testDataApiClient.callApi('items', 'getById', { params: { id } }, {
+                ...errorHandle,
                 200: (payload) => payload.data,
-                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         update: (id: string, body: { name?: string; content?: string }) =>
             testDataApiClient.callApi('items', 'update', { params: { id }, body }, {
+                ...errorHandle,
                 200: (payload) => payload.data,
-                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         delete: (id: string) =>
             testDataApiClient.callApi('items', 'delete', { params: { id } }, {
+                ...errorHandle,
                 204: () => undefined,
-                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             }),
 
         compilePrompt: (body: { promptId: string; testDataItemId: string; promptVersion?: number }) =>
             testDataApiClient.callApi('items', 'compilePrompt', { body }, {
+                ...errorHandle,
                 200: (payload) => payload.data,
-                400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-                404: (payload) => { throw new Error(payload.data?.error || 'Not found'); },
-                500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-                422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
             })
     }
 };
@@ -389,26 +329,20 @@ export const testDataApi = {
 export const commentsApi = {
     create: (body: CreateCommentRequest) =>
         commentApiClient.callApi('comments', 'create', { body }, {
+            ...errorHandle,
             201: (payload) => payload.data,
-            400: (payload: any) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload: any) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload: any) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     list: (options?: { query?: CommentListQuery }) =>
         commentApiClient.callApi('comments', 'list', options, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            400: (payload: any) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload: any) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload: any) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     delete: (id: string) => {
         commentApiClient.callApi('comments', 'delete', { params: { id } }, {
+            ...errorHandle,
             204: (payload) => { },
-            404: (payload: any) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload: any) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload: any) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         })
     }
 };
@@ -417,52 +351,51 @@ export const commentsApi = {
 export const authApi = {
     check: () =>
         authApiClient.callApi('auth', 'check', {}, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     login: (body: LoginRequest) =>
         authApiClient.callApi('auth', 'login', { body }, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            401: (payload) => { throw new Error(payload.data?.error || 'Unauthorized'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     registerFirstAdmin: (body: RegisterFirstAdminRequest) =>
         authApiClient.callApi('auth', 'registerFirstAdmin', { body }, {
+            ...errorHandle,
             201: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            409: (payload) => { throw new Error(payload.data?.error || 'Conflict'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     activate: (body: { invitation_token: string; password: string }) =>
         (authApiClient as any).callApi('auth', 'activate', { body }, {
+            ...errorHandle,
             200: (payload: any) => payload.data,
-            400: (payload: any) => { throw new Error(payload.data?.error || 'Bad request'); },
-            404: (payload: any) => { throw new Error(payload.data?.error || 'Invalid or expired invitation'); },
-            500: (payload: any) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload: any) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         })
 };
 
 export const userApi = {
     me: () =>
         userApiClient.callApi('users', 'me', {}, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         }),
 
     list: (options?: { query?: { page?: string; limit?: string; search?: string; role?: 'admin' | 'user' | 'viewer'; status?: 'active' | 'inactive' | 'pending' } }) =>
         userApiClient.callApi('users', 'list', options, {
+            ...errorHandle,
             200: (payload) => payload.data,
-            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
-            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
-            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
+    getById: (options: { params: { id: string } }) =>
+        userApiClient.callApi('users', 'getById', options, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    invite: (body: { email: string; name: string; role: 'admin' | 'user' | 'viewer'; profile?: any }) =>
+        userApiClient.callApi('users', 'invite', { body }, {
+            ...errorHandle,
+            201: (payload) => payload.data,
         }),
 };

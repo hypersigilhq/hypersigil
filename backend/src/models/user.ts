@@ -237,13 +237,6 @@ export class UserModel extends Model<UserDocument> {
     private generateInvitationToken(): string {
         return randomBytes(32).toString('hex');
     }
-
-    /**
-     * Hash password (utility method for future auth implementation)
-     */
-    static hashPassword(password: string): string {
-        return createHash('sha256').update(password).digest('hex');
-    }
 }
 
 // Export singleton instance

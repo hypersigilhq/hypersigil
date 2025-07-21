@@ -83,6 +83,7 @@ RegisterHandlers(app, AuthApiDefinition, {
 
                 // Authenticate user
                 const user = await AuthService.authenticateUser(email, password);
+
                 if (!user || !user.id) {
                     return res.respond(401, {
                         error: 'Unauthorized',
@@ -145,7 +146,7 @@ RegisterHandlers(app, AuthApiDefinition, {
                 let authData;
                 if (password) {
                     authData = {
-                        password_hash: UserModel.hashPassword(password)
+                        password_hash: await AuthService.hashPassword(password)
                     };
                 }
 

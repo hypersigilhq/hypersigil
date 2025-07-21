@@ -52,6 +52,7 @@
 
 - [done] Implement user management with invitation-based registration, role-based access control, and profile management
 - [done] Implement settings tabbed view with Users table displaying name, email, role, status, and last login columns
+- [done] Implement user invitation system with dialog interface and copyable invitation links
 - [todo] Token cost settings
 - [todo] API keys settings
 - [todo] Execution user status, rating
