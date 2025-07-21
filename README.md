@@ -1,12 +1,13 @@
 # Hypersigil
 
+<p align="center">
+<img width="116" height="114" alt="logo" src="https://github.com/user-attachments/assets/929a4eee-e990-4f65-ba0e-aee2384924f7" />
+</p>
+
 *A mystical workshop for reality hackers and prompt magicians*
 
 ## What is Hypersigil?
 
-<p align="center">
-<img width="116" height="114" alt="logo" src="https://github.com/user-attachments/assets/929a4eee-e990-4f65-ba0e-aee2384924f7" />
-</p>
 
 **Hypersigil** is not just another AI tool—it's a platform where prompts become powerful, evolving magical workings that shape AI reality through systematic testing and refinement. Drawing inspiration from chaos magic's concept of hypersigils (extended, interactive magical workings that evolve through narrative and time), this platform transforms the mundane task of prompt engineering into an art of digital sorcery.
 
