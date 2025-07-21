@@ -103,16 +103,6 @@ export const createUserInvitationResponseSchema = z.object({
 export type CreateUserInvitationBody = z.infer<typeof createUserInvitationBodySchema>;
 export type CreateUserInvitationResponse = z.infer<typeof createUserInvitationResponseSchema>;
 
-// POST /api/users/activate - Activate user account
-export const activateUserBodySchema = z.object({
-    invitation_token: z.string(),
-    password: z.string().min(8).optional() // For future auth implementation
-});
-export const activateUserResponseSchema = PublicUserSchema;
-
-export type ActivateUserBody = z.infer<typeof activateUserBodySchema>;
-export type ActivateUserResponse = z.infer<typeof activateUserResponseSchema>;
-
 export const updateUserParamsSchema = z.object({
     id: z.string()
 });
@@ -217,20 +207,6 @@ export const UserApiDefinition = CreateApiDefinition({
                 responses: CreateResponses({
                     201: createUserInvitationResponseSchema,
                     400: ErrorResponseSchema,
-                    500: ErrorResponseSchema
-                })
-            },
-
-            activate: {
-                method: 'POST',
-                path: '/activate',
-                params: z.object({}),
-                query: z.object({}),
-                body: activateUserBodySchema,
-                responses: CreateResponses({
-                    200: activateUserResponseSchema,
-                    400: ErrorResponseSchema,
-                    404: ErrorResponseSchema,
                     500: ErrorResponseSchema
                 })
             },

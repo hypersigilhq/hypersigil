@@ -69,6 +69,19 @@ export function useAuth() {
         return await authApi.check()
     }
 
+    const activateUser = async (invitationToken: string, password: string) => {
+        isLoading.value = true
+        try {
+            const response = await authApi.activate({ invitation_token: invitationToken, password })
+            return response
+        } catch (error) {
+            console.error('User activation error:', error)
+            throw error
+        } finally {
+            isLoading.value = false
+        }
+    }
+
     const initAuth = async (): Promise<void> => {
         const token = localStorage.getItem('auth_token')
         if (token) {
@@ -95,6 +108,7 @@ export function useAuth() {
         isLoading,
         login,
         registerFirstAdmin,
+        activateUser,
         logout,
         checkAuthStatus,
         initAuth

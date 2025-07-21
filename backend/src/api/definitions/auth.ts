@@ -49,6 +49,15 @@ export const CheckResponseSchema = z.object({
 
 export type CheckResponse = z.infer<typeof CheckResponseSchema>;
 
+export const activateUserBodySchema = z.object({
+    invitation_token: z.string(),
+    password: z.string().min(8).optional() // For future auth implementation
+});
+export const activateUserResponseSchema = LoginUser;
+
+export type ActivateUserBody = z.infer<typeof activateUserBodySchema>;
+export type ActivateUserResponse = z.infer<typeof activateUserResponseSchema>;
+
 export const AuthApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/auth',
     endpoints: {
@@ -56,8 +65,6 @@ export const AuthApiDefinition = CreateApiDefinition({
             registerFirstAdmin: {
                 method: 'POST',
                 path: '/register-first-admin',
-                params: z.object({}),
-                query: z.object({}),
                 body: RegisterFirstAdminRequestSchema,
                 responses: CreateResponses({
                     201: AuthLoginResponseSchema,
@@ -70,8 +77,6 @@ export const AuthApiDefinition = CreateApiDefinition({
             login: {
                 method: 'POST',
                 path: '/login',
-                params: z.object({}),
-                query: z.object({}),
                 body: LoginRequestSchema,
                 responses: CreateResponses({
                     200: AuthLoginResponseSchema,
@@ -84,14 +89,24 @@ export const AuthApiDefinition = CreateApiDefinition({
             check: {
                 method: 'GET',
                 path: '/check',
-                params: z.object({}),
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: CheckResponseSchema,
                     500: ErrorResponseSchema
                 })
-            }
+            },
+
+
+            activate: {
+                method: 'POST',
+                path: '/activate',
+                body: activateUserBodySchema,
+                responses: CreateResponses({
+                    200: activateUserResponseSchema,
+                    400: ErrorResponseSchema,
+                    404: ErrorResponseSchema,
+                    500: ErrorResponseSchema
+                })
+            },
         }
     }
 });

@@ -11,6 +11,12 @@ const router = createRouter({
       name: 'auth',
       component: AuthFlow,
     },
+    {
+      path: '/auth/invitation/:token',
+      name: 'invitation-setup',
+      component: () => import('../views/auth/InvitationSetupView.vue'),
+      props: true,
+    },
 
     // Protected routes
     {
@@ -60,15 +66,20 @@ router.beforeEach(async (to, from, next) => {
   // Initialize auth state
   await initAuth()
 
-  if (to.name === 'auth' && !isAuthenticated.value) {
+  // Allow access to auth routes without authentication
+  if ((to.name === 'auth' || to.name === 'invitation-setup') && !isAuthenticated.value) {
     next()
     return
   }
 
+  // If authenticated, allow access to all routes
   if (isAuthenticated.value) {
     next()
     return
   }
+
+  // If not authenticated and trying to access protected route, redirect to auth
+  next({ name: 'auth' })
 })
 
 export default router

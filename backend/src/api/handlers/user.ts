@@ -198,45 +198,6 @@ RegisterHandlers(app, UserApiDefinition, {
             }
         },
 
-        activate: async (req, res) => {
-            try {
-                const { invitation_token, password } = req.body;
-
-                // Prepare auth data if password is provided
-                let authData;
-                if (password) {
-                    authData = {
-                        password_hash: UserModel.hashPassword(password)
-                    };
-                }
-
-                const activatedUser = await userModel.activateUser(invitation_token, authData);
-                if (!activatedUser) {
-                    return res.respond(404, {
-                        error: 'Not Found',
-                        message: 'Invalid or expired invitation token'
-                    });
-                }
-
-                res.respond(200, formatUserForResponse(activatedUser));
-            } catch (error) {
-                console.error('Error activating user:', error);
-
-                if (error instanceof z.ZodError) {
-                    return res.respond(400, {
-                        error: 'Validation Error',
-                        message: 'Invalid input data',
-                        details: error.errors
-                    });
-                }
-
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to activate user'
-                });
-            }
-        },
-
         update: async (req, res) => {
             try {
                 const { id } = req.params;

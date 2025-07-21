@@ -438,6 +438,15 @@ export const authApi = {
             409: (payload) => { throw new Error(payload.data?.error || 'Conflict'); },
             500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
             422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
+    activate: (body: { invitation_token: string; password: string }) =>
+        (authApiClient as any).callApi('auth', 'activate', { body }, {
+            200: (payload: any) => payload.data,
+            400: (payload: any) => { throw new Error(payload.data?.error || 'Bad request'); },
+            404: (payload: any) => { throw new Error(payload.data?.error || 'Invalid or expired invitation'); },
+            500: (payload: any) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload: any) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         })
 };
 
