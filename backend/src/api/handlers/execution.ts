@@ -1,7 +1,7 @@
 import { RegisterHandlers } from 'ts-typed-api';
 import { executionService } from '../../services/execution-service';
 import { providerRegistry } from '../../providers/provider-registry';
-import { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
+import { apiKeyMiddleware, authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import app from '../../app';
 import { ExecutionOptions } from '../../providers/base-provider';
 import { Prompt, promptModel, PromptVersion } from '../../models/prompt';
@@ -457,4 +457,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
         }
     }
-}, [loggingMiddleware, timingMiddleware, authMiddleware]);
+}, [loggingMiddleware, timingMiddleware, apiKeyMiddleware<typeof ExecutionApiDefinition>((scopes, endpointInfo) => {
+    return scopes.includes('executions:run') && endpointInfo.domain === 'executions' && endpointInfo.routeKey === 'create'
+}), authMiddleware]);

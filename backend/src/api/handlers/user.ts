@@ -1,5 +1,5 @@
 import { RegisterHandlers } from 'ts-typed-api';
-import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
+import app, { apiKeyMiddleware, authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import { UserDocument, userModel, UserModel } from '../../models/user';
 import { z } from 'zod';
 import { UserApiDefinition, UserSummary } from '../definitions/user';
@@ -334,4 +334,6 @@ RegisterHandlers(app, UserApiDefinition, {
             })
         }
     }
-}, [loggingMiddleware, timingMiddleware, authMiddleware]);
+}, [loggingMiddleware, timingMiddleware, apiKeyMiddleware<typeof UserApiDefinition>((scopes, endpointInfo) => {
+    return endpointInfo.domain === 'users' && endpointInfo.routeKey === 'me'
+}), authMiddleware]);

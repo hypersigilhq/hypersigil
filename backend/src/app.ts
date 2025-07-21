@@ -2,11 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { EndpointMiddleware } from 'ts-typed-api';
+import { EndpointMiddleware, ApiDefinitionSchema, EndpointInfo } from 'ts-typed-api';
 import { config, isDevelopment } from './config';
 import { AuthService } from './services/auth-service';
 import { UserDocument, userModel } from './models/user';
 import { apiKeyModel, Permission } from './models/api-key';
+import { ExecutionApiDefinition } from './api/definitions/execution';
 
 const app = express();
 
@@ -58,6 +59,12 @@ declare global {
 // Authentication middleware for ts-typed-api
 export const authMiddleware: EndpointMiddleware = async (req, res, next) => {
     try {
+
+        if (req.user && req.user.id) {
+            next()
+            return
+        }
+
         const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith('Bearer ')) {
             res.status(401).json({
@@ -128,41 +135,15 @@ export const authMiddleware: EndpointMiddleware = async (req, res, next) => {
     }
 };
 
-// Authorization middleware factory
-export const requireRole = (roles: string[]): EndpointMiddleware => {
-    return (req, res, next) => {
-        const user = (req as any).user;
-        if (!user) {
-            res.status(401).json({
-                error: 'Unauthorized',
-                message: 'Authentication required'
-            });
-            return;
-        }
-
-        if (!roles.includes(user.role)) {
-            res.status(403).json({
-                error: 'Forbidden',
-                message: 'Insufficient permissions'
-            });
-            return;
-        }
-
-        next();
-    };
-};
-
 // API Key authentication middleware
-export const apiKeyMiddleware = (requiredScope: Permission): EndpointMiddleware => {
-    return async (req, res, next) => {
+export const apiKeyMiddleware = <T extends ApiDefinitionSchema>(fn: (scopes: Permission[], ei: EndpointInfo<T>) => boolean): EndpointMiddleware<T> => {
+    return async (req, res, next, endpointInfo) => {
         try {
             const apiKeyHeader = req.headers['x-api-key'] as string;
+
             if (!apiKeyHeader) {
-                res.status(401).json({
-                    error: 'Unauthorized',
-                    message: 'Missing API key'
-                });
-                return;
+                next()
+                return
             }
 
             // Find and validate API key
@@ -184,13 +165,11 @@ export const apiKeyMiddleware = (requiredScope: Permission): EndpointMiddleware 
                 return;
             }
 
-            // Check if API key has required scope
-            if (!apiKeyModel.hasScope(apiKey, requiredScope)) {
+            if (!fn(apiKey.permissions.scopes, endpointInfo)) {
                 res.status(403).json({
                     error: 'Forbidden',
-                    message: `API key does not have required scope: ${requiredScope}`
+                    message: `API key does not have required scope`
                 });
-                return;
             }
 
             // Get the user associated with the API key
@@ -223,13 +202,5 @@ export const apiKeyMiddleware = (requiredScope: Permission): EndpointMiddleware 
         }
     };
 };
-
-// Convenience middleware
-export const requireAdmin: EndpointMiddleware = requireRole(['admin']);
-export const requireUser: EndpointMiddleware = requireRole(['admin', 'user']);
-export const requireAuth: EndpointMiddleware = requireRole(['admin', 'user', 'viewer']);
-
-// API key middleware for specific scopes
-export const requireExecutionScope: EndpointMiddleware = apiKeyMiddleware('executions:run');
 
 export default app;
