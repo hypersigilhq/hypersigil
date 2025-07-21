@@ -10,8 +10,9 @@
         <Separator />
 
         <Tabs default-value="users" class="w-full">
-            <TabsList class="grid w-full grid-cols-4">
+            <TabsList class="grid w-full grid-cols-2">
                 <TabsTrigger value="users">Users</TabsTrigger>
+                <TabsTrigger value="api-keys">API Keys</TabsTrigger>
             </TabsList>
 
             <TabsContent value="users" class="space-y-4">
@@ -24,7 +25,9 @@
                 <UsersTable />
             </TabsContent>
 
-
+            <TabsContent value="api-keys" class="space-y-4">
+                <ApiKeysTable />
+            </TabsContent>
         </Tabs>
     </div>
 </template>
@@ -33,4 +36,5 @@
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import UsersTable from '@/components/settings/UsersTable.vue'
+import ApiKeysTable from '@/components/settings/ApiKeysTable.vue'
 </script>

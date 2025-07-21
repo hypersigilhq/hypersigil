@@ -6,6 +6,7 @@ import { TestDataApiDefinition, type CreateTestDataGroupRequest } from './defini
 import { CommentApiDefinition, type CreateCommentRequest, type CommentListQuery } from './definitions/comment';
 import { AuthApiDefinition, type LoginRequest, type RegisterFirstAdminRequest } from './definitions/auth';
 import { UserApiDefinition, type ListUsersQuery, type ListUsersResponse, type UserSummary } from './definitions/user';
+import { ApiKeyApiDefinition, type CreateApiKeyRequest, type UpdateApiKeyRequest } from './definitions/api-key';
 
 // Create the API client with the base URL
 export const apiClient = new ApiClient(
@@ -43,6 +44,11 @@ export const authApiClient = new ApiClient(
     AuthApiDefinition
 );
 
+export const apiKeyApiClient = new ApiClient(
+    document.location.origin, // Adjust this to match your backend URL
+    ApiKeyApiDefinition
+);
+
 // Array of all API clients for token management
 const allApiClients = [
     apiClient,
@@ -51,7 +57,8 @@ const allApiClients = [
     testDataApiClient,
     commentApiClient,
     userApiClient,
-    authApiClient
+    authApiClient,
+    apiKeyApiClient
 ];
 
 // Token management function
@@ -404,4 +411,43 @@ export const userApi = {
             ...errorHandle,
             200: (payload) => payload.data,
         }),
+};
+
+// Helper functions for API keys API
+export const apiKeysApi = {
+    list: () =>
+        apiKeyApiClient.callApi('apiKeys', 'list', {}, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    create: (body: CreateApiKeyRequest) =>
+        apiKeyApiClient.callApi('apiKeys', 'create', { body }, {
+            ...errorHandle,
+            201: (payload) => payload.data,
+        }),
+
+    get: (id: string) =>
+        apiKeyApiClient.callApi('apiKeys', 'get', { params: { id } }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    update: (id: string, body: UpdateApiKeyRequest) =>
+        apiKeyApiClient.callApi('apiKeys', 'update', { params: { id }, body }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    revoke: (options: { id: string }) =>
+        apiKeyApiClient.callApi('apiKeys', 'revoke', { params: options }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    stats: () =>
+        apiKeyApiClient.callApi('apiKeys', 'stats', {}, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        })
 };

@@ -6,6 +6,7 @@ import { EndpointMiddleware } from 'ts-typed-api';
 import { config, isDevelopment } from './config';
 import { AuthService } from './services/auth-service';
 import { UserDocument, userModel } from './models/user';
+import { apiKeyModel, Permission } from './models/api-key';
 
 const app = express();
 
@@ -151,9 +152,84 @@ export const requireRole = (roles: string[]): EndpointMiddleware => {
     };
 };
 
+// API Key authentication middleware
+export const apiKeyMiddleware = (requiredScope: Permission): EndpointMiddleware => {
+    return async (req, res, next) => {
+        try {
+            const apiKeyHeader = req.headers['x-api-key'] as string;
+            if (!apiKeyHeader) {
+                res.status(401).json({
+                    error: 'Unauthorized',
+                    message: 'Missing API key'
+                });
+                return;
+            }
+
+            // Find and validate API key
+            const apiKey = await apiKeyModel.findByApiKey(apiKeyHeader);
+            if (!apiKey) {
+                res.status(401).json({
+                    error: 'Unauthorized',
+                    message: 'Invalid API key'
+                });
+                return;
+            }
+
+            // Check if API key is active
+            if (apiKey.status !== 'active') {
+                res.status(401).json({
+                    error: 'Unauthorized',
+                    message: 'API key is revoked'
+                });
+                return;
+            }
+
+            // Check if API key has required scope
+            if (!apiKeyModel.hasScope(apiKey, requiredScope)) {
+                res.status(403).json({
+                    error: 'Forbidden',
+                    message: `API key does not have required scope: ${requiredScope}`
+                });
+                return;
+            }
+
+            // Get the user associated with the API key
+            const user = await userModel.findById(apiKey.user_id);
+            if (!user || user.status !== 'active') {
+                res.status(401).json({
+                    error: 'Unauthorized',
+                    message: 'API key owner account is not active'
+                });
+                return;
+            }
+
+            // Record API key usage
+            const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+            await apiKeyModel.recordUsage(apiKey.id!, clientIp);
+
+            // Attach user to request (similar to regular auth)
+            req.user = {
+                id: user.id!,
+                role: user.role
+            };
+
+            next();
+        } catch (error) {
+            console.error('API key middleware error:', error);
+            res.status(500).json({
+                error: 'Internal Server Error',
+                message: 'API key authentication failed'
+            });
+        }
+    };
+};
+
 // Convenience middleware
 export const requireAdmin: EndpointMiddleware = requireRole(['admin']);
 export const requireUser: EndpointMiddleware = requireRole(['admin', 'user']);
 export const requireAuth: EndpointMiddleware = requireRole(['admin', 'user', 'viewer']);
+
+// API key middleware for specific scopes
+export const requireExecutionScope: EndpointMiddleware = apiKeyMiddleware('executions:run');
 
 export default app;

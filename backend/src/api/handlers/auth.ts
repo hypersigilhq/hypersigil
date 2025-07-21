@@ -9,7 +9,6 @@ import { AuthApiDefinition, AuthLoginResponse } from '../definitions/auth';
  * Format user for response (remove sensitive data)
  */
 function formatUserForResponse(user: UserDocument): AuthLoginResponse['user'] {
-
     return {
         email: user.email,
         name: user.name,

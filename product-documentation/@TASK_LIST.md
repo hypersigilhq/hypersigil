@@ -54,7 +54,7 @@
 - [done] Implement settings tabbed view with Users table displaying name, email, role, status, and last login columns
 - [done] Implement user invitation system with dialog interface and copyable invitation links
 - [todo] Token cost settings
-- [todo] API keys settings
+- [done] API keys settings
 - [todo] Execution user status, rating
 - [todo] Prompt user status, rating
 - [todo] Notifications?

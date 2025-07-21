@@ -6,6 +6,7 @@ import "./api/handlers/test-data"
 import "./api/handlers/comment"
 import "./api/handlers/user"
 import "./api/handlers/auth"
+import "./api/handlers/api-key"
 import { config } from "./config";
 import { executionService } from "./services/execution-service";
 import './database/index'
