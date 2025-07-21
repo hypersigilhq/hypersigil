@@ -1,5 +1,5 @@
 import { RegisterHandlers } from 'ts-typed-api';
-import app, { loggingMiddleware, timingMiddleware } from '../../app';
+import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import { TestDataApiDefinition } from '../definitions/test-data';
 import { TestDataGroup, testDataGroupModel, testDataItemModel, promptModel } from '../../models';
 import { executionService } from '../../services/execution-service';
@@ -484,4 +484,4 @@ RegisterHandlers(app, TestDataApiDefinition, {
             }
         }
     }
-}, [loggingMiddleware, timingMiddleware]);
+}, [loggingMiddleware, timingMiddleware, authMiddleware]);

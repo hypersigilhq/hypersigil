@@ -1,5 +1,5 @@
 import { RegisterHandlers, EndpointMiddleware } from 'ts-typed-api';
-import app, { loggingMiddleware, timingMiddleware } from '../../app';
+import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import { Prompt, promptModel } from '../../models/prompt';
 import { promptAdjustmentService } from '../../services/prompt-adjustment-service';
 import { z } from 'zod';
@@ -305,4 +305,4 @@ RegisterHandlers(app, PromptApiDefinition, {
             }
         }
     }
-}, [loggingMiddleware, timingMiddleware])
+}, [loggingMiddleware, timingMiddleware, authMiddleware])

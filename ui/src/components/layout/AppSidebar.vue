@@ -23,14 +23,14 @@
             </nav>
 
             <!-- Footer - Expanded -->
+            <Button @click="useAuth().logout()">Logout</Button>
             <div class="p-4 border-t">
                 <div class="flex items-center space-x-3">
                     <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                         <User class="w-4 h-4 text-primary-foreground" />
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium truncate">John Doe</p>
-                        <p class="text-xs text-muted-foreground truncate">john@example.com</p>
+                        <p class="text-sm font-medium truncate">{{ useAuth().currentUser.value?.name }}</p>
                     </div>
                 </div>
             </div>
@@ -63,8 +63,7 @@
                         <User class="w-4 h-4 text-primary-foreground" />
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium truncate">John Doe</p>
-                        <p class="text-xs text-muted-foreground truncate">john@example.com</p>
+                        <p class="text-sm font-medium truncate">{{ useAuth().currentUser.value?.name }}</p>
                     </div>
                 </div>
                 <div v-else class="flex justify-center">
@@ -83,6 +82,7 @@ import { useRoute } from 'vue-router'
 import { Home, Settings, Info, User, FileText, Play, Database, Package, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import NavigationItem from './NavigationItem.vue'
+import { useAuth } from '@/composables/useAuth'
 
 interface NavigationItemType {
     name: string

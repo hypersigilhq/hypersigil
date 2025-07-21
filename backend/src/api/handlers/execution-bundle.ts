@@ -1,6 +1,6 @@
 import { RegisterHandlers } from 'ts-typed-api';
 import { executionBundleModel } from '../../models/execution-bundle';
-import { loggingMiddleware, timingMiddleware } from '../../app';
+import { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import app from '../../app';
 import { ExecutionBundleApiDefinition, ExecutionBundleResponse } from '../definitions/execution-bundle';
 
@@ -37,4 +37,4 @@ RegisterHandlers(app, ExecutionBundleApiDefinition, {
             }
         }
     }
-}, [loggingMiddleware, timingMiddleware]);
+}, [loggingMiddleware, timingMiddleware, authMiddleware]);

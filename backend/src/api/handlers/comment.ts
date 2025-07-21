@@ -1,5 +1,5 @@
 import { RegisterHandlers } from 'ts-typed-api';
-import app, { loggingMiddleware, timingMiddleware } from '../../app';
+import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import { Comment, commentModel } from '../../models/comment';
 import { z } from 'zod';
 import { CommentApiDefinition, CommentResponse } from '../definitions/comment';
@@ -114,4 +114,4 @@ RegisterHandlers(app, CommentApiDefinition, {
             }
         }
     }
-}, [loggingMiddleware, timingMiddleware]);
+}, [loggingMiddleware, timingMiddleware, authMiddleware]);

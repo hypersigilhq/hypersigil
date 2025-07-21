@@ -1,7 +1,7 @@
 import { RegisterHandlers } from 'ts-typed-api';
 import { executionService } from '../../services/execution-service';
 import { providerRegistry } from '../../providers/provider-registry';
-import { loggingMiddleware, timingMiddleware } from '../../app';
+import { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import app from '../../app';
 import { ExecutionOptions } from '../../providers/base-provider';
 import { Prompt, promptModel, PromptVersion } from '../../models/prompt';
@@ -457,4 +457,4 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
         }
     }
-}, [loggingMiddleware, timingMiddleware]);
+}, [loggingMiddleware, timingMiddleware, authMiddleware]);

@@ -4,6 +4,8 @@ import "./api/handlers/execution"
 import "./api/handlers/execution-bundle"
 import "./api/handlers/test-data"
 import "./api/handlers/comment"
+import "./api/handlers/user"
+import "./api/handlers/auth"
 import { config } from "./config";
 import { executionService } from "./services/execution-service";
 import './database/index'

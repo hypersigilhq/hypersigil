@@ -4,6 +4,8 @@ import { ExecutionApiDefinition, type CreateExecutionRequest, type ExecutionUpda
 import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './definitions/execution-bundle';
 import { TestDataApiDefinition, type CreateTestDataGroupRequest } from './definitions/test-data';
 import { CommentApiDefinition, type CreateCommentRequest, type CommentListQuery } from './definitions/comment';
+import { AuthApiDefinition, type LoginRequest, type RegisterFirstAdminRequest } from './definitions/auth';
+import { UserApiDefinition } from './definitions/user';
 
 // Create the API client with the base URL
 export const apiClient = new ApiClient(
@@ -31,12 +33,57 @@ export const commentApiClient = new ApiClient(
     CommentApiDefinition
 );
 
+export const userApiClient = new ApiClient(
+    document.location.origin, // Adjust this to match your backend URL
+    UserApiDefinition
+);
+
+export const authApiClient = new ApiClient(
+    document.location.origin, // Adjust this to match your backend URL
+    AuthApiDefinition
+);
+
+// Array of all API clients for token management
+const allApiClients = [
+    apiClient,
+    executionApiClient,
+    executionBundleApiClient,
+    testDataApiClient,
+    commentApiClient,
+    userApiClient,
+    authApiClient
+];
+
+// Token management function
+export const setAuthToken = (token: string | null): void => {
+    if (token) {
+        // Set Authorization header on all clients
+        allApiClients.forEach(client => {
+            client.setHeader('Authorization', `Bearer ${token}`);
+        });
+    } else {
+        // Remove Authorization header from all clients
+        allApiClients.forEach(client => {
+            client.removeHeader('Authorization');
+        });
+    }
+};
+
+// Initialize token from localStorage on app startup
+export const initializeAuth = (): void => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+        setAuthToken(token);
+    }
+};
+
 // Set default headers
 apiClient.setHeader('Content-Type', 'application/json');
 executionApiClient.setHeader('Content-Type', 'application/json');
 executionBundleApiClient.setHeader('Content-Type', 'application/json');
 testDataApiClient.setHeader('Content-Type', 'application/json');
 commentApiClient.setHeader('Content-Type', 'application/json');
+authApiClient.setHeader('Content-Type', 'application/json');
 
 // Helper functions for prompts API
 export const promptsApi = {
@@ -364,4 +411,41 @@ export const commentsApi = {
             422: (payload: any) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
         })
     }
+};
+
+// Helper functions for auth API
+export const authApi = {
+    check: () =>
+        authApiClient.callApi('auth', 'check', {}, {
+            200: (payload) => payload.data,
+            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
+    login: (body: LoginRequest) =>
+        authApiClient.callApi('auth', 'login', { body }, {
+            200: (payload) => payload.data,
+            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
+            401: (payload) => { throw new Error(payload.data?.error || 'Unauthorized'); },
+            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
+
+    registerFirstAdmin: (body: RegisterFirstAdminRequest) =>
+        authApiClient.callApi('auth', 'registerFirstAdmin', { body }, {
+            201: (payload) => payload.data,
+            400: (payload) => { throw new Error(payload.data?.error || 'Bad request'); },
+            409: (payload) => { throw new Error(payload.data?.error || 'Conflict'); },
+            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        })
+};
+
+export const userApi = {
+    me: () =>
+        userApiClient.callApi('users', 'me', {}, {
+            200: (payload) => payload.data,
+            500: (payload) => { throw new Error(payload.data?.error || 'Server error'); },
+            422: (payload) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); }
+        }),
 };
