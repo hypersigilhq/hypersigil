@@ -4,6 +4,8 @@ import { Prompt, promptModel } from '../../models/prompt';
 import { promptAdjustmentService } from '../../services/prompt-adjustment-service';
 import { z } from 'zod';
 import { PromptApiDefinition, PromptResponse } from '../definitions/prompt';
+import { executionService } from '../../services/execution-service';
+import { JSONSchema } from '../../providers/base-provider';
 
 function formatPromptForResponse(prompt: Prompt): PromptResponse {
     return {
@@ -305,6 +307,58 @@ RegisterHandlers(app, PromptApiDefinition, {
                     message: 'Failed to generate adjustment prompt'
                 });
             }
+        },
+
+        preview: async (req, res) => {
+            const { promptId, version, promptText, userInput } = req.body;
+
+            let promptToCompile = promptText!;
+            let originalPrompt = promptText!;
+            let jsonSchema: JSONSchema | undefined;
+
+            if (promptId) {
+                // Get prompt from database
+                const prompt = await promptModel.findById(promptId);
+                if (!prompt) {
+                    return res.respond(404, {
+                        error: 'Not Found',
+                        message: 'Prompt not found'
+                    });
+                }
+
+                if (version) {
+                    // Get specific version
+                    const promptVersion = promptModel.getVersion(prompt, version);
+                    if (!promptVersion) {
+                        return res.respond(404, {
+                            error: 'Not Found',
+                            message: `Version ${version} not found for this prompt`
+                        });
+                    }
+                    promptToCompile = promptVersion.prompt;
+                    originalPrompt = promptVersion.prompt;
+                    jsonSchema = <JSONSchema>promptVersion.json_schema_input
+                } else {
+                    // Use current version
+                    promptToCompile = prompt.prompt;
+                    originalPrompt = prompt.prompt;
+                    jsonSchema = <JSONSchema>prompt.json_schema_input
+                }
+            }
+
+            const compilationResult = executionService.compilePrompt(userInput, promptToCompile, jsonSchema);
+
+            if (!compilationResult.success) {
+                return res.respond(400, {
+                    error: 'Compilation Error',
+                    message: compilationResult.error
+                });
+            }
+
+            res.respond(200, {
+                compiledPrompt: compilationResult.data,
+            });
+
         }
     }
 }, [loggingMiddleware, timingMiddleware, authMiddleware])

@@ -110,6 +110,29 @@ export const GenerateAdjustmentResponseSchema = z.object({
 
 export type GenerateAdjustmentResponse = z.infer<typeof GenerateAdjustmentResponseSchema>;
 
+// Prompt preview schemas
+export const PreviewPromptRequestSchema = z.object({
+    // Either provide promptId with optional version, or provide promptText directly
+    promptId: z.string().uuid().optional(),
+    version: z.number().optional(),
+    promptText: z.string().optional(),
+    userInput: z.string().min(1) // JSON string containing the data to compile with
+}).refine(
+    (data) => (data.promptId && !data.promptText) || (!data.promptId && data.promptText),
+    {
+        message: "Either promptId or promptText must be provided, but not both",
+        path: ["promptId", "promptText"]
+    }
+);
+
+export type PreviewPromptRequest = z.infer<typeof PreviewPromptRequestSchema>;
+
+export const PreviewPromptResponseSchema = z.object({
+    compiledPrompt: z.string(),
+});
+
+export type PreviewPromptResponse = z.infer<typeof PreviewPromptResponseSchema>;
+
 export const PromptApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/prompts',
     endpoints: {
@@ -226,6 +249,20 @@ export const PromptApiDefinition = CreateApiDefinition({
                 body: GenerateAdjustmentRequestSchema,
                 responses: CreateResponses({
                     200: GenerateAdjustmentResponseSchema,
+                    400: ErrorResponseSchema,
+                    404: ErrorResponseSchema,
+                    500: ErrorResponseSchema
+                })
+            },
+
+            preview: {
+                method: 'POST',
+                path: '/preview',
+                params: z.object({}),
+                query: z.object({}),
+                body: PreviewPromptRequestSchema,
+                responses: CreateResponses({
+                    200: PreviewPromptResponseSchema,
                     400: ErrorResponseSchema,
                     404: ErrorResponseSchema,
                     500: ErrorResponseSchema

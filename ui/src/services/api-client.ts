@@ -1,5 +1,5 @@
 import { ApiClient } from 'ts-typed-api/client';
-import { PromptApiDefinition, type CreatePromptRequest, type GenerateAdjustmentRequest } from './definitions/prompt';
+import { PromptApiDefinition, type CreatePromptRequest, type GenerateAdjustmentRequest, type PreviewPromptRequest } from './definitions/prompt';
 import { ExecutionApiDefinition, type CreateExecutionRequest, type ExecutionUpdateRequest } from './definitions/execution';
 import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './definitions/execution-bundle';
 import { TestDataApiDefinition, type CreateTestDataGroupRequest } from './definitions/test-data';
@@ -154,6 +154,12 @@ export const promptsApi = {
 
     generateAdjustment: (id: string, body: GenerateAdjustmentRequest) =>
         apiClient.callApi('prompts', 'generateAdjustment', { params: { id }, body }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    preview: (body: PreviewPromptRequest) =>
+        apiClient.callApi('prompts', 'preview', { body }, {
             ...errorHandle,
             200: (payload) => payload.data,
         })

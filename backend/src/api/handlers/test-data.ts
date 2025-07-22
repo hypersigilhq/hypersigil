@@ -472,7 +472,7 @@ RegisterHandlers(app, TestDataApiDefinition, {
                 }
 
                 // Compile the prompt
-                const result = promptModel.compilePrompt(testDataItem, promptVersionData);
+                const result = executionService.compilePromptVersion(testDataItem, promptVersionData);
 
                 res.respond(200, result);
             } catch (error) {

@@ -47,6 +47,8 @@ After every implementation, add high-level documentation in ./product-documentat
 - All data should be typed, avoid any/unknown types if possible
 
 ## Backend architecture and best practices
+- Dont put comments for straitghtforward actions
+- If using try/catch block only use when necessary and for the smallest scope possible
 - Use Golang-like error handling pattern, there's global types. The reason is to avoid try/catch blocks and treat every error explicitly.
 ```
 declare global {

@@ -172,8 +172,44 @@
                 <Button type="button" variant="outline" @click="closeDialog">
                     Cancel
                 </Button>
+                <Button type="button" variant="secondary" :disabled="previewDisabled" @click="showPreview">
+                    {{ previewLoading ? 'Loading Preview...' : 'Preview Compiled Prompt' }}
+                </Button>
                 <Button type="submit" :disabled="scheduleExecutionDisabled" @click="submitScheduleExecution">
                     {{ submitting ? 'Scheduling...' : (isCloning ? 'Clone Execution' : 'Schedule Execution') }}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <!-- Preview Dialog -->
+    <Dialog v-model:open="showPreviewDialog">
+        <DialogContent class="max-w-4xl max-h-[80vh] overflow-hidden">
+            <DialogHeader>
+                <DialogTitle>Compiled Prompt Preview</DialogTitle>
+                <DialogDescription>
+                    Preview of the prompt compiled with your user input
+                </DialogDescription>
+            </DialogHeader>
+
+            <div class="flex-1 overflow-y-auto">
+                <div v-if="previewError" class="p-3 bg-red-50 border border-red-200 rounded-md mb-4">
+                    <p class="text-sm text-red-800">{{ previewError }}</p>
+                </div>
+
+                <div v-if="previewResult" class="space-y-4">
+                    <div>
+                        <Label class="text-sm font-medium">Compiled Prompt:</Label>
+                        <div class="mt-2 p-4 bg-gray-50 border rounded-md">
+                            <pre class="whitespace-pre-wrap text-sm">{{ previewResult }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <DialogFooter>
+                <Button type="button" variant="outline" @click="showPreviewDialog = false">
+                    Close
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -203,7 +239,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 
-import { executionsApi, testDataApi } from '@/services/api-client'
+import { executionsApi, testDataApi, promptsApi } from '@/services/api-client'
 import PromptSelector from '@/components/prompts/PromptSelector.vue'
 
 // Props
@@ -258,6 +294,12 @@ const testDataGroups = ref<Array<{ id: string; name: string }>>([])
 const successMessage = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
 const modelSearchQuery = ref('')
+
+// Preview state
+const showPreviewDialog = ref(false)
+const previewLoading = ref(false)
+const previewResult = ref<string | null>(null)
+const previewError = ref<string | null>(null)
 
 // Form data
 const formData = reactive({
@@ -318,6 +360,21 @@ const filteredAvailableModels = computed(() => {
     }
 
     return filtered
+})
+
+const previewDisabled = computed(() => {
+    if (previewLoading.value) return true
+
+    // Check if we have user input
+    if (!formData.userInput.trim()) return true
+
+    // Check if we have a prompt (either text or ID)
+    if (props.mode === 'text') {
+        return !formData.promptText.trim()
+    } else {
+        const promptId = props.mode === 'item' ? formData.promptId : props.promptId
+        return !promptId
+    }
 })
 
 // Methods
@@ -429,6 +486,38 @@ const closeDialog = () => {
     isOpen.value = false
     successMessage.value = null
     errorMessage.value = null
+}
+
+const showPreview = async () => {
+    if (previewDisabled.value) return
+
+    previewLoading.value = true
+    previewError.value = null
+    previewResult.value = null
+
+    try {
+        const previewData: any = {
+            userInput: formData.userInput
+        }
+
+        // Handle different modes
+        if (props.mode === 'text') {
+            previewData.promptText = formData.promptText
+        } else {
+            const promptId = props.mode === 'item' ? formData.promptId : props.promptId
+            previewData.promptId = promptId
+        }
+
+        const response = await promptsApi.preview(previewData)
+        previewResult.value = response.compiledPrompt
+        showPreviewDialog.value = true
+    } catch (err) {
+        console.error('Failed to preview prompt:', err)
+        previewError.value = `Failed to preview prompt: ${err}`
+    } finally {
+        showPreviewDialog.value = true
+        previewLoading.value = false
+    }
 }
 
 const submitScheduleExecution = async () => {

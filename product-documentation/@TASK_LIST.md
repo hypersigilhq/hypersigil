@@ -62,3 +62,4 @@
 - [done] Implement prompt adjustment service that generates adjustment prompts based on comments and execution results
 - [done] Implement prompt calibration UI with "Calibrate prompt" button and dedicated dialog for displaying adjustment suggestions
 - [done] Implement invitation setup view for password creation by invited users
+- [done] Add prompt preview endpoint for compiling prompts with user input using Mustache templating
