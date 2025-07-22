@@ -2,7 +2,7 @@
     <div class="space-y-4">
         <!-- Header with filters -->
         <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2">
+            <div class="flex flex-wrap items-center space-x-2">
                 <Input v-model="searchQuery" placeholder="Search executions..." class="w-64" @input="debouncedSearch" />
                 <PromptSelector v-model="promptId" :label="''" :null-option="true" class="w-64" />
                 <Select v-model="statusFilter">
@@ -48,7 +48,7 @@
                     </SelectContent>
                 </Select>
             </div>
-            <div class="flex items-center space-x-2">
+            <div class="flex flex-wrap items-center space-x-2">
                 <Button @click="clearFilters" variant="destructive" size="sm">
                     <CircleX class="w-4 h-4 mr-2" />
                     Clear filters
