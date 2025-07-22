@@ -40,6 +40,7 @@ export interface PromptVersion {
     version: number;
     name: string;
     prompt: string;
+    json_schema_input?: object | undefined;
     json_schema_response?: object | undefined;
     created_at: Date;
 }
@@ -48,6 +49,7 @@ export interface PromptVersion {
 export interface Prompt extends BaseDocument {
     name: string;
     prompt: string;
+    json_schema_input?: object | undefined;
     json_schema_response?: object | undefined;
     current_version: number;
     versions: PromptVersion[];
@@ -91,26 +93,32 @@ export class PromptModel extends Model<Prompt> {
             (data.name && data.name !== existing.name) ||
             (data.prompt && data.prompt !== existing.prompt) ||
             (data.json_schema_response && JSON.stringify(data.json_schema_response) !== JSON.stringify(existing.json_schema_response));
+        (data.json_schema_input && JSON.stringify(data.json_schema_input) !== JSON.stringify(existing.json_schema_input));
 
         if (hasContentChanges) {
             // Create new version
             const newVersion = existing.current_version + 1;
-            const processedSchema = data.json_schema_response
+            const processedSchemaOutput = data.json_schema_response
                 ? addAdditionalPropertiesFalse(data.json_schema_response)
-                : existing.json_schema_response;
+                : undefined;
+            const processedSchemaInput = data.json_schema_input
+                ? addAdditionalPropertiesFalse(data.json_schema_input)
+                : undefined;
 
             const newVersionEntry: PromptVersion = {
                 version: newVersion,
                 name: data.name || existing.name,
                 prompt: data.prompt || existing.prompt,
-                json_schema_response: processedSchema,
+                json_schema_response: processedSchemaOutput,
+                json_schema_input: processedSchemaInput,
                 created_at: new Date()
             };
 
             // Update with new version
             const updateData = {
                 ...data,
-                json_schema_response: data.json_schema_response ? processedSchema : data.json_schema_response,
+                json_schema_response: data.json_schema_response ? processedSchemaOutput : data.json_schema_response,
+                json_schema_input: data.json_schema_input ? processedSchemaInput : data.json_schema_input,
                 current_version: newVersion,
                 versions: [...existing.versions, newVersionEntry]
             };

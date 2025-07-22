@@ -25,71 +25,65 @@ RegisterHandlers(app, ExecutionApiDefinition, {
         create: async (req, res) => {
             let executionIds: string[] = []
             const { promptId, promptVersion, testDataGroupId, options, promptText } = req.body;
-            try {
-                for (let i in req.body.providerModel) {
-                    let providerModel = req.body.providerModel[i]!
-                    if (testDataGroupId) {
-                        try {
+            for (let i in req.body.providerModel) {
+                let providerModel = req.body.providerModel[i]!
+                if (testDataGroupId) {
+                    try {
 
-                            // Check if test data group exists
-                            const group = await testDataGroupModel.findById(testDataGroupId);
-                            if (!group) {
-                                res.respond(404, {
-                                    error: 'Not found',
-                                    message: 'Test data group not found'
-                                });
-                                return;
-                            }
-
-                            // Get all items in the group
-                            const items = await testDataItemModel.findByGroupId(testDataGroupId);
-                            if (items.length === 0) {
-                                res.respond(400, {
-                                    error: 'Validation error',
-                                    message: 'Test data group is empty'
-                                });
-                                return;
-                            }
-
-                            const errors: { itemId: string; error: string }[] = [];
-
-                            // Create executions for each item
-                            for (const item of items) {
-                                try {
-                                    const executionData: any = {
-                                        promptId,
-                                        userInput: item.content,
-                                        providerModel
-                                    };
-
-                                    if (promptVersion !== undefined) {
-                                        executionData.promptVersion = promptVersion;
-                                    }
-
-                                    if (options !== undefined) {
-                                        executionData.options = options;
-                                    }
-
-                                    const execution = await executionService.createExecution(executionData);
-
-                                    executionIds.push(execution.id!);
-                                } catch (error) {
-                                    errors.push({
-                                        itemId: item.id!,
-                                        error: error instanceof Error ? error.message : 'Unknown error'
-                                    });
-                                }
-                            }
-
-                        } catch (error) {
-                            console.error('Error creating batch executions:', error);
-                            res.respond(500, {
-                                error: 'Internal server error',
-                                message: 'Failed to create batch executions'
+                        // Check if test data group exists
+                        const group = await testDataGroupModel.findById(testDataGroupId);
+                        if (!group) {
+                            res.respond(404, {
+                                error: 'Not found',
+                                message: 'Test data group not found'
                             });
-                            return
+                            return;
                         }
-                    } else {
+
+                        // Get all items in the group
+                        const items = await testDataItemModel.findByGroupId(testDataGroupId);
+                        if (items.length === 0) {
+                            res.respond(400, {
+                                error: 'Validation error',
+                                message: 'Test data group is empty'
+                            });
+                            return;
+                        }
+
+                        const errors: { itemId: string; error: string }[] = [];
+
+                        // Create executions for each item
+                        for (const item of items) {
+                            const executionData: any = {
+                                promptId,
+                                userInput: item.content,
+                                providerModel
+                            };
+
+                            if (promptVersion !== undefined) {
+                                executionData.promptVersion = promptVersion;
+                            }
+
+                            if (options !== undefined) {
+                                executionData.options = options;
+                            }
+
+                            const execution = await executionService.createExecution(executionData);
+
+                            executionIds.push(execution.id!);
+                        }
+
+                    } catch (error) {
+                        console.error('Error creating batch executions:', error);
+                        res.respond(500, {
+                            error: 'Internal server error',
+                            message: 'Failed to create batch executions'
+                        });
+                        return
+                    }
+                } else {
+
+                    try {
                         const { promptId, promptVersion, userInput, options, traceId } = req.body;
 
                         const execution = await executionService.createExecution({
@@ -103,48 +97,42 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             traceId
                         });
 
-                    }
+                    } catch (error) {
+                        console.error('Error creating execution:', error);
+                        if (error instanceof Error) {
+                            if (error.message.includes('Invalid') || error.message.includes('format')) {
+                                return res.respond(400, {
+                                    error: 'Invalid request',
+                                    message: error.message
+                                });
+                            }
+                        }
 
-                }
-            } catch (error) {
-                console.error('Error creating execution:', error);
-
-                if (error instanceof Error) {
-                    if (error.message.includes('not found') || error.message.includes('not supported')) {
-                        return res.respond(404, {
-                            error: 'Resource not found',
-                            message: error.message
-                        });
-                    }
-
-                    if (error.message.includes('Invalid') || error.message.includes('format')) {
-                        return res.respond(400, {
-                            error: 'Invalid request',
-                            message: error.message
+                        res.respond(500, {
+                            error: 'Internal server error',
+                            message: 'Failed to create execution',
+                            details: (<Error>error).message
                         });
                     }
                 }
 
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to create execution'
-                });
-            } finally {
-                res.respond(201, { executionIds });
-                // Create ExecutionBundle if executions were created successfully
-                if (executionIds.length > 0 && testDataGroupId && promptId) {
-                    try {
-                        await executionBundleModel.create({
-                            test_group_id: testDataGroupId,
-                            execution_ids: executionIds,
-                            prompt_id: promptId,
-                        });
-                    } catch (bundleError) {
-                        console.error('Error creating execution bundle:', bundleError);
-                        // Continue execution even if bundle creation fails
-                    }
+            }
+
+            res.respond(201, { executionIds });
+            // Create ExecutionBundle if executions were created successfully
+            if (executionIds.length > 0 && testDataGroupId && promptId) {
+                try {
+                    await executionBundleModel.create({
+                        test_group_id: testDataGroupId,
+                        execution_ids: executionIds,
+                        prompt_id: promptId,
+                    });
+                } catch (bundleError) {
+                    console.error('Error creating execution bundle:', bundleError);
+                    // Continue execution even if bundle creation fails
                 }
             }
+
 
         },
 

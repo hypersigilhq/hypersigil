@@ -1,7 +1,7 @@
 <template>
     <Dialog v-model:open="isOpen">
-        <DialogContent class="max-w-7xl">
-            <DialogHeader>
+        <DialogContent class="fixed max-w-7xl h-screen m-0 p-2 rounded-none border-0 bg-background">
+            <DialogHeader class="flex-shrink-0 border-b">
                 <DialogTitle>
                     {{ isCloning ? 'Clone Execution' : 'Schedule Execution' }}
                 </DialogTitle>
@@ -16,161 +16,166 @@
                         Schedule a new execution
                     </span>
                 </DialogDescription>
+                <div v-if="successMessage" class="p-3 bg-green-50 border border-green-200 rounded-md mb-4">
+                    <p class="text-sm text-green-800">{{ successMessage }}</p>
+                </div>
+
+                <div v-if="errorMessage" class="p-3 bg-red-50 border border-red-200 rounded-md mb-4">
+                    <p class="text-sm text-red-800">{{ errorMessage }}</p>
+                </div>
             </DialogHeader>
 
-            <div v-if="successMessage" class="p-3 bg-green-50 border border-green-200 rounded-md mb-4">
-                <p class="text-sm text-green-800">{{ successMessage }}</p>
+            <div class="flex-1 overflow-y-auto p-1">
+                <form @submit.prevent="submitScheduleExecution" class="space-y-4">
+                    <!-- Prompt Selection (for item mode) -->
+                    <div v-if="mode === 'item'">
+                        <PromptSelector v-model="formData.promptId" required />
+                    </div>
+
+                    <!-- Prompt Text Input (for text mode) -->
+                    <div v-if="mode === 'text'">
+                        <Label for="promptText">Prompt Text</Label>
+                        <Textarea id="promptText" v-model="formData.promptText"
+                            placeholder="Enter the prompt text to execute" rows="6" required />
+                    </div>
+
+                    <!-- Test Data Group Selection (for group mode) -->
+                    <div v-if="mode !== 'item' && mode !== 'text'">
+                        <Label for="testDataGroup">Test Data Group (Optional)</Label>
+                        <Select v-model="formData.testDataGroupId">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select test data group or leave empty for manual input" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem v-if="loadingTestDataGroups" value="loading" disabled>
+                                    Loading test data groups...
+                                </SelectItem>
+                                <SelectItem v-for="group in testDataGroups" :key="group.id" :value="group.id">
+                                    {{ group.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div v-if="!formData.testDataGroupId">
+                        <template v-if="multipleUserInputs">
+                            <div class="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                <p class="text-sm text-blue-800">
+                                    Multiple user input provided, will schedule {{ multipleUserInputs }} executions
+                                </p>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <Label for="userInput">User Input</Label>
+                            <Textarea id="userInput" v-model="formData.userInput"
+                                placeholder="Enter the input text to process with this prompt" rows="4" />
+                        </template>
+                    </div>
+
+                    <div v-else class="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <p class="text-sm text-blue-800">
+                            <strong>Test Data Group Selected:</strong> {{testDataGroups.find(g => g.id ===
+                                formData.testDataGroupId)?.name}}
+                        </p>
+                        <p class="text-xs text-blue-600 mt-1">
+                            The execution will run against all test data items in this group.
+                            <Button @click="formData.testDataGroupId = ''">Switch to user input</Button>
+                        </p>
+                    </div>
+
+                    <div>
+                        <Label for="providerModel">Provider/Model (Select multiple)</Label>
+                        <div class="border rounded-md p-3 min-h-[40px] bg-background">
+                            <div v-if="loadingModels" class="text-sm text-muted-foreground">
+                                Loading models...
+                            </div>
+                            <div v-else-if="modelOptions.length === 0" class="text-sm text-muted-foreground">
+                                No models available
+                            </div>
+                            <div v-else class="space-y-2">
+                                <div v-if="formData.providerModel.length > 0" class="flex flex-wrap gap-2 mb-3">
+                                    <div v-for="selectedModel in formData.providerModel" :key="selectedModel"
+                                        class="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded-md text-sm">
+                                        {{ selectedModel }}
+                                        <button type="button" @click="removeModel(selectedModel)"
+                                            class="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5">
+                                            ×
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Search bar -->
+                                <div class="mb-3">
+                                    <Input v-model="modelSearchQuery" placeholder="Search providers and models..."
+                                        class="text-sm" @input="onSearchInput" />
+                                </div>
+
+                                <div class="max-h-48 overflow-y-auto space-y-1">
+                                    <template v-for="(models, provider) in filteredAvailableModels" :key="provider">
+                                        <div v-for="model in models" :key="`${provider}:${model}`"
+                                            class="flex items-center space-x-2 p-2 hover:bg-muted rounded-md cursor-pointer"
+                                            @click="toggleModel(`${provider}:${model}`)">
+                                            <input type="checkbox"
+                                                :checked="formData.providerModel.includes(`${provider}:${model}`)"
+                                                @change="toggleModel(`${provider}:${model}`)"
+                                                class="rounded border-gray-300">
+                                            <label class="text-sm cursor-pointer flex-1">
+                                                {{ provider }}: {{ model }}
+                                            </label>
+                                        </div>
+                                    </template>
+                                    <div v-if="Object.keys(filteredAvailableModels).length === 0 && modelSearchQuery"
+                                        class="text-sm text-muted-foreground p-2 text-center">
+                                        No models found matching "{{ modelSearchQuery }}"
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="formData.providerModel.length === 0" class="text-sm text-red-500 mt-1">
+                            Please select at least one provider/model
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <Label>Execution Options (Optional)</Label>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <Label for="temperature" class="text-sm">Temperature</Label>
+                                <Input id="temperature" type="number" step="0.01" min="0" max="2"
+                                    v-model.number="formData.options.temperature" placeholder="0.01" />
+                            </div>
+                            <div>
+                                <Label for="maxTokens" class="text-sm">Max Tokens</Label>
+                                <Input id="maxTokens" type="number" min="1" v-model.number="formData.options.maxTokens"
+                                    placeholder="Auto" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <Label for="topP" class="text-sm">Top P</Label>
+                                <Input id="topP" type="number" step="0.01" min="0" max="1"
+                                    v-model.number="formData.options.topP" placeholder="Auto" />
+                            </div>
+                            <div>
+                                <Label for="topK" class="text-sm">Top K</Label>
+                                <Input id="topK" type="number" min="1" v-model.number="formData.options.topK"
+                                    placeholder="Auto" />
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
 
-            <form @submit.prevent="submitScheduleExecution" class="space-y-4">
-                <!-- Prompt Selection (for item mode) -->
-                <div v-if="mode === 'item'">
-                    <PromptSelector v-model="formData.promptId" required />
-                </div>
-
-                <!-- Prompt Text Input (for text mode) -->
-                <div v-if="mode === 'text'">
-                    <Label for="promptText">Prompt Text</Label>
-                    <Textarea id="promptText" v-model="formData.promptText"
-                        placeholder="Enter the prompt text to execute" rows="6" required />
-                </div>
-
-                <!-- Test Data Group Selection (for group mode) -->
-                <div v-if="mode !== 'item' && mode !== 'text'">
-                    <Label for="testDataGroup">Test Data Group (Optional)</Label>
-                    <Select v-model="formData.testDataGroupId">
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select test data group or leave empty for manual input" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem v-if="loadingTestDataGroups" value="loading" disabled>
-                                Loading test data groups...
-                            </SelectItem>
-                            <SelectItem v-for="group in testDataGroups" :key="group.id" :value="group.id">
-                                {{ group.name }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div v-if="!formData.testDataGroupId">
-                    <template v-if="multipleUserInputs">
-                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                            <p class="text-sm text-blue-800">
-                                Multiple user input provided, will schedule {{ multipleUserInputs }} executions
-                            </p>
-                        </div>
-                    </template>
-                    <template v-else>
-                        <Label for="userInput">User Input</Label>
-                        <Textarea id="userInput" v-model="formData.userInput"
-                            placeholder="Enter the input text to process with this prompt" rows="4" />
-                    </template>
-                </div>
-
-                <div v-else class="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <p class="text-sm text-blue-800">
-                        <strong>Test Data Group Selected:</strong> {{testDataGroups.find(g => g.id ===
-                            formData.testDataGroupId)?.name}}
-                    </p>
-                    <p class="text-xs text-blue-600 mt-1">
-                        The execution will run against all test data items in this group.
-                        <Button @click="formData.testDataGroupId = ''">Switch to user input</Button>
-                    </p>
-                </div>
-
-                <div>
-                    <Label for="providerModel">Provider/Model (Select multiple)</Label>
-                    <div class="border rounded-md p-3 min-h-[40px] bg-background">
-                        <div v-if="loadingModels" class="text-sm text-muted-foreground">
-                            Loading models...
-                        </div>
-                        <div v-else-if="modelOptions.length === 0" class="text-sm text-muted-foreground">
-                            No models available
-                        </div>
-                        <div v-else class="space-y-2">
-                            <div v-if="formData.providerModel.length > 0" class="flex flex-wrap gap-2 mb-3">
-                                <div v-for="selectedModel in formData.providerModel" :key="selectedModel"
-                                    class="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded-md text-sm">
-                                    {{ selectedModel }}
-                                    <button type="button" @click="removeModel(selectedModel)"
-                                        class="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5">
-                                        ×
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Search bar -->
-                            <div class="mb-3">
-                                <Input v-model="modelSearchQuery" placeholder="Search providers and models..."
-                                    class="text-sm" @input="onSearchInput" />
-                            </div>
-
-                            <div class="max-h-48 overflow-y-auto space-y-1">
-                                <template v-for="(models, provider) in filteredAvailableModels" :key="provider">
-                                    <div v-for="model in models" :key="`${provider}:${model}`"
-                                        class="flex items-center space-x-2 p-2 hover:bg-muted rounded-md cursor-pointer"
-                                        @click="toggleModel(`${provider}:${model}`)">
-                                        <input type="checkbox"
-                                            :checked="formData.providerModel.includes(`${provider}:${model}`)"
-                                            @change="toggleModel(`${provider}:${model}`)"
-                                            class="rounded border-gray-300">
-                                        <label class="text-sm cursor-pointer flex-1">
-                                            {{ provider }}: {{ model }}
-                                        </label>
-                                    </div>
-                                </template>
-                                <div v-if="Object.keys(filteredAvailableModels).length === 0 && modelSearchQuery"
-                                    class="text-sm text-muted-foreground p-2 text-center">
-                                    No models found matching "{{ modelSearchQuery }}"
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-if="formData.providerModel.length === 0" class="text-sm text-red-500 mt-1">
-                        Please select at least one provider/model
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <Label>Execution Options (Optional)</Label>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <Label for="temperature" class="text-sm">Temperature</Label>
-                            <Input id="temperature" type="number" step="0.01" min="0" max="2"
-                                v-model.number="formData.options.temperature" placeholder="0.01" />
-                        </div>
-                        <div>
-                            <Label for="maxTokens" class="text-sm">Max Tokens</Label>
-                            <Input id="maxTokens" type="number" min="1" v-model.number="formData.options.maxTokens"
-                                placeholder="Auto" />
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <Label for="topP" class="text-sm">Top P</Label>
-                            <Input id="topP" type="number" step="0.01" min="0" max="1"
-                                v-model.number="formData.options.topP" placeholder="Auto" />
-                        </div>
-                        <div>
-                            <Label for="topK" class="text-sm">Top K</Label>
-                            <Input id="topK" type="number" min="1" v-model.number="formData.options.topK"
-                                placeholder="Auto" />
-                        </div>
-                    </div>
-                </div>
-
-                <DialogFooter>
-                    <Button type="button" variant="outline" @click="closeDialog">
-                        Cancel
-                    </Button>
-                    <Button type="submit" :disabled="scheduleExecutionDisabled">
-                        {{ submitting ? 'Scheduling...' : (isCloning ? 'Clone Execution' : 'Schedule Execution') }}
-                    </Button>
-                </DialogFooter>
-            </form>
+            <DialogFooter class="flex-shrink-0 border-t pt-4">
+                <Button type="button" variant="outline" @click="closeDialog">
+                    Cancel
+                </Button>
+                <Button type="submit" :disabled="scheduleExecutionDisabled" @click="submitScheduleExecution">
+                    {{ submitting ? 'Scheduling...' : (isCloning ? 'Clone Execution' : 'Schedule Execution') }}
+                </Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
 </template>
@@ -251,6 +256,7 @@ const loadingTestDataGroups = ref(false)
 const availableModels = ref<Record<string, string[]>>({})
 const testDataGroups = ref<Array<{ id: string; name: string }>>([])
 const successMessage = ref<string | null>(null)
+const errorMessage = ref<string | null>(null)
 const modelSearchQuery = ref('')
 
 // Form data
@@ -348,6 +354,7 @@ const resetForm = () => {
     formData.options.topP = 1
     formData.options.topK = 50
     successMessage.value = null
+    errorMessage.value = null
     modelSearchQuery.value = ''
 }
 
@@ -421,6 +428,7 @@ const onSearchInput = () => {
 const closeDialog = () => {
     isOpen.value = false
     successMessage.value = null
+    errorMessage.value = null
 }
 
 const submitScheduleExecution = async () => {
@@ -446,6 +454,7 @@ const submitScheduleExecution = async () => {
 
     submitting.value = true
     successMessage.value = null
+    errorMessage.value = null
 
     try {
         const options: Record<string, any> = {}
@@ -506,6 +515,7 @@ const submitScheduleExecution = async () => {
 
     } catch (err) {
         console.error('Failed to schedule execution:', err)
+        errorMessage.value = `Failed to ${isCloning.value ? 'clone' : 'schedule'} execution. Please try again. Details: ` + err
     } finally {
         submitting.value = false
     }

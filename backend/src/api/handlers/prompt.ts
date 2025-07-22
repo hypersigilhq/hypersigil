@@ -3,24 +3,26 @@ import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../
 import { Prompt, promptModel } from '../../models/prompt';
 import { promptAdjustmentService } from '../../services/prompt-adjustment-service';
 import { z } from 'zod';
-import { PromptApiDefinition } from '../definitions/prompt';
+import { PromptApiDefinition, PromptResponse } from '../definitions/prompt';
 
-function formatPromptForResponse(prompt: any) {
+function formatPromptForResponse(prompt: Prompt): PromptResponse {
     return {
-        id: prompt.id,
+        id: prompt.id!,
         name: prompt.name,
         prompt: prompt.prompt,
-        json_schema_response: prompt.json_schema_response,
+        json_schema_response: <Record<string, string>>prompt.json_schema_response,
+        json_schema_input: <Record<string, string>>prompt.json_schema_input,
         current_version: prompt.current_version,
         versions: prompt.versions.map((v: any) => ({
             version: v.version,
             name: v.name,
             prompt: v.prompt,
             json_schema_response: v.json_schema_response,
+            json_schema_input: v.json_schema_input,
             created_at: v.created_at instanceof Date ? v.created_at.toISOString() : v.created_at
         })),
-        created_at: prompt.created_at instanceof Date ? prompt.created_at.toISOString() : prompt.created_at,
-        updated_at: prompt.updated_at instanceof Date ? prompt.updated_at.toISOString() : prompt.updated_at
+        created_at: (prompt.created_at instanceof Date ? prompt.created_at.toISOString() : prompt.created_at)!,
+        updated_at: (prompt.updated_at instanceof Date ? prompt.updated_at.toISOString() : prompt.updated_at)!
     };
 }
 

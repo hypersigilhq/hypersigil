@@ -27,6 +27,11 @@ if (isDevelopment) {
     app.use(morgan('combined'));
 }
 
+app.use((req, res, next) => {
+    req.isApiCall = () => !!req.apiKey
+    next()
+})
+
 // Custom middleware for ts-typed-api
 export const loggingMiddleware: EndpointMiddleware = (req, res, next, endpointInfo) => {
     const timestamp = new Date().toISOString();
@@ -127,7 +132,6 @@ export const authMiddleware: EndpointMiddleware = async (req, res, next) => {
         req.user = {
             id: user.id,
             role: user.role
-
         }
         next();
     } catch (error) {
@@ -199,8 +203,6 @@ export const apiKeyMiddleware = <T extends ApiDefinitionSchema>(fn: (scopes: Per
             req.apiKey = {
                 id: apiKey.id!
             }
-
-            req.isApiCall = () => !!req.apiKey
 
             next();
         } catch (error) {

@@ -36,7 +36,7 @@
                 </div>
             </DialogHeader>
 
-            <div v-if="prompt && currentDisplayVersion" class="flex-1 overflow-hidden flex flex-col space-y-4 p-4">
+            <div v-if="currentDisplayVersion" class="flex-1 overflow-hidden flex flex-col space-y-4 p-4">
                 <div class="flex-shrink-0 grid grid-cols-2 gap-4 h-full">
                     <div class="flex flex-col min-h-0">
                         <div class="flex items-center justify-between mb-1">
@@ -53,9 +53,23 @@
                     <div class="flex flex-col min-h-0">
                         <template v-if="currentDisplayVersion.json_schema_response">
                             <Label>JSON Schema Response</Label>
-                            <div class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
+                            <Switch :model-value="jsonSchemaOutputVisible"
+                                @update:model-value="(v: boolean) => jsonSchemaOutputVisible = v" />
+                            <div v-if="jsonSchemaInputVisible"
+                                class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
                                 <pre
                                     class="whitespace-pre-wrap text-sm">{{ JSON.stringify(currentDisplayVersion.json_schema_response || {}, null, 2) }}</pre>
+                            </div>
+                        </template>
+                        <template v-if="currentDisplayVersion.json_schema_input">
+                            <Label>JSON Schema Input
+                                <Switch :model-value="jsonSchemaInputVisible"
+                                    @update:model-value="(v: boolean) => jsonSchemaInputVisible = v" />
+                            </Label>
+                            <div v-if="jsonSchemaInputVisible"
+                                class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
+                                <pre
+                                    class="whitespace-pre-wrap text-sm">{{ JSON.stringify(currentDisplayVersion.json_schema_input || {}, null, 2) }}</pre>
                             </div>
                         </template>
                         <div class="flex items-center justify-between my-2">
@@ -138,6 +152,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import CalibratePromptDialog from './CalibratePromptDialog.vue'
+import Switch from '../ui/switch/Switch.vue'
 
 const props = defineProps<{
     open: boolean
@@ -158,6 +173,8 @@ const selectedComments = ref<Set<string>>(new Set())
 
 // Calibration dialog state
 const showCalibrateDialog = ref(false)
+const jsonSchemaInputVisible = ref(true)
+const jsonSchemaOutputVisible = ref(true)
 
 // Computed properties
 const sortedVersions = computed(() => {

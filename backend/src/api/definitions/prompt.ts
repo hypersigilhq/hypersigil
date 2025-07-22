@@ -11,6 +11,7 @@ export const PromptVersionSchema = z.object({
     name: z.string(),
     prompt: z.string(),
     json_schema_response: JSONSchemaSchema.optional(),
+    json_schema_input: JSONSchemaSchema.optional(),
     created_at: z.string()
 });
 
@@ -22,6 +23,7 @@ export const PromptResponseSchema = z.object({
     name: z.string(),
     prompt: z.string(),
     json_schema_response: JSONSchemaSchema.optional(),
+    json_schema_input: JSONSchemaSchema.optional(),
     current_version: z.number(),
     versions: z.array(PromptVersionSchema),
     created_at: z.string(),
@@ -34,7 +36,8 @@ export type PromptResponse = z.infer<typeof PromptResponseSchema>;
 export const CreatePromptRequestSchema = z.object({
     name: z.string().min(1).max(255),
     prompt: z.string().min(1),
-    json_schema_response: JSONSchemaSchema.optional()
+    json_schema_response: JSONSchemaSchema.optional(),
+    json_schema_input: JSONSchemaSchema.optional(),
 });
 
 export type CreatePromptRequest = z.infer<typeof CreatePromptRequestSchema>;
@@ -42,7 +45,8 @@ export type CreatePromptRequest = z.infer<typeof CreatePromptRequestSchema>;
 export const UpdatePromptRequestSchema = z.object({
     name: z.string().min(1).max(255).optional(),
     prompt: z.string().min(1).optional(),
-    json_schema_response: JSONSchemaSchema.optional()
+    json_schema_response: JSONSchemaSchema.optional(),
+    json_schema_input: JSONSchemaSchema.optional()
 });
 
 export type UpdatePromptRequest = z.infer<typeof UpdatePromptRequestSchema>;

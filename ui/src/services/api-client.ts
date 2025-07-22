@@ -97,7 +97,7 @@ let errorHandle = {
     400: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message || 'Bad request'); },
     401: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message || 'Unauthorzed'); },
     409: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message || 'Conflict'); },
-    500: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error || 'Server error'); },
+    500: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message + ` (${payload.data.details})` || 'Server error'); },
     422: (payload: { error: any }) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); },
     404: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error || 'Not found'); },
 }

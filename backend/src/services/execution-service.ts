@@ -189,10 +189,18 @@ export class ExecutionService {
             if (!promptVersion) {
                 throw new Error(`Prompt version ${versionToExecute} not found`);
             }
+
+            if (request.promptId && promptVersion && promptVersion.json_schema_input) {
+                let vr = this.validateData(JSON.parse(request.userInput), <JSONSchema>promptVersion.json_schema_input)
+                if (!vr.valid) {
+                    throw new Error(`Input data is not valid: ` + vr.validation_message)
+                }
+            }
         }
 
         // Parse and validate provider:model format
         const { provider: providerName, model } = providerRegistry.parseProviderModel(request.providerModel);
+
 
         // Create execution record
         const executionData: Omit<Execution, 'id' | 'created_at' | 'updated_at'> = {
@@ -283,13 +291,25 @@ export class ExecutionService {
         result_valid: boolean;
         result_validation_message?: string
     } {
+        let v = this.validateData(result, jsonSchema)
+
+        return {
+            result_valid: v.valid,
+            ...(v.validation_message && { result_validation_message: v.validation_message })
+        }
+    }
+
+    private validateData(data: any, jsonSchema?: JSONSchema): {
+        valid: boolean;
+        validation_message?: string
+    } {
         // If no schema is provided, consider it valid
         if (!jsonSchema) {
-            return { result_valid: true };
+            return { valid: true };
         }
 
         // Create Ajv instance
-        const ajv = new Ajv();
+        const ajv = new Ajv({ allErrors: true });
         addFormats(ajv)
 
         try {
@@ -297,28 +317,28 @@ export class ExecutionService {
             const validate = ajv.compile(jsonSchema);
 
             // Validate the result
-            const valid = validate(result);
+            const valid = validate(data);
 
             if (valid) {
                 return {
-                    result_valid: true
+                    valid: true
                 };
             } else {
                 // Generate error message
                 const errorDetails = validate.errors?.map(err =>
                     `${err.instancePath} ${err.message}`
                 ).join('; ') + "; " + JSON.stringify(validate.errors) || 'Validation failed';
-
+                console.log(errorDetails)
                 return {
-                    result_valid: false,
-                    result_validation_message: errorDetails
+                    valid: false,
+                    validation_message: errorDetails
                 };
             }
         } catch (error: any) {
             console.error(error)
             return {
-                result_valid: false,
-                result_validation_message: error.message
+                valid: false,
+                validation_message: error.message
             };
         }
     }

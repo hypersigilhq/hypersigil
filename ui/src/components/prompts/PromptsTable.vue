@@ -164,13 +164,32 @@
                         <!-- Right Column -->
                         <div class="flex flex-col">
                             <div class="flex-1 flex flex-col">
-                                <Label for="schema">JSON Schema Response</Label>
-                                <Textarea id="schema" v-model="schemaText"
+                                <Label for="schema">JSON Schema Input</Label>
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    Enter a valid JSON schema that defines the expected input structure.
+                                    Use <a href="https://transform.tools/json-to-json-schema" target="_blank">JSON to
+                                        JSON
+                                        Schema</a> or
+                                    <a href="https://bjdash.github.io/JSON-Schema-Builder/" target="_blank">JSON Schema
+                                        Builder</a>
+                                </p>
+                                <Textarea id="schema" v-model="schemaInputText"
                                     placeholder='{"type": "object", "properties": {...}}'
                                     class="flex-1 min-h-[300px] resize-none font-mono text-sm" />
+                            </div>
+                            <div class="flex-1 flex flex-col mt-3">
+                                <Label for="schema">JSON Schema Response</Label>
                                 <p class="text-sm text-muted-foreground mt-1">
                                     Enter a valid JSON schema that defines the expected response structure.
+                                    Use <a href="https://transform.tools/json-to-json-schema" target="_blank">JSON to
+                                        JSON
+                                        Schema</a> or
+                                    <a href="https://bjdash.github.io/JSON-Schema-Builder/" target="_blank">JSON Schema
+                                        Builder</a>
                                 </p>
+                                <Textarea id="schema" v-model="schemaOutputText"
+                                    placeholder='{"type": "object", "properties": {...}}'
+                                    class="flex-1 min-h-[300px] resize-none font-mono text-sm" />
                             </div>
                         </div>
                     </div>
@@ -228,7 +247,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 
-import { promptsApi, executionsApi } from '@/services/api-client'
+import { promptsApi } from '@/services/api-client'
 import type { PromptResponse, CreatePromptRequest } from '../../services/definitions/prompt'
 import ScheduleExecutionDialog from '@/components/executions/ScheduleExecutionDialog.vue'
 import { RouterLink } from 'vue-router'
@@ -267,10 +286,12 @@ const saving = ref(false)
 const formData = reactive<CreatePromptRequest>({
     name: '',
     prompt: '',
-    json_schema_response: {}
+    json_schema_response: {},
+    json_schema_input: {}
 })
 
-const schemaText = ref('')
+const schemaOutputText = ref('')
+const schemaInputText = ref('')
 
 // Debounced search
 const debouncedSearch = debounce(() => {
@@ -323,7 +344,9 @@ const openCreateDialog = () => {
     formData.name = ''
     formData.prompt = ''
     formData.json_schema_response = {}
-    schemaText.value = ''
+    formData.json_schema_input = {}
+    schemaOutputText.value = ''
+    schemaInputText.value = ''
     showDialog.value = true
 }
 
@@ -333,7 +356,9 @@ const editPrompt = (prompt: PromptResponse) => {
     formData.name = prompt.name
     formData.prompt = prompt.prompt
     formData.json_schema_response = prompt.json_schema_response
-    schemaText.value = JSON.stringify(prompt.json_schema_response, null, 2)
+    formData.json_schema_input = prompt.json_schema_input
+    schemaOutputText.value = JSON.stringify(prompt.json_schema_response, null, 2)
+    schemaInputText.value = JSON.stringify(prompt.json_schema_input, null, 2)
     showDialog.value = true
 }
 
@@ -343,7 +368,9 @@ const clonePrompt = (prompt: PromptResponse) => {
     formData.name = `Copy: ${prompt.name}`
     formData.prompt = prompt.prompt
     formData.json_schema_response = prompt.json_schema_response
-    schemaText.value = JSON.stringify(prompt.json_schema_response, null, 2)
+    formData.json_schema_input = prompt.json_schema_input
+    schemaOutputText.value = JSON.stringify(prompt.json_schema_response, null, 2)
+    schemaInputText.value = JSON.stringify(prompt.json_schema_input, null, 2)
     showDialog.value = true
 }
 
@@ -369,13 +396,22 @@ const savePrompt = async () => {
             prompt: formData.prompt,
         }
         try {
-            if (schemaText.value) {
+            if (schemaOutputText.value) {
                 let parsedSchema: Record<string, any>
-                parsedSchema = JSON.parse(schemaText.value)
+                parsedSchema = JSON.parse(schemaOutputText.value)
                 promptData.json_schema_response = parsedSchema
             }
         } catch {
-            throw new Error('Invalid JSON schema format')
+            throw new Error('Invalid JSON schema response format')
+        }
+        try {
+            if (schemaInputText.value) {
+                let parsedSchema: Record<string, any>
+                parsedSchema = JSON.parse(schemaInputText.value)
+                promptData.json_schema_input = parsedSchema
+            }
+        } catch {
+            throw new Error('Invalid JSON schema input format')
         }
 
         if (editingPrompt.value) {
@@ -442,3 +478,8 @@ onMounted(() => {
     loadPrompts()
 })
 </script>
+<style scoped>
+a {
+    text-decoration: underline;
+}
+</style>
