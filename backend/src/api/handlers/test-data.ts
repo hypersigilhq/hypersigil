@@ -2,7 +2,6 @@ import { RegisterHandlers } from 'ts-typed-api';
 import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import { TestDataApiDefinition } from '../definitions/test-data';
 import { TestDataGroup, testDataGroupModel, testDataItemModel, promptModel } from '../../models';
-import { executionService } from '../../services/execution-service';
 import { promptService } from '../../services/prompt-service';
 
 // Helper function to format test data group for response

@@ -3,7 +3,7 @@ import { BaseDocument } from '../database/types';
 import { randomBytes, createHash } from 'crypto';
 import bcrypt from 'bcrypt';
 
-export type Permission = "executions:run"
+export type Permission = "executions:run" | "prompts:preview"
 
 export interface ApiKeyDocument extends BaseDocument {
     name: string;

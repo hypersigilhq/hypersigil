@@ -55,6 +55,7 @@
 - [done] Implement user invitation system with dialog interface and copyable invitation links
 - [todo] Token cost settings
 - [done] API keys settings
+- [done] Refactor CreateApiKeyDialog to use dynamic permissions from API definitions
 - [todo] Execution user status, rating
 - [todo] Prompt user status, rating
 - [todo] Notifications?

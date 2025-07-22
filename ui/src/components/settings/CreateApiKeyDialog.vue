@@ -17,10 +17,12 @@
                 <div class="space-y-2">
                     <Label>Scopes</Label>
                     <div class="space-y-2">
-                        <div class="flex items-center space-x-2">
-                            <Checkbox id="executions-run" v-model:checked="form.scopes.executionsRun" />
-                            <Label for="executions-run" class="text-sm font-normal">
-                                executions:run - Execute prompts and manage executions
+                        <div v-for="permission in availablePermissions" :key="permission.value"
+                            class="flex items-center space-x-2">
+                            <Checkbox :id="permission.value" :checked="form.scopes.includes(permission.value)"
+                                @update:model-value="(v: any) => updateChecked(permission.value)" />
+                            <Label :for="permission.value" class="text-sm font-normal">
+                                {{ permission.label }}
                             </Label>
                         </div>
                     </div>
@@ -74,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -90,6 +92,7 @@ import {
 import { apiKeysApi } from '@/services/api-client'
 import { useUI } from '@/services/ui'
 import type { CreateApiKeyRequest } from '@/services/definitions/api-key'
+import { permissions } from '@/services/definitions/api-key'
 
 const { toast } = useUI()
 
@@ -110,21 +113,37 @@ const showSuccessDialog = ref(false)
 const createdApiKey = ref('')
 const copied = ref(false)
 
+// Automatically derive available permissions from the backend enum
+const availablePermissions = computed(() => {
+    return permissions.options.map(value => ({
+        value,
+        label: value
+    }))
+})
+
+const updateChecked = (p: string) => {
+    if (form.scopes.includes(p)) {
+        const index = form.scopes.indexOf(p)
+        if (index > -1) {
+            form.scopes.splice(index, 1)
+        }
+    } else {
+        form.scopes.push(p)
+    }
+}
+
+// Create dynamic form structure with array for tracking checked scopes
 const form = reactive({
     name: '',
-    scopes: {
-        executionsRun: true
-    }
+    scopes: [] as string[]
 })
 
 const handleSubmit = async () => {
     try {
         loading.value = true
 
-        const scopes: CreateApiKeyRequest['scopes'] = []
-        if (form.scopes.executionsRun) {
-            scopes.push('executions:run')
-        }
+        // Use scopes array directly
+        const scopes = form.scopes as CreateApiKeyRequest['scopes']
 
         const response = await apiKeysApi.create({
             name: form.name,
@@ -138,7 +157,7 @@ const handleSubmit = async () => {
 
         // Reset form
         form.name = ''
-        form.scopes.executionsRun = true
+        form.scopes.length = 0
 
     } catch (error) {
         console.error('Failed to create API key:', error)

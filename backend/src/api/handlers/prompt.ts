@@ -1,10 +1,9 @@
 import { RegisterHandlers, EndpointMiddleware } from 'ts-typed-api';
-import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
+import app, { apiKeyMiddleware, authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import { Prompt, promptModel } from '../../models/prompt';
 import { promptAdjustmentService } from '../../services/prompt-adjustment-service';
 import { z } from 'zod';
 import { PromptApiDefinition, PromptResponse } from '../definitions/prompt';
-import { executionService } from '../../services/execution-service';
 import { JSONSchema } from '../../providers/base-provider';
 import { promptService } from '../../services/prompt-service';
 
@@ -362,4 +361,6 @@ RegisterHandlers(app, PromptApiDefinition, {
 
         }
     }
-}, [loggingMiddleware, timingMiddleware, authMiddleware])
+}, [loggingMiddleware, timingMiddleware, apiKeyMiddleware<typeof PromptApiDefinition>((scopes, endpointInfo) => {
+    return scopes.includes('prompts:preview') && endpointInfo.domain === 'prompts' && endpointInfo.routeKey === 'preview'
+}), authMiddleware])

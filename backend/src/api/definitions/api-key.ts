@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 import { ErrorResponseSchema } from './common';
 
-const permissions = z.enum(['executions:run'])
+export const permissions = z.enum(['executions:run', 'prompts:preview'])
 
 // API Key schemas
 export const ApiKeySchema = z.object({
