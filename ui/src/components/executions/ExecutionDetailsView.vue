@@ -1,6 +1,6 @@
 <template>
     <div v-if="execution" class="flex-1 overflow-hidden flex flex-col space-y-4 px-4">
-        <div class="flex-shrink-0 grid grid-cols-9 gap-2">
+        <div class="flex-shrink-0 grid grid-cols-11 gap-2">
             <div>
                 <Label>Status</Label>
                 <div class="mt-1">
@@ -25,6 +25,12 @@
                 <Badge :variant="'secondary'" class="flex items-center gap-1" v-if="execution.prompt_text">
                     Custom
                 </Badge>
+            </div>
+            <div>
+                <Label>Origin</Label>
+                <div class="mt-1 text-sm">
+                    {{ execution.origin }}
+                </div>
             </div>
             <div>
                 <Label>Starred</Label>

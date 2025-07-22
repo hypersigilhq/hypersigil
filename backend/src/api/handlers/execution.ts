@@ -90,7 +90,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             return
                         }
                     } else {
-                        const { promptId, promptVersion, userInput, options } = req.body;
+                        const { promptId, promptVersion, userInput, options, traceId } = req.body;
 
                         const execution = await executionService.createExecution({
                             promptId,
@@ -98,7 +98,9 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             promptText,
                             userInput: userInput!,
                             providerModel,
-                            options: options as ExecutionOptions
+                            options: options as ExecutionOptions,
+                            origin: req.isApiCall() ? 'api' : 'app',
+                            traceId
                         });
 
                     }
@@ -283,7 +285,9 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             },
                             result_valid: execution.result_valid,
                             result_validation_message: execution.result_validation_message,
-                            starred: execution.starred
+                            starred: execution.starred,
+                            origin: execution.origin,
+                            traceId: execution.trace_id
                         }
                     })
                 };
@@ -336,7 +340,9 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     created_at: execution.created_at!.toISOString(),
                     updated_at: execution.updated_at!.toISOString(),
                     options: execution.options,
-                    starred: execution.starred
+                    starred: execution.starred,
+                    origin: execution.origin,
+                    traceId: execution.trace_id
                 };
 
                 res.respond(200, response);

@@ -113,6 +113,7 @@
                         <TableHead>ID</TableHead>
                         <TableHead>Prompt</TableHead>
                         <TableHead>Provider/Model</TableHead>
+                        <TableHead>Origin</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Starred</TableHead>
                         <TableHead>Result valid</TableHead>
@@ -146,6 +147,9 @@
                                 <div class="font-medium">{{ execution.provider }}</div>
                                 <div class="text-muted-foreground">{{ execution.model }}</div>
                             </div>
+                        </TableCell>
+                        <TableCell>
+                            <Badge :variant="'secondary'">{{ execution.origin }}</Badge>
                         </TableCell>
                         <TableCell>
                             <Badge :variant="getStatusVariant(execution.status)" class="flex items-center gap-1">

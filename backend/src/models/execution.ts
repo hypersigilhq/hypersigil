@@ -1,8 +1,7 @@
 import { Model } from '../database/base-model';
 import { BaseDocument } from '../database/types';
 import { db } from '../database/manager';
-import { ExecutionOptions, ExecutionResult } from '../providers/base-provider';
-import { ExecutionUpdateRequest } from '../api/definitions/execution';
+import { ExecutionOptions } from '../providers/base-provider';
 
 // Execution interface extending BaseDocument
 export interface Execution extends BaseDocument {
@@ -27,6 +26,10 @@ export interface Execution extends BaseDocument {
 
     test_data_group_id?: string | undefined;
     test_data_item_id?: string | undefined;
+    // used to correlate executions together
+    trace_id?: string | undefined;
+    // whats the origin of the execution
+    origin: 'app' | 'api';
 }
 
 export class ExecutionModel extends Model<Execution> {

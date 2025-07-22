@@ -51,7 +51,11 @@ declare global {
             user?: {
                 id: string,
                 role: UserDocument['role']
-            }
+            },
+            apiKey?: {
+                id: string,
+            },
+            isApiCall(): boolean
         }
     }
 }
@@ -191,6 +195,12 @@ export const apiKeyMiddleware = <T extends ApiDefinitionSchema>(fn: (scopes: Per
                 id: user.id!,
                 role: user.role
             };
+
+            req.apiKey = {
+                id: apiKey.id!
+            }
+
+            req.isApiCall = () => !!req.apiKey
 
             next();
         } catch (error) {

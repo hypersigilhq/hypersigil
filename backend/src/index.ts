@@ -9,11 +9,17 @@ import "./api/handlers/auth"
 import "./api/handlers/api-key"
 import { config } from "./config";
 import { executionService } from "./services/execution-service";
-import './database/index'
+import { migrationManager } from './database/index'
 
-// Initialize execution service
+// Initialize database and services
 const initializeServices = async () => {
     try {
+        // Initialize and run database migrations first
+        console.log('🔄 Initializing database migrations...');
+        await migrationManager.initialize();
+        await migrationManager.runMigrations();
+
+        // Then initialize other services
         await executionService.initialize();
         console.log('✅ Services initialized successfully');
     } catch (error) {

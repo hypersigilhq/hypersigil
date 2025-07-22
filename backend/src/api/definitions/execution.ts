@@ -59,7 +59,10 @@ export const ExecutionResponseSchema = z.object({
     completed_at: z.string().optional(),
     created_at: z.string(),
     updated_at: z.string(),
+    traceId: z.string().optional(),
+    origin: z.enum(['app', 'api']),
     starred: z.boolean().optional(),
+
     options: ExecutionOptionsSchema.optional()
 }).refine(input => {
     return input.prompt_id || input.prompt_text
@@ -81,6 +84,7 @@ export const CreateExecutionRequestSchema = z.object({
     promptText: z.string().optional(),
     userInput: z.string().optional(),
     testDataGroupId: z.string().optional(),
+    traceId: z.string().optional(),
     providerModel: z.array(z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model')),
     options: ExecutionOptionsSchema.optional()
 }).superRefine((val, ctx) => {
