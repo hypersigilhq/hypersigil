@@ -1,6 +1,6 @@
 <template>
     <Dialog v-model:open="isOpen">
-        <DialogContent class="fixed max-w-7xl h-screen m-0 p-2 rounded-none border-0 bg-background">
+        <DialogContent class=" max-w-7xl h-screen m-0 p-2 rounded-none border-0 bg-background">
             <DialogHeader class="flex-shrink-0 border-b">
                 <DialogTitle>
                     {{ isCloning ? 'Clone Execution' : 'Schedule Execution' }}

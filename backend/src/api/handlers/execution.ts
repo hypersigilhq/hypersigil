@@ -6,7 +6,7 @@ import app from '../../app';
 import { ExecutionOptions } from '../../providers/base-provider';
 import { Prompt, promptModel, PromptVersion } from '../../models/prompt';
 import { ExecutionApiDefinition, ExecutionResponse } from '../definitions/execution';
-import { testDataGroupModel, testDataItemModel, executionBundleModel, executionModel } from '../../models';
+import { executionModel } from '../../models';
 
 // Provider cache - simple in-memory cache with no TTL
 let providerHealthCache: any = null;
@@ -25,64 +25,36 @@ RegisterHandlers(app, ExecutionApiDefinition, {
         create: async (req, res) => {
             let executionIds: string[] = []
             const { promptId, promptVersion, testDataGroupId, options, promptText } = req.body;
-            for (let i in req.body.providerModel) {
-                let providerModel = req.body.providerModel[i]!
-                if (testDataGroupId) {
-                    try {
+            if (testDataGroupId) {
+                if (!promptId) {
+                    res.respond(400, {
+                        error: 'Validation error',
+                        message: 'promptId is required for batch executions'
+                    });
+                    return;
+                }
 
-                        // Check if test data group exists
-                        const group = await testDataGroupModel.findById(testDataGroupId);
-                        if (!group) {
-                            res.respond(404, {
-                                error: 'Not found',
-                                message: 'Test data group not found'
-                            });
-                            return;
-                        }
-
-                        // Get all items in the group
-                        const items = await testDataItemModel.findByGroupId(testDataGroupId);
-                        if (items.length === 0) {
-                            res.respond(400, {
-                                error: 'Validation error',
-                                message: 'Test data group is empty'
-                            });
-                            return;
-                        }
-
-                        const errors: { itemId: string; error: string }[] = [];
-
-                        // Create executions for each item
-                        for (const item of items) {
-                            const executionData: any = {
-                                promptId,
-                                userInput: item.content,
-                                providerModel
-                            };
-
-                            if (promptVersion !== undefined) {
-                                executionData.promptVersion = promptVersion;
-                            }
-
-                            if (options !== undefined) {
-                                executionData.options = options;
-                            }
-
-                            const execution = await executionService.createExecution(executionData);
-
-                            executionIds.push(execution.id!);
-                        }
-
-                    } catch (error) {
-                        console.error('Error creating batch executions:', error);
-                        res.respond(500, {
-                            error: 'Internal server error',
-                            message: 'Failed to create batch executions'
-                        });
-                        return
-                    }
-                } else {
-
+                try {
+                    executionIds = await executionService.createExecutionBundle(
+                        testDataGroupId,
+                        req.body.providerModel,
+                        promptId,
+                        promptVersion,
+                        options as ExecutionOptions
+                    );
+                    res.respond(201, { executionIds });
+                } catch (error) {
+                    console.error('Error creating batch executions:', error);
+                    res.respond(500, {
+                        error: 'Internal server error',
+                        message: 'Failed to create execution',
+                        details: (<Error>error).message
+                    });
+                    return;
+                }
+            } else {
+                for (let i in req.body.providerModel) {
+                    let providerModel = req.body.providerModel[i]!
                     try {
                         const { promptId, promptVersion, userInput, options, traceId } = req.body;
 
@@ -119,21 +91,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
             }
 
             res.respond(201, { executionIds });
-            // Create ExecutionBundle if executions were created successfully
-            if (executionIds.length > 0 && testDataGroupId && promptId) {
-                try {
-                    await executionBundleModel.create({
-                        test_group_id: testDataGroupId,
-                        execution_ids: executionIds,
-                        prompt_id: promptId,
-                    });
-                } catch (bundleError) {
-                    console.error('Error creating execution bundle:', bundleError);
-                    // Continue execution even if bundle creation fails
-                }
-            }
-
-
         },
 
         update: async (req, res) => {

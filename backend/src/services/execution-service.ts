@@ -1,9 +1,11 @@
 import { executionModel, Execution } from '../models/execution';
 import { promptModel } from '../models/prompt';
+import { executionBundleModel } from '../models/execution-bundle';
 import { providerRegistry } from '../providers/provider-registry';
 import { ProviderError, ExecutionOptions, JSONSchema, ExecutionResult } from '../providers/base-provider';
 import Ajv from 'ajv';
 import addFormats from "ajv-formats"
+import { testDataGroupModel, testDataItemModel } from '../models';
 
 export interface CreateExecutionRequest {
     promptId?: string | undefined;
@@ -514,6 +516,67 @@ export class ExecutionService {
      */
     public async cleanupOldExecutions(olderThanDays: number = 30): Promise<number> {
         return executionModel.cleanupOldExecutions(olderThanDays);
+    }
+
+    /**
+     * Create an execution bundle for a group of executions
+     */
+    public async createExecutionBundle(
+        testDataGroupId: string,
+        providerModels: string[],
+        promptId: string,
+        promptVersion?: number,
+        options?: ExecutionOptions
+    ): Promise<string[]> {
+        const executionIds: string[] = [];
+
+        for (let i in providerModels) {
+            let providerModel = providerModels[i]!;
+            // Check if test data group exists
+            const group = await testDataGroupModel.findById(testDataGroupId);
+            if (!group) {
+                throw new Error('Test data group not found');
+            }
+
+            // Get all items in the group
+            const items = await testDataItemModel.findByGroupId(testDataGroupId);
+            if (items.length === 0) {
+                throw new Error('Test data group is empty');
+            }
+
+            // Create executions for each item
+            for (const item of items) {
+                const executionData: any = {
+                    promptId,
+                    userInput: item.content,
+                    providerModel,
+                    origin: 'app' as const
+                };
+
+                if (promptVersion !== undefined) {
+                    executionData.promptVersion = promptVersion;
+                }
+
+                if (options !== undefined) {
+                    executionData.options = options;
+                }
+
+                const execution = await this.createExecution(executionData);
+                executionIds.push(execution.id!);
+            }
+        }
+
+        // Create ExecutionBundle if executions were created successfully
+        if (executionIds.length > 0 && testDataGroupId && promptId) {
+            await executionBundleModel.create({
+                test_group_id: testDataGroupId,
+                execution_ids: executionIds,
+                prompt_id: promptId,
+            });
+            console.log(`Created execution bundle for ${executionIds.length} executions`);
+        }
+
+        return executionIds;
     }
 
     /**
