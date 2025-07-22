@@ -3,6 +3,7 @@ import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../
 import { TestDataApiDefinition } from '../definitions/test-data';
 import { TestDataGroup, testDataGroupModel, testDataItemModel, promptModel } from '../../models';
 import { executionService } from '../../services/execution-service';
+import { promptService } from '../../services/prompt-service';
 
 // Helper function to format test data group for response
 const formatTestDataGroupForResponse = (group: any) => ({
@@ -471,8 +472,7 @@ RegisterHandlers(app, TestDataApiDefinition, {
                     return;
                 }
 
-                // Compile the prompt
-                const result = executionService.compilePromptVersion(testDataItem, promptVersionData);
+                const result = promptService.compilePromptVersion(testDataItem, promptVersionData);
 
                 res.respond(200, result);
             } catch (error) {

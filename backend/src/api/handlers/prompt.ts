@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { PromptApiDefinition, PromptResponse } from '../definitions/prompt';
 import { executionService } from '../../services/execution-service';
 import { JSONSchema } from '../../providers/base-provider';
+import { promptService } from '../../services/prompt-service';
 
 function formatPromptForResponse(prompt: Prompt): PromptResponse {
     return {
@@ -346,7 +347,7 @@ RegisterHandlers(app, PromptApiDefinition, {
                 }
             }
 
-            const compilationResult = executionService.compilePrompt(userInput, promptToCompile, jsonSchema);
+            const compilationResult = promptService.compilePrompt(userInput, promptToCompile, jsonSchema);
 
             if (!compilationResult.success) {
                 return res.respond(400, {
