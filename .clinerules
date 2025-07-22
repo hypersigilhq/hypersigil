@@ -46,6 +46,21 @@ After every implementation, add high-level documentation in ./product-documentat
 - Leverage API `ui/services/definitions` types across the application
 - All data should be typed, avoid any/unknown types if possible
 
+## Backend architecture and best practices
+- Use Golang-like error handling pattern, there's global types:
+```
+declare global {
+  type Result<T, E = string> = { success: true; data: T } | { success: false; error: E };
+  function Ok<T>(data: T): Result<T, never>;
+  function Err<E>(error: E): Result<never, E>;
+}
+//example
+function parse(input: boolean): Result<number, string> {
+  return input ? Ok(1) : Err('Invalid');
+
+}
+```
+
 ### __UI/UX Considerations__
 
 __Design Consistency:__

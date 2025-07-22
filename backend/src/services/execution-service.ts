@@ -168,10 +168,10 @@ export class ExecutionService {
     /**
      * Create a new execution (will be picked up by polling)
      */
-    public async createExecution(request: CreateExecutionRequest): Promise<Execution> {
+    public async createExecution(request: CreateExecutionRequest): Promise<Result<Execution>> {
         // Validate that either promptId or promptText is provided
         if (!request.promptId && !request.promptText) {
-            throw new Error('Either promptId or promptText must be provided');
+            return Err('Either promptId or promptText must be provided');
         }
 
         let versionToExecute: number | undefined;
@@ -180,7 +180,7 @@ export class ExecutionService {
         if (request.promptId) {
             const prompt = await promptModel.findById(request.promptId);
             if (!prompt) {
-                throw new Error(`Prompt not found: ${request.promptId}`);
+                return Err(`Prompt not found: ${request.promptId}`);
             }
 
             // Determine version to execute
@@ -189,13 +189,13 @@ export class ExecutionService {
             // Validate version exists
             const promptVersion = promptModel.getVersion(prompt, versionToExecute);
             if (!promptVersion) {
-                throw new Error(`Prompt version ${versionToExecute} not found`);
+                return Err(`Prompt version ${versionToExecute} not found`);
             }
 
             if (request.promptId && promptVersion && promptVersion.json_schema_input) {
                 let vr = this.validateData(JSON.parse(request.userInput), <JSONSchema>promptVersion.json_schema_input)
                 if (!vr.valid) {
-                    throw new Error(`Input data is not valid: ` + vr.validation_message)
+                    return Err(`Input data is not valid: ` + vr.validation_message)
                 }
             }
         }
@@ -228,7 +228,7 @@ export class ExecutionService {
             : `Created execution ${execution.id} for prompt version ${versionToExecute} - will be processed by polling`;
         console.log(logMessage);
 
-        return execution;
+        return Ok(execution);
     }
 
     /**
@@ -527,7 +527,7 @@ export class ExecutionService {
         promptId: string,
         promptVersion?: number,
         options?: ExecutionOptions
-    ): Promise<string[]> {
+    ): Promise<Result<string[]>> {
         const executionIds: string[] = [];
 
         for (let i in providerModels) {
@@ -535,13 +535,13 @@ export class ExecutionService {
             // Check if test data group exists
             const group = await testDataGroupModel.findById(testDataGroupId);
             if (!group) {
-                throw new Error('Test data group not found');
+                return Err('Test data group not found');
             }
 
             // Get all items in the group
             const items = await testDataItemModel.findByGroupId(testDataGroupId);
             if (items.length === 0) {
-                throw new Error('Test data group is empty');
+                return Err('Test data group is empty');
             }
 
             // Create executions for each item
@@ -561,8 +561,12 @@ export class ExecutionService {
                     executionData.options = options;
                 }
 
-                const execution = await this.createExecution(executionData);
-                executionIds.push(execution.id!);
+                const result = await this.createExecution(executionData);
+                if (!result.success) {
+                    return Err(result.error);
+                }
+                executionIds.push(result.data!.id!);
+
             }
         }
 
@@ -576,7 +580,7 @@ export class ExecutionService {
             console.log(`Created execution bundle for ${executionIds.length} executions`);
         }
 
-        return executionIds;
+        return Ok(executionIds);
     }
 
     /**

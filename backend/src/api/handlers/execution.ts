@@ -23,7 +23,6 @@ export function clearProviderCache() {
 RegisterHandlers(app, ExecutionApiDefinition, {
     executions: {
         create: async (req, res) => {
-            let executionIds: string[] = []
             const { promptId, promptVersion, testDataGroupId, options, promptText } = req.body;
             if (testDataGroupId) {
                 if (!promptId) {
@@ -34,63 +33,56 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     return;
                 }
 
-                try {
-                    executionIds = await executionService.createExecutionBundle(
-                        testDataGroupId,
-                        req.body.providerModel,
-                        promptId,
-                        promptVersion,
-                        options as ExecutionOptions
-                    );
-                    res.respond(201, { executionIds });
-                } catch (error) {
-                    console.error('Error creating batch executions:', error);
+                let result = await executionService.createExecutionBundle(
+                    testDataGroupId,
+                    req.body.providerModel,
+                    promptId,
+                    promptVersion,
+                    options as ExecutionOptions
+                );
+
+                if (!result.success) {
+                    console.error('Error creating batch executions:', result.error);
                     res.respond(500, {
                         error: 'Internal server error',
                         message: 'Failed to create execution',
-                        details: (<Error>error).message
+                        details: result.error
                     });
                     return;
                 }
+                res.respond(201, { executionIds: result.data });
             } else {
                 for (let i in req.body.providerModel) {
                     let providerModel = req.body.providerModel[i]!
-                    try {
-                        const { promptId, promptVersion, userInput, options, traceId } = req.body;
+                    const { promptId, promptVersion, userInput, options, traceId } = req.body;
 
-                        const execution = await executionService.createExecution({
-                            promptId,
-                            ...(promptVersion !== undefined && { promptVersion }),
-                            promptText,
-                            userInput: userInput!,
-                            providerModel,
-                            options: options as ExecutionOptions,
-                            origin: req.isApiCall() ? 'api' : 'app',
-                            traceId
-                        });
+                    const result = await executionService.createExecution({
+                        promptId,
+                        ...(promptVersion !== undefined && { promptVersion }),
+                        promptText,
+                        userInput: userInput!,
+                        providerModel,
+                        options: options as ExecutionOptions,
+                        origin: req.isApiCall() ? 'api' : 'app',
+                        traceId
+                    });
 
-                    } catch (error) {
-                        console.error('Error creating execution:', error);
-                        if (error instanceof Error) {
-                            if (error.message.includes('Invalid') || error.message.includes('format')) {
-                                return res.respond(400, {
-                                    error: 'Invalid request',
-                                    message: error.message
-                                });
-                            }
-                        }
-
+                    if (!result.success) {
                         res.respond(500, {
                             error: 'Internal server error',
                             message: 'Failed to create execution',
-                            details: (<Error>error).message
+                            details: result.error
                         });
+                        return;
                     }
+
+                    res.respond(201, { executionIds: [result.data.id!] });
+                    return;
+
                 }
 
             }
 
-            res.respond(201, { executionIds });
         },
 
         update: async (req, res) => {
