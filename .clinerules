@@ -47,7 +47,7 @@ After every implementation, add high-level documentation in ./product-documentat
 - All data should be typed, avoid any/unknown types if possible
 
 ## Backend architecture and best practices
-- Use Golang-like error handling pattern, there's global types:
+- Use Golang-like error handling pattern, there's global types. The reason is to avoid try/catch blocks and treat every error explicitly.
 ```
 declare global {
   type Result<T, E = string> = { success: true; data: T } | { success: false; error: E };

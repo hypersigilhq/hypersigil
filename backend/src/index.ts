@@ -1,4 +1,5 @@
 import app from "./app";
+import "./types/global-init"; // Initialize global Result functions
 import "./api/handlers/prompt"
 import "./api/handlers/execution"
 import "./api/handlers/execution-bundle"
