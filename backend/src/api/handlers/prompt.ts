@@ -362,5 +362,9 @@ RegisterHandlers(app, PromptApiDefinition, {
         }
     }
 }, [loggingMiddleware, timingMiddleware, apiKeyMiddleware<typeof PromptApiDefinition>((scopes, endpointInfo) => {
-    return scopes.includes('prompts:preview') && endpointInfo.domain === 'prompts' && endpointInfo.routeKey === 'preview'
+    if (endpointInfo.domain !== 'prompts') {
+        return false
+    }
+    return scopes.includes('prompts:preview') && endpointInfo.routeKey === 'preview'
+        || scopes.includes('prompts:read') && endpointInfo.routeKey === 'getById'
 }), authMiddleware])

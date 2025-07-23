@@ -401,5 +401,15 @@ RegisterHandlers(app, ExecutionApiDefinition, {
         }
     }
 }, [loggingMiddleware, timingMiddleware, apiKeyMiddleware<typeof ExecutionApiDefinition>((scopes, endpointInfo) => {
-    return scopes.includes('executions:run') && endpointInfo.domain === 'executions' && endpointInfo.routeKey === 'create'
+    if (endpointInfo.domain !== 'executions') {
+        return false
+    }
+    switch (endpointInfo.routeKey) {
+        case 'getById':
+            return scopes.includes('executions:read')
+        case 'create':
+            return scopes.includes('executions:run')
+        default:
+            return false
+    }
 }), authMiddleware]);

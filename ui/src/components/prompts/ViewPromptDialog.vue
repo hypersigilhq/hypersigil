@@ -51,17 +51,18 @@
                     </div>
 
                     <div class="flex flex-col min-h-0">
-                        <template v-if="currentDisplayVersion.json_schema_response">
-                            <Label>JSON Schema Response</Label>
-                            <Switch :model-value="jsonSchemaOutputVisible"
-                                @update:model-value="(v: boolean) => jsonSchemaOutputVisible = v" />
-                            <div v-if="jsonSchemaInputVisible"
+                        <div class="my-2" v-if="currentDisplayVersion.json_schema_response">
+                            <Label>JSON Schema Response
+                                <Switch :model-value="jsonSchemaOutputVisible"
+                                    @update:model-value="(v: boolean) => jsonSchemaOutputVisible = v" />
+                            </Label>
+                            <div v-if="jsonSchemaOutputVisible"
                                 class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
                                 <pre
                                     class="whitespace-pre-wrap text-sm">{{ JSON.stringify(currentDisplayVersion.json_schema_response || {}, null, 2) }}</pre>
                             </div>
-                        </template>
-                        <template v-if="currentDisplayVersion.json_schema_input">
+                        </div>
+                        <div class="my-2" v-if="currentDisplayVersion.json_schema_input">
                             <Label>JSON Schema Input
                                 <Switch :model-value="jsonSchemaInputVisible"
                                     @update:model-value="(v: boolean) => jsonSchemaInputVisible = v" />
@@ -71,7 +72,7 @@
                                 <pre
                                     class="whitespace-pre-wrap text-sm">{{ JSON.stringify(currentDisplayVersion.json_schema_input || {}, null, 2) }}</pre>
                             </div>
-                        </template>
+                        </div>
                         <div class="flex items-center justify-between my-2">
                             <Label>Comments</Label>
                             <div class="flex items-center space-x-2">

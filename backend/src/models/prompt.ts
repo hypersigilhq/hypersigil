@@ -90,8 +90,8 @@ export class PromptModel extends Model<Prompt> {
         const hasContentChanges =
             (data.name && data.name !== existing.name) ||
             (data.prompt && data.prompt !== existing.prompt) ||
-            (data.json_schema_response && JSON.stringify(data.json_schema_response) !== JSON.stringify(existing.json_schema_response));
-        (data.json_schema_input && JSON.stringify(data.json_schema_input) !== JSON.stringify(existing.json_schema_input));
+            (data.json_schema_response && JSON.stringify(data.json_schema_response) !== JSON.stringify(existing.json_schema_response)) ||
+            (data.json_schema_input && JSON.stringify(data.json_schema_input) !== JSON.stringify(existing.json_schema_input));
 
         if (hasContentChanges) {
             // Create new version
