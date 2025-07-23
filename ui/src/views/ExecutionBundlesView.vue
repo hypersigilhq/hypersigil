@@ -1,5 +1,5 @@
 <template>
-    <div class="h-full flex flex-col">
+    <div class="flex flex-col h-[calc(100vh-50px)]">
         <!-- Header -->
         <div class="flex-shrink-0 p-4 border-b">
             <h1 class="text-2xl font-bold">Execution Bundles</h1>
