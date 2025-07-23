@@ -84,6 +84,7 @@ import { Settings, User, FileText, Play, Database, PanelLeftClose, PanelLeftOpen
 import { Button } from '@/components/ui/button'
 import NavigationItem from './NavigationItem.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useSettings } from '@/composables/useSettings'
 
 interface NavigationItemType {
     name: string
@@ -124,21 +125,16 @@ const emit = defineEmits<{
 }>()
 
 // Sidebar collapse state
-const isCollapsed = ref(false)
+const isCollapsed = useSettings().getSettingRef('sidebarCollapsed')
 const isHovered = ref(false)
 
 // Load saved state from localStorage
 onMounted(() => {
-    const saved = localStorage.getItem('sidebar-collapsed')
-    if (saved !== null) {
-        isCollapsed.value = JSON.parse(saved)
-        emit('collapse-change', isCollapsed.value)
-    }
+    emit('collapse-change', isCollapsed.value)
 })
 
 const toggleCollapse = () => {
     isCollapsed.value = !isCollapsed.value
-    localStorage.setItem('sidebar-collapsed', JSON.stringify(isCollapsed.value))
     emit('collapse-change', isCollapsed.value)
 }
 

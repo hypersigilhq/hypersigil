@@ -5,13 +5,15 @@ export interface AppSettings {
     executionViewCommentContainerWidth: number,
     executionBundleFirstColumnWidht: number,
     executionBundleSecondColumnWidht: number,
+    sidebarCollapsed: boolean
 }
 
 // Default settings
 const defaultSettings: AppSettings = {
     executionBundleFirstColumnWidht: 200,
     executionBundleSecondColumnWidht: 300,
-    executionViewCommentContainerWidth: 300
+    executionViewCommentContainerWidth: 300,
+    sidebarCollapsed: false
 }
 
 const STORAGE_KEY = 'app_settings'
