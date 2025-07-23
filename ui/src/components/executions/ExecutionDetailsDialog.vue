@@ -5,6 +5,7 @@
                 <DialogTitle>Execution Details</DialogTitle>
                 <DialogDescription>
                     ID: {{ execution?.id }}
+                    <CopyToClipboard :text="execution?.id!" />
                 </DialogDescription>
             </DialogHeader>
             <ExecutionDetailsView :execution="execution" />

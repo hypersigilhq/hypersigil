@@ -6,6 +6,8 @@
                     <div>
                         <DialogTitle>{{ prompt?.name }}</DialogTitle>
                         <DialogDescription>
+                            ID: {{ prompt?.id }}
+                            <CopyToClipboard :text="prompt?.id!" class="mr-5" />
                             Created: {{ prompt ? formatDate(prompt.created_at) : '' }} |
                             Updated: {{ prompt ? formatDate(prompt.updated_at) : '' }}
                         </DialogDescription>
@@ -154,6 +156,7 @@ import {
 } from '@/components/ui/dialog'
 import CalibratePromptDialog from './CalibratePromptDialog.vue'
 import Switch from '../ui/switch/Switch.vue'
+import CopyToClipboard from '../ui/copy-to-clipboard/CopyToClipboard.vue'
 
 const props = defineProps<{
     open: boolean

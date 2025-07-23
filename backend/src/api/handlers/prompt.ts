@@ -351,7 +351,8 @@ RegisterHandlers(app, PromptApiDefinition, {
             if (!compilationResult.success) {
                 return res.respond(400, {
                     error: 'Compilation Error',
-                    message: compilationResult.error
+                    message: compilationResult.error.error,
+                    details: compilationResult.error.details
                 });
             }
 

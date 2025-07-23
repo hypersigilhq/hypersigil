@@ -75,7 +75,7 @@
             </div>
         </div>
 
-        <div v-if="!execution.result_valid" class="flex-shrink-0">
+        <div v-if="execution.result_valid === false" class="flex-shrink-0">
             <Label>Result validation error</Label>
             <div class="mt-1 p-3 bg-destructive/10 border border-destructive/20 rounded-md max-h-32 overflow-auto">
                 <pre class="whitespace-pre-wrap text-sm text-destructive">{{

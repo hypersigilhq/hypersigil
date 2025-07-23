@@ -174,10 +174,12 @@ export const apiKeyMiddleware = <T extends ApiDefinitionSchema>(fn: (scopes: Per
             }
 
             if (!fn(apiKey.permissions.scopes, endpointInfo)) {
+                console.error('Access denied', { scopes: apiKey.permissions.scopes, endpointInfo })
                 res.status(403).json({
                     error: 'Forbidden',
                     message: `API key does not have required scope`
                 });
+                return
             }
 
             // Get the user associated with the API key

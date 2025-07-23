@@ -181,6 +181,7 @@ Each <Comment> is supplied with <ReviewerComment> as an original comment from a 
 You are also supplied with a list of <GenericComment> which is a comment without any quotation.
 
 After reviewing all feedback, provide a revised version of the original prompt that addresses the identified issues.
+You may find other tags (example: <FooBar>) in the <OriginalPrompt> ignore those as those are part of the <OriginalPrompt>.
 </Instructions>
         
 <OriginalPrompt>{{{originalPrompt}}}<OriginalPrompt>
