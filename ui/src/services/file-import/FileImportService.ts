@@ -2,6 +2,7 @@ import type { FileParser, ImportResult, ImportProgress } from './types'
 import type { CreateTestDataItemRequest, BulkCreateTestDataItemsRequest } from '../definitions/test-data'
 import { MarkdownParser } from './parsers/MarkdownParser'
 import { CsvParser } from './parsers/CsvParser'
+import { JsonParser } from './parsers/JsonParser'
 
 export class FileImportService {
     private parsers: FileParser[] = []
@@ -13,6 +14,7 @@ export class FileImportService {
     private registerDefaultParsers(): void {
         this.parsers.push(new MarkdownParser())
         this.parsers.push(new CsvParser())
+        this.parsers.push(new JsonParser())
     }
 
     registerParser(parser: FileParser): void {
