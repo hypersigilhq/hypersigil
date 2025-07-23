@@ -73,37 +73,44 @@
                         <TableCell>{{ formatDate(prompt.created_at) }}</TableCell>
                         <TableCell>{{ formatDate(prompt.updated_at) }}</TableCell>
                         <TableCell class="text-right">
-                            <div class="flex justify-end space-x-2">
-                                <Button variant="ghost" size="sm" @click="viewPrompt(prompt)"
-                                    v-tooltip.bottom="'View prompt details'">
-                                    <Eye class="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="sm" @click="scheduleExecution(prompt)"
-                                    v-tooltip.bottom="'Schedule execution'">
-                                    <Play class="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="sm" @click="clonePrompt(prompt)"
-                                    v-tooltip.bottom="'Clone prompt'">
-                                    <Copy class="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="sm" @click="editPrompt(prompt)"
-                                    v-tooltip.bottom="'Edit prompt'">
-                                    <Edit class="w-4 h-4" />
-                                </Button>
-                                <RouterLink :class="buttonVariants({ variant: 'ghost', size: 'sm' })"
-                                    :to="`/executions?prompt_id=${prompt.id}`" v-tooltip.bottom="'View executions'">
-                                    <Search class="w-4 h-4" />
-                                </RouterLink>
-                                <RouterLink :class="buttonVariants({ variant: 'ghost', size: 'sm' })"
-                                    :to="`/execution-bundles?prompt_id=${prompt.id}`"
-                                    v-tooltip.bottom="'View execution bundles'">
-                                    <Package class="w-4 h-4" />
-                                </RouterLink>
-                                <Button variant="ghost" size="sm" @click="deletePrompt(prompt)"
-                                    class="text-destructive hover:text-destructive" v-tooltip.bottom="'Delete prompt'">
-                                    <Trash2 class="w-4 h-4" />
-                                </Button>
-                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" class="h-8 w-8 p-0">
+                                        <MoreHorizontal class="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem @click="viewPrompt(prompt)">
+                                        <Eye class="w-4 h-4 mr-2" />
+                                        View
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem @click="scheduleExecution(prompt)">
+                                        <Play class="w-4 h-4 mr-2" />
+                                        Schedule execution
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem @click="clonePrompt(prompt)">
+                                        <Copy class="w-4 h-4 mr-2" />
+                                        Clone prompt
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem @click="editPrompt(prompt)">
+                                        <Edit class="w-4 h-4 mr-2" />
+                                        Edit prompt
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem @click="navigateToExecutions(prompt.id)">
+                                        <Search class="w-4 h-4 mr-2" />
+                                        View executions
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem @click="navigateToExecutionBundles(prompt.id)">
+                                        <Package class="w-4 h-4 mr-2" />
+                                        View execution bundles
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem @click="deletePrompt(prompt)"
+                                        class="text-destructive focus:text-destructive">
+                                        <Trash2 class="w-4 h-4 mr-2" />
+                                        Delete prompt
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </TableCell>
                     </TableRow>
                 </TableBody>
@@ -217,9 +224,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue'
 import { debounce } from 'lodash-es'
-import { Plus, Eye, Edit, Trash2, Play, Package, Copy, Search } from 'lucide-vue-next'
+import { Plus, Eye, Edit, Trash2, Play, Package, Copy, Search, MoreHorizontal } from 'lucide-vue-next'
 
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -250,8 +257,14 @@ import {
 import { promptsApi } from '@/services/api-client'
 import type { PromptResponse, CreatePromptRequest } from '../../services/definitions/prompt'
 import ScheduleExecutionDialog from '@/components/executions/ScheduleExecutionDialog.vue'
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import ViewPromptDialog from './ViewPromptDialog.vue'
+import DropdownMenu from '../ui/dropdown-menu/DropdownMenu.vue'
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { useUI } from '@/services/ui'
+
+const router = useRouter()
+const { toast, confirm } = useUI()
 
 // Reactive state
 const prompts = ref<PromptResponse[]>([])
@@ -261,7 +274,7 @@ const searchQuery = ref('')
 const orderBy = ref<'name' | 'created_at' | 'updated_at'>('created_at')
 const orderDirection = ref<'ASC' | 'DESC'>('DESC')
 const currentPage = ref(1)
-const pageLimit = ref(10)
+const pageLimit = ref(25)
 
 const pagination = ref<{
     total: number
@@ -420,6 +433,11 @@ const savePrompt = async () => {
             await promptsApi.create(promptData)
         }
 
+        toast({
+            title: 'Success',
+            variant: 'success',
+            description: `Prompt ${editingPrompt.value ? `updated` : `created`} successfully`
+        })
         closeDialog()
         loadPrompts()
     } catch (err) {
@@ -444,16 +462,40 @@ const onExecutionSuccess = (executionId: string) => {
 
 // Delete prompt
 const deletePrompt = async (prompt: PromptResponse) => {
-    if (!confirm(`Are you sure you want to delete "${prompt.name}"?`)) {
-        return
-    }
+    const confirmed = await confirm({
+        title: 'Delete Prompt',
+        message: `Are you sure you want to delete "${prompt.name}"? This action cannot be undone.`,
+        confirmText: 'Delete',
+        variant: 'destructive'
+    })
+
+    if (!confirmed) return
 
     try {
         await promptsApi.delete(prompt.id)
+        toast({
+            title: 'Success',
+            variant: 'success',
+            description: 'Prompt deleted successfully'
+        })
         loadPrompts()
     } catch (err) {
         error.value = err instanceof Error ? err.message : 'Failed to delete prompt'
+        toast({
+            title: 'Error',
+            description: error.value,
+            variant: 'error'
+        })
     }
+}
+
+// Navigation functions
+const navigateToExecutions = (promptId: string) => {
+    router.push(`/executions?prompt_id=${promptId}`)
+}
+
+const navigateToExecutionBundles = (promptId: string) => {
+    router.push(`/execution-bundles?prompt_id=${promptId}`)
 }
 
 // Utility functions
