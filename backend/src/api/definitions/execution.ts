@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CreateApiDefinition, CreateResponses } from 'ts-typed-api';
+import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 import { ErrorResponseSchema, createPaginationResponseSchema, PaginationQuerySchema, OrderDirectionSchema } from './common';
 import { JSONSchemaSchema } from './prompt';
 
