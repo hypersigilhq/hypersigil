@@ -1,27 +1,27 @@
 import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult, GenericProvider } from './base-provider';
 
-export interface ClaudeConfig extends ProviderConfig {
+export interface AnthropicConfig extends ProviderConfig {
     apiKey: string;
     baseUrl: string;
     timeout: number;
     version: string;
 }
 
-interface ClaudeMessage {
+interface AnthropicMessage {
     role: 'user' | 'assistant';
     content: string;
 }
 
-interface ClaudeRequest {
+interface AnthropicRequest {
     model: string;
     max_tokens: number;
-    messages: ClaudeMessage[];
+    messages: AnthropicMessage[];
     system?: string;
     temperature?: number;
     top_p?: number;
 }
 
-interface ClaudeResponse {
+interface AnthropicResponse {
     id: string;
     type: 'message';
     role: 'assistant';
@@ -38,31 +38,31 @@ interface ClaudeResponse {
     };
 }
 
-interface ClaudeModel {
+interface AnthropicModel {
     id: string;
     type: 'model';
     display_name: string;
     created_at: string;
 }
 
-interface ClaudeModelsResponse {
-    data: ClaudeModel[];
+interface AnthropicModelsResponse {
+    data: AnthropicModel[];
     has_more: boolean;
     first_id?: string;
     last_id?: string;
 }
 
-export class ClaudeProvider extends GenericProvider implements AIProvider {
-    public readonly name = 'claude';
-    private config: ClaudeConfig;
+export class AnthropicProvider extends GenericProvider implements AIProvider {
+    public readonly name = 'anthropic';
+    private config: AnthropicConfig;
     private modelsCache: string[] | null = null;
     private modelsCacheExpiry: number = 0;
     private readonly modelsCacheTTL = 5 * 60 * 1000; // 5 minutes
 
-    constructor(config: Partial<ClaudeConfig> = {}) {
+    constructor(config: Partial<AnthropicConfig> = {}) {
         super()
         this.config = {
-            name: 'claude',
+            name: 'anthropic',
             apiKey: config.apiKey || process.env.ANTHROPIC_API_KEY || '',
             baseUrl: config.baseUrl || 'https://api.anthropic.com',
             timeout: config.timeout || 240_000,
@@ -92,7 +92,7 @@ export class ClaudeProvider extends GenericProvider implements AIProvider {
         // Build user message
         const userMessage = userInput;
 
-        const requestBody: ClaudeRequest = {
+        const requestBody: AnthropicRequest = {
             model,
             max_tokens: options?.maxTokens || 4096,
             messages: [
@@ -119,7 +119,7 @@ export class ClaudeProvider extends GenericProvider implements AIProvider {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                let errorMessage = `Claude API error: ${response.status} ${response.statusText}`;
+                let errorMessage = `Anthropic API error: ${response.status} ${response.statusText}`;
 
                 try {
                     const errorData = JSON.parse(errorText);
@@ -138,11 +138,11 @@ export class ClaudeProvider extends GenericProvider implements AIProvider {
                 );
             }
 
-            const result = await response.json() as ClaudeResponse;
+            const result = await response.json() as AnthropicResponse;
 
             if (!result.content || result.content.length === 0) {
                 throw new ProviderError(
-                    'Claude API returned empty response',
+                    'Anthropic API returned empty response',
                     this.name,
                     'EMPTY_RESPONSE'
                 );
@@ -152,7 +152,7 @@ export class ClaudeProvider extends GenericProvider implements AIProvider {
             const textContent = result.content.find(block => block.type === 'text');
             if (!textContent) {
                 throw new ProviderError(
-                    'Claude API returned no text content',
+                    'Anthropic API returned no text content',
                     this.name,
                     'NO_TEXT_CONTENT'
                 );
@@ -174,7 +174,7 @@ export class ClaudeProvider extends GenericProvider implements AIProvider {
                 }
 
                 if (error.message.includes('ECONNREFUSED') || error.message.includes('fetch failed')) {
-                    throw new ProviderUnavailableError(this.name, 'Cannot connect to Claude API');
+                    throw new ProviderUnavailableError(this.name, 'Cannot connect to Anthropic API');
                 }
             }
 
@@ -234,7 +234,7 @@ export class ClaudeProvider extends GenericProvider implements AIProvider {
                 );
             }
 
-            const data = await response.json() as ClaudeModelsResponse;
+            const data = await response.json() as AnthropicModelsResponse;
             const models = data.data?.map((model) => model.id) || [];
 
             // Cache the results
@@ -252,7 +252,7 @@ export class ClaudeProvider extends GenericProvider implements AIProvider {
     }
 
     supportsStructuredOutput(): boolean {
-        return true; // Claude supports structured output through prompt engineering
+        return true; // Anthropic supports structured output through prompt engineering
     }
 
     private async makeRequest(endpoint: string, options: RequestInit): Promise<Response> {

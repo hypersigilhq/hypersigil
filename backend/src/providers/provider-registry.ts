@@ -1,6 +1,6 @@
 import { AIProvider, AIProviderName } from './base-provider';
 import { OllamaProvider } from './ollama-provider';
-import { ClaudeProvider } from './claude-provider';
+import { AnthropicProvider } from './anthropic-provider';
 import { OpenAIProvider } from './openai-provider';
 
 export class ProviderRegistry {
@@ -23,9 +23,9 @@ export class ProviderRegistry {
         const ollamaProvider = new OllamaProvider();
         this.providers.set(ollamaProvider.name, ollamaProvider);
 
-        // Initialize Claude provider
-        const claudeProvider = new ClaudeProvider();
-        this.providers.set(claudeProvider.name, claudeProvider);
+        // Initialize Anthropic provider
+        const anthropicProvider = new AnthropicProvider();
+        this.providers.set(anthropicProvider.name, anthropicProvider);
 
         // Initialize OpenAI provider
         const openaiProvider = new OpenAIProvider();

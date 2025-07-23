@@ -16,7 +16,7 @@ In the realm of Hypersigil, every prompt is a sigil—a symbol of intent designe
 ## Features
 
 ### 🔮 Prompt Execution System
-- **Multi-Provider Support**: Execute prompts across Ollama, OpenAI, Claude, and other AI providers
+- **Multi-Provider Support**: Execute prompts across Ollama, OpenAI, Anthropic, and other AI providers
 - **Asynchronous Processing**: Background execution with real-time status tracking
 - **Provider Health Monitoring**: Automatic failover and health checking
 - **Execution Bundles**: Organize and track related prompt executions
@@ -62,7 +62,7 @@ In the realm of Hypersigil, every prompt is a sigil—a symbol of intent designe
 ### AI Providers
 - **Ollama**: Local AI model execution
 - **OpenAI**: GPT models and embeddings
-- **Anthropic Claude**: Advanced reasoning and analysis
+- **Anthropic**: Advanced reasoning and analysis
 - **Extensible**: Plugin system for additional providers
 
 ## Getting Started
@@ -149,7 +149,7 @@ DATABASE_PATH=./data/hypersigil.db
 
 # AI Providers
 OPENAI_API_KEY=your_openai_key
-ANTHROPIC_API_KEY=your_claude_key
+ANTHROPIC_API_KEY=your_anthropic_key
 OLLAMA_BASE_URL=http://localhost:11434
 
 # Authentication
@@ -170,7 +170,7 @@ ollama pull qwen2.5:7b
 #### OpenAI
 Add your API key to the environment variables and configure in the settings panel.
 
-#### Claude
+#### Anthropic
 Add your Anthropic API key to the environment variables and configure in the settings panel.
 
 ## Contributing

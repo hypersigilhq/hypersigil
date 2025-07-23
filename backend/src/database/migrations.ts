@@ -145,7 +145,7 @@ export class MigrationManager {
                 });
 
                 // Execute migration SQL
-                this.database.exec(migration.up);
+                const result = this.database.exec(migration.up);
 
                 // Record migration
                 this.database
@@ -154,7 +154,8 @@ export class MigrationManager {
 
                 console.log('Migration completed', {
                     version: migration.version,
-                    name: migration.name
+                    name: migration.name,
+
                 });
             } catch (error) {
                 console.error('Migration failed', {
