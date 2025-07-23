@@ -333,24 +333,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     message: 'Failed to get execution statistics'
                 });
             }
-        },
-
-        getQueueStatus: async (req, res) => {
-            try {
-                const processingStatus = await executionService.getProcessingStatus();
-
-                const queueStatus = {
-                    processing: processingStatus.running,
-                };
-
-                res.respond(200, queueStatus);
-            } catch (error) {
-                console.error('Error getting processing status:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to get processing status'
-                });
-            }
         }
     },
 

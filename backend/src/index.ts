@@ -11,6 +11,7 @@ import "./api/handlers/api-key"
 import { config } from "./config";
 import { executionService } from "./services/execution-service";
 import { migrationManager } from './database/index'
+import { executionWorker } from "./services/execution-worker";
 
 // Initialize database and services
 const initializeServices = async () => {
@@ -21,7 +22,7 @@ const initializeServices = async () => {
         await migrationManager.runMigrations();
 
         // Then initialize other services
-        await executionService.initialize();
+        await executionWorker.initialize();
         console.log('✅ Services initialized successfully');
     } catch (error) {
         console.error('❌ Failed to initialize services:', error);
@@ -37,21 +38,15 @@ const server = app.listen(config.port, async () => {
     await initializeServices();
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('SIGTERM received, shutting down gracefully');
-    executionService.shutdown();
-    server.close(() => {
-        console.log('Process terminated');
-        process.exit(0);
-    });
-});
-
-process.on('SIGINT', () => {
+const shutdown = () => {
     console.log('SIGINT received, shutting down gracefully');
-    executionService.shutdown();
+    executionWorker.shutdown();
     server.close(() => {
         console.log('Process terminated');
         process.exit(0);
     });
-});
+}
+
+// Graceful shutdown
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

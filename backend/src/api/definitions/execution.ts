@@ -248,18 +248,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                     200: ExecutionStatsResponseSchema,
                     500: ErrorResponseSchema
                 })
-            },
-
-            getQueueStatus: {
-                method: 'GET',
-                path: '/queue/status',
-                params: z.object({}),
-                query: z.object({}),
-                body: z.object({}),
-                responses: CreateResponses({
-                    200: QueueStatusResponseSchema,
-                    500: ErrorResponseSchema
-                })
             }
         },
 
