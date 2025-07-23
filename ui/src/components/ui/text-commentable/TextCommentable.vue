@@ -54,7 +54,7 @@
                         <div class="comment-meta">
                             <span class="text-[11px] text-muted-foreground">{{ new
                                 Date(comment.unixTimestampMs).toLocaleString()
-                            }}</span>
+                                }}</span>
                             <Button variant="destructive" size="sm" :class="'text-[12px] h-6'"
                                 @click.stop="deleteComment(comment.id)" class="">
                                 Delete
@@ -78,6 +78,7 @@ import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import type { Comment, Selection, TextCommentableProps, TextCommentableEmits } from './types'
 import { useUI } from "@/services/ui";
+import { useSettings } from "@/composables/useSettings";
 
 const ui = useUI()
 
@@ -310,7 +311,7 @@ const commentText = ref('');
 const activeCommentId = ref<string | null>(null);
 
 // Resize functionality
-const sidebarWidth = ref(320); // Default width (equivalent to w-80)
+const sidebarWidth = useSettings().getSettingRef('executionViewCommentContainerWidth'); // Default width (equivalent to w-80)
 const isResizing = ref(false);
 const minSidebarWidth = 200;
 const maxSidebarWidth = 1600;

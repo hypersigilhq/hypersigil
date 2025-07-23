@@ -168,6 +168,7 @@ import type { ExecutionBundleResponse } from '@/services/definitions/execution-b
 import type { ExecutionResponse } from '@/services/definitions/execution'
 import router from '@/router'
 import ExecutionDetailsView from '@/components/executions/ExecutionDetailsView.vue'
+import { useSettings } from '@/composables/useSettings'
 
 // State
 const bundles = ref<ExecutionBundleResponse[]>([])
@@ -184,8 +185,8 @@ const executionsError = ref<string | null>(null)
 const searchQuery = ref('')
 
 // Column resizing
-const bundlesColumnWidth = ref(200)
-const executionsColumnWidth = ref(180)
+const bundlesColumnWidth = useSettings().getSettingRef('executionBundleFirstColumnWidht')
+const executionsColumnWidth = useSettings().getSettingRef('executionBundleSecondColumnWidht')
 const isResizing = ref(false)
 const currentResizingColumn = ref<'bundles' | 'executions' | null>(null)
 
