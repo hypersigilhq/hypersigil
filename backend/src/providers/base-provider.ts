@@ -33,9 +33,12 @@ export interface ExecutionResult {
     outputTokensUsed: number;
 }
 
+export const AIProviderNames = ['ollama', 'openai', 'anthropic', 'claude'] as const
+export type AIProviderName = typeof AIProviderNames[number]
+
 // Base interface for AI providers
 export interface AIProvider {
-    name: string;
+    name: AIProviderName;
     execute(prompt: string, userInput: string, model: string, options?: ExecutionOptions): Promise<ExecutionResult>;
     isAvailable(): Promise<boolean>;
     getSupportedModels(): Promise<string[]>;

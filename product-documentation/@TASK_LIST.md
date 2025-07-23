@@ -64,3 +64,4 @@
 - [done] Implement prompt calibration UI with "Calibrate prompt" button and dedicated dialog for displaying adjustment suggestions
 - [done] Implement invitation setup view for password creation by invited users
 - [done] Add prompt preview endpoint for compiling prompts with user input using Mustache templating
+- [done] Implement per-provider parallelism in execution worker to replace global concurrency limit with provider-specific limits

@@ -1,7 +1,7 @@
 import { Model } from '../database/base-model';
 import { BaseDocument } from '../database/types';
 import { db } from '../database/manager';
-import { ExecutionOptions } from '../providers/base-provider';
+import { AIProviderName, ExecutionOptions } from '../providers/base-provider';
 
 // Execution interface extending BaseDocument
 export interface Execution extends BaseDocument {
@@ -9,7 +9,7 @@ export interface Execution extends BaseDocument {
     prompt_version?: number | undefined;
     prompt_text?: string | undefined;
     user_input: string;
-    provider: string;  // e.g., "ollama"
+    provider: AIProviderName;  // e.g., "ollama"
     model: string;     // e.g., "qwen2.5:6b"
     status: 'pending' | 'running' | 'completed' | 'failed';
     result?: string;
@@ -60,6 +60,25 @@ export class ExecutionModel extends Model<Execution> {
             orderBy: 'created_at',
             orderDirection: 'ASC',
             limit
+        });
+    }
+
+    // Custom method to get pending executions for a specific provider
+    public async getPendingExecutionsByProvider(provider: AIProviderName, limit: number = 10): Promise<Execution[]> {
+        return this.findMany({
+            where: { status: 'pending', provider },
+            orderBy: 'created_at',
+            orderDirection: 'ASC',
+            limit
+        });
+    }
+
+    // Custom method to get running executions for a specific provider
+    public async getRunningExecutionsByProvider(provider: AIProviderName): Promise<Execution[]> {
+        return this.findMany({
+            where: { status: 'running', provider },
+            orderBy: 'created_at',
+            orderDirection: 'ASC'
         });
     }
 

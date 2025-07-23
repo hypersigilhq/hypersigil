@@ -9,7 +9,6 @@ import "./api/handlers/user"
 import "./api/handlers/auth"
 import "./api/handlers/api-key"
 import { config } from "./config";
-import { executionService } from "./services/execution-service";
 import { migrationManager } from './database/index'
 import { executionWorker } from "./services/execution-worker";
 

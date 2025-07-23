@@ -1,20 +1,30 @@
 import { executionModel, Execution } from '../models/execution';
-import { promptModel, PromptVersion } from '../models/prompt';
-import { executionBundleModel } from '../models/execution-bundle';
+import { promptModel } from '../models/prompt';
 import { providerRegistry } from '../providers/provider-registry';
-import { ProviderError, ExecutionOptions, JSONSchema, ExecutionResult } from '../providers/base-provider';
-import { testDataGroupModel, TestDataItem, testDataItemModel } from '../models';
+import { ProviderError, ExecutionOptions, JSONSchema, AIProviderName, AIProviderNames } from '../providers/base-provider';
 import { promptService } from './prompt-service';
 
 
 export class ExecutionWorker {
     private static instance: ExecutionWorker;
-    private maxConcurrentExecutions: number = 1; // Adjustable concurrency limit
+    private providerConcurrencyLimits: Map<AIProviderName, number> = new Map(); // Per-provider concurrency limits
     private isInitialized: boolean = false;
     private pollingInterval: NodeJS.Timeout | null = null;
     private readonly POLL_INTERVAL_MS = 2000; // Poll every 2 seconds
 
-    private constructor() { }
+    private constructor() {
+        this.initializeProviderLimits();
+    }
+
+    /**
+     * Initialize default concurrency limits for all providers
+     */
+    private initializeProviderLimits(): void {
+        AIProviderNames.forEach(p => {
+            this.setProviderConcurrencyLimit(p, 1)
+        })
+        console.log('Initialized provider concurrency limits:', Object.fromEntries(this.providerConcurrencyLimits));
+    }
 
     public static getInstance(): ExecutionWorker {
         if (!ExecutionWorker.instance) {
@@ -57,16 +67,28 @@ export class ExecutionWorker {
         if (runningExecutions.length > 0) {
             console.log(`Found ${runningExecutions.length} interrupted running executions, processing them first...`);
 
-            // Process interrupted executions up to concurrency limit
-            const toProcess = runningExecutions.slice(0, this.maxConcurrentExecutions);
+            // Group executions by provider
+            const executionsByProvider = new Map<AIProviderName, Execution[]>();
+            for (const execution of runningExecutions) {
+                if (!executionsByProvider.has(execution.provider)) {
+                    executionsByProvider.set(execution.provider, []);
+                }
+                executionsByProvider.get(execution.provider)!.push(execution);
+            }
 
-            for (const execution of toProcess) {
-                if (execution.id) {
-                    console.log(`Resuming interrupted execution: ${execution.id}`);
-                    // Process without changing status since it's already running
-                    this.processExecution(execution.id).catch(error => {
-                        console.error(`Error resuming execution ${execution.id}:`, error);
-                    });
+            // Process executions for each provider up to their limits
+            for (const [provider, executions] of executionsByProvider) {
+                const limit = this.providerConcurrencyLimits.get(provider) || 1;
+                const toProcess = executions.slice(0, limit);
+
+                for (const execution of toProcess) {
+                    if (execution.id) {
+                        console.log(`Resuming interrupted execution: ${execution.id} (provider: ${provider})`);
+                        // Process without changing status since it's already running
+                        this.processExecution(execution.id).catch(error => {
+                            console.error(`Error resuming execution ${execution.id}:`, error);
+                        });
+                    }
                 }
             }
         }
@@ -103,27 +125,60 @@ export class ExecutionWorker {
     }
 
     /**
-     * Poll the database for work and process executions
+     * Poll the database for work and process executions per provider
      */
     private async pollForWork(): Promise<void> {
-        // Check current running executions count
-        const runningCount = await executionModel.count({ status: 'running' });
+        // Get all pending executions
+        const pendingExecutions = await executionModel.findByStatus('pending');
 
-        if (runningCount >= this.maxConcurrentExecutions) {
-            return; // At capacity
+        if (pendingExecutions.length === 0) {
+            return; // No work to do
         }
 
-        // Get available slots
-        const availableSlots = this.maxConcurrentExecutions - runningCount;
+        // Group pending executions by provider
+        const executionsByProvider = new Map<AIProviderName, Execution[]>();
+        for (const execution of pendingExecutions) {
+            if (!executionsByProvider.has(execution.provider)) {
+                executionsByProvider.set(execution.provider, []);
+            }
+            executionsByProvider.get(execution.provider)!.push(execution);
+        }
 
-        // Get pending executions to fill available slots
-        const pendingExecutions = await executionModel.getPendingExecutions(availableSlots);
+        // Process executions for each provider in parallel
+        const processingPromises: Promise<void>[] = [];
 
-        if (pendingExecutions.length > 0) {
-            console.log(`Processing ${pendingExecutions.length} pending executions (${runningCount} currently running)`);
+        for (const [provider, executions] of executionsByProvider) {
+            processingPromises.push(this.processProviderExecutions(provider, executions));
+        }
 
-            // Process each pending execution
-            for (const execution of pendingExecutions) {
+        // Wait for all providers to process their executions
+        await Promise.all(processingPromises);
+    }
+
+    /**
+     * Process executions for a specific provider
+     */
+    private async processProviderExecutions(provider: AIProviderName, executions: Execution[]): Promise<void> {
+        // Get current running count for this provider using optimized query
+        const runningExecutions = await executionModel.getRunningExecutionsByProvider(provider);
+        const providerRunningCount = runningExecutions.length;
+
+        // Get concurrency limit for this provider
+        const concurrencyLimit = this.providerConcurrencyLimits.get(provider) || 1;
+
+        if (providerRunningCount >= concurrencyLimit) {
+            return; // Provider at capacity
+        }
+
+        // Calculate available slots for this provider
+        const availableSlots = concurrencyLimit - providerRunningCount;
+        const executionsToProcess = executions.slice(0, availableSlots);
+
+        if (executionsToProcess.length > 0) {
+            console.log(`Processing ${executionsToProcess.length} pending executions for provider ${provider} (${providerRunningCount} currently running, limit: ${concurrencyLimit})`);
+
+            // Process executions for this provider
+            for (const execution of executionsToProcess) {
                 if (execution.id) {
                     this.processExecution(execution.id).catch(error => {
                         console.error(`Error processing execution ${execution.id}:`, error);
@@ -134,26 +189,30 @@ export class ExecutionWorker {
     }
 
     /**
-     * Set the maximum number of concurrent executions
+     * Set concurrency limit for a specific provider
      */
-    public setMaxConcurrentExecutions(max: number): void {
-        if (max < 1) {
-            throw new Error('Maximum concurrent executions must be at least 1');
+    public setProviderConcurrencyLimit(provider: AIProviderName, limit: number): void {
+        if (limit < 1) {
+            throw new Error('Provider concurrency limit must be at least 1');
         }
-        this.maxConcurrentExecutions = max;
-        console.log(`Set maximum concurrent executions to: ${max}`);
+        this.providerConcurrencyLimits.set(provider, limit);
+        console.log(`Set concurrency limit for provider ${provider} to: ${limit}`);
     }
 
     /**
-     * Get the current maximum concurrent executions setting
+     * Get concurrency limit for a specific provider
      */
-    public getMaxConcurrentExecutions(): number {
-        return this.maxConcurrentExecutions;
+    public getProviderConcurrencyLimit(provider: AIProviderName): number {
+        return this.providerConcurrencyLimits.get(provider) || 1;
     }
 
     /**
-     * Process a single execution
+     * Get all provider concurrency limits
      */
+    public getAllProviderConcurrencyLimits(): Record<string, number> {
+        return Object.fromEntries(this.providerConcurrencyLimits);
+    }
+
     /**
      * Validate execution result against JSON schema
      */
@@ -169,8 +228,9 @@ export class ExecutionWorker {
         }
     }
 
-    // Removed convertJsonSchemaToZodSchema method as it's no longer needed
-
+    /**
+     * Process a single execution
+     */
     private async processExecution(executionId: string): Promise<void> {
         try {
             // Get execution
@@ -281,7 +341,6 @@ export class ExecutionWorker {
                 resultOutput = result.output
             }
 
-
             // Update with result and validation
             await executionModel.updateStatus(executionId, 'completed', {
                 result: resultOutput, // null values has been removed
@@ -349,8 +408,6 @@ export class ExecutionWorker {
         // Return the object if it has properties, otherwise null
         return Object.keys(result).length > 0 ? result : null;
     }
-
-
 }
 
 // Export singleton instance

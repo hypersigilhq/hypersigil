@@ -1,4 +1,4 @@
-import { AIProvider } from './base-provider';
+import { AIProvider, AIProviderName } from './base-provider';
 import { OllamaProvider } from './ollama-provider';
 import { ClaudeProvider } from './claude-provider';
 import { OpenAIProvider } from './openai-provider';
@@ -117,13 +117,13 @@ export class ProviderRegistry {
         return models;
     }
 
-    public parseProviderModel(providerModel: string): { provider: string; model: string } {
+    public parseProviderModel(providerModel: string): { provider: AIProviderName; model: string } {
         const parts = providerModel.split(':');
         if (parts.length < 2) {
             throw new Error(`Invalid provider:model format: ${providerModel}. Expected format: provider:model`);
         }
 
-        const provider = parts[0];
+        const provider = <AIProviderName>parts[0];
         const model = parts.slice(1).join(':'); // Handle models with colons in their names
 
         if (!provider || !model) {

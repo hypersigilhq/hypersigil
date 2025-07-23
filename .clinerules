@@ -68,7 +68,8 @@ function parse(input: boolean): Result<number, string> {
 __Design Consistency:__
 
 - Follow existing design patterns from PromptsTable.vue
-- Use the same UI components (shadcn/ui)
+- Use the same UI components (shadcn/ui) in ./ui/src/components/ui
+- There is global toast and confirmation-dialog under useUI for confirmations, warnings and notifications
 - Consistent spacing, typography, and color scheme
 
 __Accessibility:__
