@@ -123,7 +123,7 @@ export const BatchExecutionRequestSchema = z.object({
     testDataGroupId: z.string().uuid(),
     providerModel: z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model'),
     options: z.object({
-        schema: z.record(z.unknown()).optional(),
+        schema: z.record(z.string(), z.unknown()).optional(),
         temperature: z.number().min(0).max(2).optional(),
         maxTokens: z.number().min(1).optional(),
         topP: z.number().min(0).max(1).optional(),
@@ -186,9 +186,7 @@ export const TestDataApiDefinition = CreateApiDefinition({
             list: {
                 method: 'GET',
                 path: '/groups',
-                params: z.object({}),
                 query: TestDataGroupListQuerySchema,
-                body: z.object({}),
                 responses: CreateResponses({
                     200: PaginatedTestDataGroupsResponseSchema,
                     400: ErrorResponseSchema,
@@ -199,7 +197,6 @@ export const TestDataApiDefinition = CreateApiDefinition({
             create: {
                 method: 'POST',
                 path: '/groups',
-                params: z.object({}),
                 query: z.object({}),
                 body: CreateTestDataGroupRequestSchema,
                 responses: CreateResponses({
@@ -214,7 +211,6 @@ export const TestDataApiDefinition = CreateApiDefinition({
                 path: '/groups/:id',
                 params: TestDataGroupParamsSchema,
                 query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: TestDataGroupResponseSchema,
                     404: ErrorResponseSchema,
@@ -241,7 +237,6 @@ export const TestDataApiDefinition = CreateApiDefinition({
                 path: '/groups/:id',
                 params: TestDataGroupParamsSchema,
                 query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     204: z.object({}),
                     404: ErrorResponseSchema,
@@ -254,7 +249,6 @@ export const TestDataApiDefinition = CreateApiDefinition({
                 path: '/groups/:groupId/items',
                 params: TestDataGroupItemsParamsSchema,
                 query: TestDataItemListQuerySchema,
-                body: z.object({}),
                 responses: CreateResponses({
                     200: PaginatedTestDataItemsResponseSchema,
                     400: ErrorResponseSchema,
@@ -298,7 +292,6 @@ export const TestDataApiDefinition = CreateApiDefinition({
                 path: '/items/:id',
                 params: TestDataItemParamsSchema,
                 query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: TestDataItemResponseSchema,
                     404: ErrorResponseSchema,
@@ -325,7 +318,6 @@ export const TestDataApiDefinition = CreateApiDefinition({
                 path: '/items/:id',
                 params: TestDataItemParamsSchema,
                 query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     204: z.object({}),
                     404: ErrorResponseSchema,
@@ -336,7 +328,6 @@ export const TestDataApiDefinition = CreateApiDefinition({
             compilePrompt: {
                 method: 'POST',
                 path: '/compile-prompt',
-                params: z.object({}),
                 query: z.object({}),
                 body: CompilePromptRequestSchema,
                 responses: CreateResponses({

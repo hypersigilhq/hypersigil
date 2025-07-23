@@ -56,7 +56,7 @@ RegisterHandlers(app, AuthApiDefinition, {
                     return res.respond(400, {
                         error: 'Validation Error',
                         message: 'Invalid input data',
-                        details: error.errors
+                        details: error.issues
                     });
                 }
 
@@ -105,7 +105,7 @@ RegisterHandlers(app, AuthApiDefinition, {
                     return res.respond(400, {
                         error: 'Validation Error',
                         message: 'Invalid input data',
-                        details: error.errors
+                        details: error.issues
                     });
                 }
 
@@ -165,7 +165,7 @@ RegisterHandlers(app, AuthApiDefinition, {
                     return res.respond(400, {
                         error: 'Validation Error',
                         message: 'Invalid input data',
-                        details: error.errors
+                        details: error.issues
                     });
                 }
 

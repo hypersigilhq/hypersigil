@@ -175,9 +175,7 @@ export const UserApiDefinition = CreateApiDefinition({
             list: {
                 method: 'GET',
                 path: '/',
-                params: z.object({}),
                 query: listUsersQuerySchema,
-                body: z.object({}),
                 responses: CreateResponses({
                     200: listUsersResponseSchema,
                     400: ErrorResponseSchema,
@@ -189,8 +187,6 @@ export const UserApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/:id',
                 params: getUserParamsSchema,
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: getUserResponseSchema,
                     404: ErrorResponseSchema,
@@ -201,8 +197,6 @@ export const UserApiDefinition = CreateApiDefinition({
             invite: {
                 method: 'POST',
                 path: '/invite',
-                params: z.object({}),
-                query: z.object({}),
                 body: createUserInvitationBodySchema,
                 responses: CreateResponses({
                     201: createUserInvitationResponseSchema,
@@ -215,7 +209,6 @@ export const UserApiDefinition = CreateApiDefinition({
                 method: 'PUT',
                 path: '/:id',
                 params: updateUserParamsSchema,
-                query: z.object({}),
                 body: updateUserBodySchema,
                 responses: CreateResponses({
                     200: updateUserResponseSchema,
@@ -229,7 +222,6 @@ export const UserApiDefinition = CreateApiDefinition({
                 method: 'PUT',
                 path: '/:id/profile',
                 params: updateUserProfileParamsSchema,
-                query: z.object({}),
                 body: updateUserProfileBodySchema,
                 responses: CreateResponses({
                     200: updateUserProfileResponseSchema,
@@ -243,8 +235,6 @@ export const UserApiDefinition = CreateApiDefinition({
                 method: 'DELETE',
                 path: '/:id',
                 params: deleteUserParamsSchema,
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: deleteUserResponseSchema,
                     404: ErrorResponseSchema,
@@ -255,9 +245,6 @@ export const UserApiDefinition = CreateApiDefinition({
             cleanup: {
                 method: 'POST',
                 path: '/cleanup',
-                params: z.object({}),
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: cleanupExpiredInvitationsResponseSchema,
                     500: ErrorResponseSchema
@@ -266,9 +253,6 @@ export const UserApiDefinition = CreateApiDefinition({
             me: {
                 method: 'GET',
                 path: '/profile/me',
-                params: z.object({}),
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: LoginUser,
                     500: ErrorResponseSchema

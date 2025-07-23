@@ -2,13 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { EndpointMiddleware, ApiDefinitionSchema, EndpointInfo } from 'ts-typed-api';
+import { EndpointMiddleware, ApiDefinitionSchema, EndpointInfo, generateOpenApiSpec2, CreateApiDefinition, CreateResponses } from 'ts-typed-api';
 import { config, isDevelopment } from './config';
 import { AuthService } from './services/auth-service';
 import { UserDocument, userModel } from './models/user';
 import { apiKeyModel, Permission } from './models/api-key';
 import { ExecutionApiDefinition } from './api/definitions/execution';
-
+import { PromptApiDefinition } from './api/definitions/prompt';
 const app = express();
 
 // Basic middleware
@@ -30,6 +30,36 @@ if (isDevelopment) {
 app.use((req, res, next) => {
     req.isApiCall = () => !!req.apiKey
     next()
+})
+
+function pick<T extends object, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
+    const result = {} as Pick<T, K>;
+
+    for (const key of keys) {
+        if (key in obj) {
+            result[key] = obj[key];
+        }
+    }
+
+    return result;
+}
+
+
+app.get('/api/json-schema', (req, res) => {
+    const spec = generateOpenApiSpec2([{
+        prefix: ExecutionApiDefinition.prefix, endpoints: { executions: pick(ExecutionApiDefinition.endpoints.executions, ['getById', 'create']) }
+    }, {
+        prefix: PromptApiDefinition.prefix, endpoints: { prompts: pick(PromptApiDefinition.endpoints.prompts, ['preview', 'getById']) }
+    }], {
+        info: {
+            description: "Hypesigil API",
+            title: "Hypesigil API",
+            version: "0.1"
+        },
+        servers: [],
+        anonymousTypes: true
+    })
+    res.json(spec)
 })
 
 // Custom middleware for ts-typed-api

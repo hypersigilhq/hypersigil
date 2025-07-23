@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
+import { CreateApiDefinition, CreateResponses } from 'ts-typed-api';
 import { ErrorResponseSchema, createPaginationResponseSchema, PaginationQuerySchema, OrderDirectionSchema } from './common';
 
-// JSON Schema validation - improved type safety
-const JSONSchemaSchema: z.ZodType<Record<string, unknown>> = z.record(z.unknown());
+// JSON Schema validation
+export const JSONSchemaSchema: z.ZodType<Record<string, unknown>> = z.record(z.string(), z.unknown());
 
 // Prompt version schema
 export const PromptVersionSchema = z.object({
@@ -66,7 +66,7 @@ export const PromptListQuerySchema = PaginationQuerySchema.extend({
 export type PromptListQuery = z.infer<typeof PromptListQuerySchema>;
 
 export const PromptRecentQuerySchema = z.object({
-    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(50)).optional().default('10')
+    limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().min(1).max(50)).optional().default(10)
 });
 
 export type PromptRecentQuery = z.infer<typeof PromptRecentQuerySchema>;
@@ -140,9 +140,6 @@ export const PromptApiDefinition = CreateApiDefinition({
             selectList: {
                 method: 'GET',
                 path: '/select-list',
-                params: z.object({}),
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: PromptSelectListSchema,
                     400: ErrorResponseSchema,
@@ -152,9 +149,7 @@ export const PromptApiDefinition = CreateApiDefinition({
             list: {
                 method: 'GET',
                 path: '/',
-                params: z.object({}),
                 query: PromptListQuerySchema,
-                body: z.object({}),
                 responses: CreateResponses({
                     200: PaginatedPromptsResponseSchema,
                     400: ErrorResponseSchema,
@@ -165,8 +160,6 @@ export const PromptApiDefinition = CreateApiDefinition({
             create: {
                 method: 'POST',
                 path: '/',
-                params: z.object({}),
-                query: z.object({}),
                 body: CreatePromptRequestSchema,
                 responses: CreateResponses({
                     201: PromptResponseSchema,
@@ -179,8 +172,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/:id',
                 params: PromptParamsSchema,
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: PromptResponseSchema,
                     404: ErrorResponseSchema,
@@ -192,7 +183,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 method: 'PUT',
                 path: '/:id',
                 params: PromptParamsSchema,
-                query: z.object({}),
                 body: UpdatePromptRequestSchema,
                 responses: CreateResponses({
                     200: PromptResponseSchema,
@@ -206,8 +196,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 method: 'DELETE',
                 path: '/:id',
                 params: PromptParamsSchema,
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     204: z.object({}),
                     404: ErrorResponseSchema,
@@ -219,8 +207,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/search/:pattern',
                 params: PromptSearchParamsSchema,
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: z.array(PromptResponseSchema),
                     400: ErrorResponseSchema,
@@ -231,9 +217,7 @@ export const PromptApiDefinition = CreateApiDefinition({
             getRecent: {
                 method: 'GET',
                 path: '/recent',
-                params: z.object({}),
                 query: PromptRecentQuerySchema,
-                body: z.object({}),
                 responses: CreateResponses({
                     200: z.array(PromptResponseSchema),
                     400: ErrorResponseSchema,
@@ -245,7 +229,6 @@ export const PromptApiDefinition = CreateApiDefinition({
                 method: 'POST',
                 path: '/:id/generate-adjustment',
                 params: PromptParamsSchema,
-                query: z.object({}),
                 body: GenerateAdjustmentRequestSchema,
                 responses: CreateResponses({
                     200: GenerateAdjustmentResponseSchema,
@@ -258,8 +241,6 @@ export const PromptApiDefinition = CreateApiDefinition({
             preview: {
                 method: 'POST',
                 path: '/preview',
-                params: z.object({}),
-                query: z.object({}),
                 body: PreviewPromptRequestSchema,
                 responses: CreateResponses({
                     200: PreviewPromptResponseSchema,

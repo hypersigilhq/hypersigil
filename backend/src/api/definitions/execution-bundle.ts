@@ -30,9 +30,7 @@ export const ExecutionBundleApiDefinition = CreateApiDefinition({
             list: {
                 method: 'GET',
                 path: '/',
-                params: z.object({}),
                 query: ExecutionBundleListQuerySchema,
-                body: z.object({}),
                 responses: CreateResponses({
                     200: z.array(ExecutionBundleResponseSchema),
                     400: ErrorResponseSchema,

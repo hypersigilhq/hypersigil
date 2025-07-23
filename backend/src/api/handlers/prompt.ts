@@ -100,7 +100,7 @@ RegisterHandlers(app, PromptApiDefinition, {
                     return res.respond(400, {
                         error: 'Validation Error',
                         message: 'Invalid input data',
-                        details: error.errors
+                        details: error.issues
                     });
                 }
 
@@ -183,7 +183,7 @@ RegisterHandlers(app, PromptApiDefinition, {
                     return res.respond(400, {
                         error: 'Validation Error',
                         message: 'Invalid input data',
-                        details: error.errors
+                        details: error.issues
                     });
                 }
 
@@ -279,7 +279,7 @@ RegisterHandlers(app, PromptApiDefinition, {
                     return res.respond(400, {
                         error: 'Validation Error',
                         message: 'Invalid input data',
-                        details: error.errors
+                        details: error.issues
                     });
                 }
 

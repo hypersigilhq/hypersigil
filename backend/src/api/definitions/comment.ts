@@ -64,8 +64,6 @@ export const CommentApiDefinition = CreateApiDefinition({
             create: {
                 method: 'POST',
                 path: '/',
-                params: z.object({}),
-                query: z.object({}),
                 body: CreateCommentRequestSchema,
                 responses: CreateResponses({
                     201: CommentResponseSchema,
@@ -77,9 +75,7 @@ export const CommentApiDefinition = CreateApiDefinition({
             list: {
                 method: 'GET',
                 path: '/',
-                params: z.object({}),
                 query: CommentListQuerySchema,
-                body: z.object({}),
                 responses: CreateResponses({
                     200: z.array(CommentResponseSchema),
                     400: ErrorResponseSchema,
@@ -93,8 +89,6 @@ export const CommentApiDefinition = CreateApiDefinition({
                 params: z.object({
                     id: z.string().uuid()
                 }),
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     204: z.object({}),
                     404: ErrorResponseSchema,

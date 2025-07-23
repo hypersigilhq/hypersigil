@@ -1,24 +1,7 @@
 import { z } from 'zod';
-import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
-import { PromptResponseSchema } from './prompt';
+import { CreateApiDefinition, CreateResponses } from 'ts-typed-api';
 import { ErrorResponseSchema, createPaginationResponseSchema, PaginationQuerySchema, OrderDirectionSchema } from './common';
-
-// JSON Schema validation - improved type safety
-const JSONSchemaSchema: z.ZodType<Record<string, unknown>> = z.lazy(() => z.object({
-    type: z.enum(['object', 'array', 'string', 'number', 'boolean', 'null']),
-    properties: z.record(z.string(), JSONSchemaSchema).optional(),
-    items: JSONSchemaSchema.optional(),
-    required: z.array(z.string()).optional(),
-    description: z.string().optional(),
-    enum: z.array(z.unknown()).optional(),
-    format: z.string().optional(),
-    minimum: z.number().optional(),
-    maximum: z.number().optional(),
-    minLength: z.number().optional(),
-    maxLength: z.number().optional(),
-    pattern: z.string().optional(),
-    additionalProperties: z.union([z.boolean(), JSONSchemaSchema]).optional()
-}).catchall(z.unknown()));
+import { JSONSchemaSchema } from './prompt';
 
 // Execution options schema
 export const ExecutionOptionsSchema = z.object({
@@ -176,8 +159,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
             create: {
                 method: 'POST',
                 path: '/',
-                params: z.object({}),
-                query: z.object({}),
                 body: CreateExecutionRequestSchema,
                 responses: CreateResponses({
                     201: CreateExecutionResponseSchema,
@@ -189,9 +170,7 @@ export const ExecutionApiDefinition = CreateApiDefinition({
             list: {
                 method: 'GET',
                 path: '/',
-                params: z.object({}),
                 query: ExecutionListQuerySchema,
-                body: z.object({}),
                 responses: CreateResponses({
                     200: PaginatedExecutionsResponseSchema,
                     400: ErrorResponseSchema,
@@ -203,8 +182,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/:id',
                 params: ExecutionParamsSchema,
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: ExecutionResponseSchema,
                     404: ErrorResponseSchema,
@@ -228,8 +205,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
                 method: 'DELETE',
                 path: '/:id',
                 params: ExecutionParamsSchema,
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     204: z.object({}),
                     400: ErrorResponseSchema,
@@ -241,9 +216,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
             getStats: {
                 method: 'GET',
                 path: '/stats/all',
-                params: z.object({}),
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: ExecutionStatsResponseSchema,
                     500: ErrorResponseSchema
@@ -255,9 +227,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
             getProviderHealth: {
                 method: 'GET',
                 path: '/providers/health',
-                params: z.object({}),
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: ProviderHealthResponseSchema,
                     500: ErrorResponseSchema
@@ -267,9 +236,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
             listProviders: {
                 method: 'GET',
                 path: '/providers/list',
-                params: z.object({}),
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: ProvidersListResponseSchema,
                     500: ErrorResponseSchema
@@ -279,9 +245,6 @@ export const ExecutionApiDefinition = CreateApiDefinition({
             getAvailableModels: {
                 method: 'GET',
                 path: '/providers/models',
-                params: z.object({}),
-                query: z.object({}),
-                body: z.object({}),
                 responses: CreateResponses({
                     200: ProviderModelsResponseSchema,
                     500: ErrorResponseSchema
