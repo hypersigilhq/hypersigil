@@ -6,7 +6,15 @@
 
 ## What is Hypersigil?
 
-**Hypersigil** is not just another AI tool—it's a platform where prompts become powerful, evolving workings that shape AI reality through systematic testing and refinement. Drawing inspiration from chaos magic's concept of hypersigils (extended, interactive magical workings that evolve through narrative and time), this platform transforms the mundane task of prompt engineering into an art of digital sorcery.
+**Hypersigil** is
+
+## Use Cases
+
+- **Centralized Prompt Management**: Single source of truth for all prompts with API integration, enabling hot-swapping without code deployments
+- **Non-Technical Collaboration**: Role-based access allowing domain experts to test, comment, and refine prompts without technical knowledge
+- **Multi-Provider AI Gateway**: Test and compare prompts across OpenAI, Anthropic, Ollama (more providers soon) with cost optimization and automatic failover
+- **Complete Prompt Lifecycle**: Systematic development, testing, collaboration, and production monitoring with full audit trails
+- **Enterprise Governance**: Compliance-ready with access controls, audit trails, and systematic validation against regulatory scenarios
 
 ## Features
 
@@ -25,7 +33,7 @@
 
 - **Systematic Testing**: Create test data groups for comprehensive prompt validation
 - **Batch Execution**: Run prompts against multiple test cases simultaneously
-- **Data Import**: Import test datasets from various formats
+- **Data Import**: Import test datasets from various formats (csv, markdown, json)
 - **Result Analysis**: Compare outcomes across different test scenarios
 
 </details>
@@ -35,7 +43,6 @@
 - **Intelligent Adjustment**: AI-powered prompt refinement based on execution results
 - **Comment System**: Collaborative feedback and analysis of prompt performance
 - **Version Control**: Track prompt evolution and performance over time
-- **Calibration Suggestions**: Automated recommendations for prompt improvements
 
 </details>
 <details>
@@ -52,12 +59,13 @@
 
 - **Type-Safe APIs**: Full TypeScript support with ts-typed-api
 - **RESTful Architecture**: Clean, well-documented API endpoints
-- **Real-Time Updates**: WebSocket support for live execution monitoring
 - **Extensible Design**: Plugin architecture for custom providers and features
 
 </details>
 
-## Getting Started
+
+## Getting Started with local development
+<details><summary>Details</summary>
 
 ### Prerequisites
 - Node.js 18+ 
@@ -109,6 +117,8 @@
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3000
 
+</details>
+
 ## Architecture
 <details>
 <summary>Architecture</summary>
@@ -139,16 +149,6 @@
 3. **Create a prompt** and test it with different inputs
 4. **Set up test data** for systematic validation
 5. **Execute and calibrate** your prompts to perfection
-
-## API Documentation
-
-The API is fully type-safe and self-documenting through TypeScript definitions. Key endpoints include:
-
-- `POST /api/v1/executions` - Execute prompts
-- `GET /api/v1/executions` - List and filter executions
-- `GET /api/v1/prompts` - Manage prompts
-- `GET /api/v1/test-data` - Test data management
-- `GET /api/v1/users` - User management
 
 ## Configuration
 
@@ -195,4 +195,13 @@ We welcome contributions from fellow reality hackers and prompt magicians!
 
 ## License
 
-[License information to be added]
+Hypersigil is licensed under Apache 2.0 with Commons Clause. This means:
+
+- ✅ **Internal business use is allowed** - You can use Hypersigil within your organization for internal purposes
+- ✅ **Modification and distribution** - You can modify the code and distribute it
+- ✅ **Building applications** - You can create applications that use Hypersigil
+- ❌ **Commercial selling prohibited** - You cannot sell Hypersigil itself as a product or service
+
+The Commons Clause restriction only applies to selling the software itself. You are free to use it internally, modify it, and build upon it for your business needs.
+
+For the complete license terms, see the [LICENSE](LICENSE) file.
