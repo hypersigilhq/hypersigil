@@ -3,6 +3,9 @@ import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 import { ErrorResponseSchema, createPaginationResponseSchema, PaginationQuerySchema, OrderDirectionSchema } from './common';
 import { JSONSchemaSchema } from './prompt';
 
+// copy of base-provider AIProviderNames, leave it here as is since this file cannot import from outside of this dir
+export const AIProviderNamesDefinition = ['ollama', 'openai', 'anthropic'] as const
+
 // Execution options schema
 export const ExecutionOptionsSchema = z.object({
     schema: JSONSchemaSchema.optional(),
@@ -29,7 +32,7 @@ export const ExecutionResponseSchema = z.object({
     test_data_group_id: z.string().optional(),
     test_data_item_id: z.string().optional(),
     user_input: z.string(),
-    provider: z.string(),
+    provider: z.enum(AIProviderNamesDefinition),
     model: z.string(),
     status: ExecutionStatusSchema,
     result: z.string().optional(),
@@ -93,7 +96,7 @@ export const ExecutionStatsResponseSchema = z.object({
     running: z.number(),
     completed: z.number(),
     failed: z.number(),
-    byProvider: z.record(z.string(), z.number())
+    byProvider: z.record(z.enum(AIProviderNamesDefinition), z.number())
 });
 
 export type ExecutionStatsResponse = z.infer<typeof ExecutionStatsResponseSchema>;
@@ -128,7 +131,7 @@ export type ProvidersListResponse = z.infer<typeof ProvidersListResponseSchema>;
 // Query schemas
 export const ExecutionListQuerySchema = PaginationQuerySchema.extend({
     status: ExecutionStatusSchema.optional(),
-    provider: z.string().optional(),
+    provider: z.enum(AIProviderNamesDefinition).optional(),
     promptId: z.string().uuid().optional(),
     starred: z.boolean().optional(),
     ids: z.string().optional().transform(v => v?.split(',')),

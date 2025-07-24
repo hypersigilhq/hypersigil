@@ -150,7 +150,7 @@ export class ExecutionModel extends Model<Execution> {
         running: number;
         completed: number;
         failed: number;
-        byProvider: Record<string, number>;
+        byProvider: Record<AIProviderName, number>;
     }> {
         const total = await this.count();
         const pending = await this.count({ status: 'pending' });

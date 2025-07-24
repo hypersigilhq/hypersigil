@@ -7,6 +7,8 @@ For implementation think like UX/UI designer first, then when writing code act a
 
 After every implementation, add high-level documentation in ./product-documentation/implemented-features
 
+The product name is Hypersigil
+
 # API Definitions Architecture Rules
 
 ## Central API Definitions System
