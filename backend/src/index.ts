@@ -11,10 +11,15 @@ import "./api/handlers/api-key"
 import { config } from "./config";
 import { migrationManager } from './database/index'
 import { executionWorker } from "./services/execution-worker";
+import { initializeAllModels } from "./database/model-initializer";
 
 // Initialize database and services
 const initializeServices = async () => {
     try {
+        // Initialize all model tables
+        console.log('🔄 Initializing model tables...');
+        await initializeAllModels()
+
         // Initialize and run database migrations first
         console.log('🔄 Initializing database migrations...');
         await migrationManager.initialize();
@@ -29,23 +34,32 @@ const initializeServices = async () => {
     }
 };
 
-// Start server
-const server = app.listen(config.port, '0.0.0.0', async () => {
-    console.log(`🚀 Server running on http://localhost:${config.port}`);
+// Initialize services before starting server
+const startServer = async () => {
 
-    // Initialize services after server starts
-    await initializeServices();
-});
-
-const shutdown = () => {
-    console.log('SIGINT received, shutting down gracefully');
-    executionWorker.shutdown();
-    server.close(() => {
-        console.log('Process terminated');
-        process.exit(0);
+    // Start server after services are initialized
+    const server = app.listen(config.port, '127.0.0.1', 511, () => {
+        console.log(`🚀 Server running on http://localhost:${config.port}`);
     });
-}
 
-// Graceful shutdown
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+    return server;
+};
+
+// Start the application
+(async () => {
+    await initializeServices();
+    const server = await startServer();
+
+    const shutdown = () => {
+        console.log('SIGINT received, shutting down gracefully');
+        executionWorker.shutdown();
+        server.close(() => {
+            console.log('Process terminated');
+            process.exit(0);
+        });
+    }
+
+    // Graceful shutdown
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+})();

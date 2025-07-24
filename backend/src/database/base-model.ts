@@ -1,15 +1,25 @@
 import { randomUUID } from 'crypto';
 import { db } from './manager';
 import { BaseDocument, QueryOptions, PaginationResult, WhereClause } from './types';
+import { modelRegistry } from './model-registry';
 
 export abstract class Model<T extends BaseDocument> {
     protected abstract tableName: string;
+    private _isRegistered = false;
 
     constructor() {
-        // Ensure table exists on first instantiation - delay until after construction
-        setTimeout(() => {
-            db.ensureTable(this.tableName);
-        }, 0);
+        // Registration will happen on first method call that needs the table
+        // This is necessary because abstract properties aren't available in constructor
+    }
+
+    /**
+     * Ensure this model is registered with the registry
+     * Called automatically before any database operations
+     */
+    public ensureRegistered(): void {
+        const modelName = this.constructor.name;
+        modelRegistry.registerModel(modelName, this.tableName);
+        this._isRegistered = true;
     }
 
     protected serializeDocument(doc: T): string {
