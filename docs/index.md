@@ -64,7 +64,7 @@ Hypersigil is built with a modern, scalable architecture:
 
 ## Support & Contributing
 
-- **Repository**: [GitHub](https://github.com/PeterOsinski/promptlab)
+- **Repository**: [GitHub](https://github.com/hypersigilhq/hypersigil)
 - **Issues**: Report bugs and request features on GitHub
 - **Documentation**: This site is built with MkDocs and Material theme
 

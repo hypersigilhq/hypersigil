@@ -1,11 +1,11 @@
 site_name: Hypersigil Documentation
 site_description: Comprehensive testing platform for AI prompt development and validation
 site_author: Hypersigil Team
-site_url: https://peterosinski.github.io/promptlab/
+site_url: https://hypersigilhq.github.io/hypersigil/
 
 # Repository
-repo_name: PeterOsinski/promptlab
-repo_url: https://github.com/PeterOsinski/promptlab
+repo_name: hypersigilhq/hypersigil
+repo_url: https://github.com/hypersigilhq/hypersigil
 edit_uri: edit/main/docs/
 
 # Configuration
@@ -76,8 +76,8 @@ markdown_extensions:
   - pymdownx.keys
   - pymdownx.magiclink:
       repo_url_shorthand: true
-      user: PeterOsinski
-      repo: promptlab
+      user: hypersigilhq
+      repo: hypersigil
   - pymdownx.mark
   - pymdownx.smartsymbols
   - pymdownx.superfences:
@@ -105,7 +105,7 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/PeterOsinski/promptlab
+      link: https://github.com/hypersigilhq/hypersigil
   generator: false
 
 # Copyright
