@@ -48,6 +48,7 @@ plugins:
       lang: en
   - git-revision-date-localized:
       enable_creation_date: true
+  - swagger-ui-tag
 
 # Extensions
 markdown_extensions:
@@ -100,6 +101,7 @@ nav:
     - Executions: executions.md
     - Test Data: test-data.md
     - Settings: settings.md
+  - API Reference: api-reference.md
 
 # Extra
 extra:
