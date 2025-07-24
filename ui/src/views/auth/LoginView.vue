@@ -58,9 +58,9 @@ const validate = (): boolean => {
         return true
     } catch (error) {
         if (error instanceof z.ZodError) {
-            error.errors.forEach(err => {
+            error.issues.forEach(err => {
                 if (err.path.length > 0) {
-                    errors.value[err.path[0]] = err.message
+                    errors.value[err.path[0].toString()] = err.message
                 }
             })
         }

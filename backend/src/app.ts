@@ -45,6 +45,16 @@ function pick<T extends object, K extends keyof T>(obj: T, keys: K[]): Pick<T, K
 }
 
 
+// Health check endpoint for Docker
+app.get('/api/health', (req, res) => {
+    res.status(200).json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        version: '1.0.0'
+    });
+});
+
 app.get('/api/json-schema', (req, res) => {
     const spec = generateOpenApiSpec2([{
         prefix: ExecutionApiDefinition.prefix, endpoints: { executions: pick(ExecutionApiDefinition.endpoints.executions, ['getById', 'create']) }

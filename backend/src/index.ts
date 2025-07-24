@@ -30,7 +30,7 @@ const initializeServices = async () => {
 };
 
 // Start server
-const server = app.listen(config.port, async () => {
+const server = app.listen(config.port, '0.0.0.0', async () => {
     console.log(`🚀 Server running on http://localhost:${config.port}`);
 
     // Initialize services after server starts

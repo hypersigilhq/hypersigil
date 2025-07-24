@@ -5,6 +5,7 @@ import { JSONSchemaSchema } from './prompt';
 
 // copy of base-provider AIProviderNames, leave it here as is since this file cannot import from outside of this dir
 export const AIProviderNamesDefinition = ['ollama', 'openai', 'anthropic'] as const
+export type AIProviderNameDefinition = typeof AIProviderNamesDefinition[number]
 
 // Execution options schema
 export const ExecutionOptionsSchema = z.object({

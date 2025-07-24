@@ -1,6 +1,6 @@
 import { ApiClient } from 'ts-typed-api/client';
 import { PromptApiDefinition, type CreatePromptRequest, type GenerateAdjustmentRequest, type PreviewPromptRequest } from './definitions/prompt';
-import { ExecutionApiDefinition, type CreateExecutionRequest, type ExecutionUpdateRequest } from './definitions/execution';
+import { ExecutionApiDefinition, type CreateExecutionRequest, type ExecutionUpdateRequest, type AIProviderNameDefinition } from './definitions/execution';
 import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './definitions/execution-bundle';
 import { TestDataApiDefinition, type CreateTestDataGroupRequest } from './definitions/test-data';
 import { CommentApiDefinition, type CreateCommentRequest, type CommentListQuery } from './definitions/comment';
@@ -172,7 +172,7 @@ export const executionsApi = {
             page?: string;
             limit?: string;
             status?: 'pending' | 'running' | 'completed' | 'failed';
-            provider?: string;
+            provider?: AIProviderNameDefinition;
             promptId?: string;
             starred?: boolean;
             ids?: string;
@@ -212,12 +212,6 @@ export const executionsApi = {
 
     getStats: () =>
         executionApiClient.callApi('executions', 'getStats', {}, {
-            ...errorHandle,
-            200: (payload) => payload.data,
-        }),
-
-    getQueueStatus: () =>
-        executionApiClient.callApi('executions', 'getQueueStatus', {}, {
             ...errorHandle,
             200: (payload) => payload.data,
         }),

@@ -45,6 +45,7 @@
 - [todo] Create execution templates and presets
 - [todo] Add execution scheduling and batch processing
 - [done] Fix form component structure in authentication views
+- [done] Docker build system with single container deployment using nginx and supervisord
 
 - [done] Implement prompt compilation with test data using Mustache templating engine
 - [done] Add prompt compilation UI to test data item dialog for JSON mode groups
