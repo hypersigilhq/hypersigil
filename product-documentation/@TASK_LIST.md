@@ -36,7 +36,7 @@
 ## Future Tasks
 - [done] Add authentication and authorization
 - [todo] Implement database integration
-- [todo] Add API documentation
+- [done] Add API documentation
 - [todo] Set up testing framework
 - [done] Add more AI providers (Claude/Anthropic and OpenAI providers implemented)
 - [done] Implement execution bundles list view with macOS Finder-style interface
