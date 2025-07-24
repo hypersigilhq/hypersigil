@@ -1,6 +1,7 @@
 ui/node_modules
 backend/node_modules
 backend/data/*
+backend/data_b/*
 backend/dist
 shared/dist
 shared/node_modules

@@ -47,8 +47,10 @@ The product name is Hypersigil
 - Keep props typed (leverate Typescript types)
 - Leverage API `ui/services/definitions` types across the application
 - All data should be typed, avoid any/unknown types if possible
+- Use camelCase everywhere
 
 ## Backend architecture and best practices
+- Use camelCase everywhere, api model definitions, database models
 - Dont put comments for straitghtforward actions
 - If using try/catch block only use when necessary and for the smallest scope possible
 - Use Golang-like error handling pattern, there's global types. The reason is to avoid try/catch blocks and treat every error explicitly.
