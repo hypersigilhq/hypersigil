@@ -46,6 +46,7 @@
 - [todo] Add execution scheduling and batch processing
 - [done] Fix form component structure in authentication views
 - [done] Docker build system with single container deployment using nginx and supervisord
+- [done] Docker push script for publishing images to Docker Hub registry
 
 - [done] Implement prompt compilation with test data using Mustache templating engine
 - [done] Add prompt compilation UI to test data item dialog for JSON mode groups

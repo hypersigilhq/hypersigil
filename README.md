@@ -67,6 +67,60 @@ Whether you're managing a few AI features or orchestrating complex multi-provide
 
 </details>
 
+## Run with Docker
+
+### Using Pre-built Image
+
+Pull and run the latest Hypersigil image from Docker Hub:
+
+```bash
+# Run on port 8080
+docker run -d --name hypersigil -p 8080:80 -v $(pwd)/hypersigil/.env:/app/.env -v $(pwd)/hypersigil:/app/data --init hypersigil:latest
+```
+
+**Important**: Make sure you have a `backend/.env` file configured before running. You can use `backend/.env.example` as a template.
+
+### Building Your Own Image
+
+<details><summary>If you prefer to build the Docker image yourself instead of pulling from the registry</summary>
+
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- (Optional) Ollama for local AI models
+
+1. **Clone the repository**:
+   ```bash
+   git clone git@github.com:hypersigilhq/hypersigil.git
+   cd hypersigil
+   ```
+
+2. **Run the build script**:
+   ```bash
+   ./build-docker.sh
+   ```
+
+   This script will:
+   - Build the Vue.js frontend for production
+   - Compile the TypeScript backend
+   - Create a Docker image tagged as `hypersigil:latest`
+   - Provide you with ready-to-use run commands
+
+3. **Run your locally built image**:
+   ```bash
+   # Run on port 8080
+   docker run -d --name hypersigil -p 8080:80 -v $(pwd)/backend/.env:/app/.env -v $(pwd)/backend/data:/app/data --init hypersigil:latest
+   ```
+
+### Docker Run Parameters Explained
+
+- `-d`: Run container in detached mode (background)
+- `--name hypersigil`: Assign a name to the container for easy management
+- `-p 8080:8080`: Map host port 8080 to container port 80 (change first number for different host port)
+- `-v $(pwd)/backend/.env:/app/.env`: Mount your environment configuration file
+- `-v $(pwd)/backend/data:/app/data`: Mount data directory for persistent storage
+- `--init`: Use proper init system for signal handling
+</details>
 
 ## Getting Started with local development
 <details><summary>Details</summary>
