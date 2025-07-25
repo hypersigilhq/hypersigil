@@ -50,7 +50,7 @@ The product name is Hypersigil
 - Use camelCase everywhere
 
 ## Backend architecture and best practices
-- Use camelCase everywhere, api model definitions, database models
+- Use camelCase everywhere, use camelCase in api model definitions, use camelCase in database models, use camelCase in api handlers
 - Dont put comments for straitghtforward actions
 - If using try/catch block only use when necessary and for the smallest scope possible
 - in `backend/src/api/definitions` when building contracts dont fill empty request params for endpoints like `body: z.object({})`, this is unecessary
