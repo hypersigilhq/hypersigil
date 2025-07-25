@@ -67,7 +67,7 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
         super()
         this.config = {
             name: 'openai',
-            apiKey: config.apiKey || process.env.OPENAI_API_KEY || '',
+            apiKey: config.apiKey || '',
             baseUrl: config.baseUrl || 'https://api.openai.com',
             timeout: config.timeout || 240_000,
             maxRetries: config.maxRetries || 3,
@@ -75,9 +75,8 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
         };
 
         // Set organization separately to handle undefined properly
-        const orgValue = config.organization || process.env.OPENAI_ORGANIZATION;
-        if (orgValue) {
-            this.config.organization = orgValue;
+        if (config.organization) {
+            this.config.organization = config.organization;
         }
     }
 
@@ -277,6 +276,20 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
 
     supportsStructuredOutput(): boolean {
         return true; // OpenAI supports structured output through response_format
+    }
+
+    updateConfig(config: Partial<OpenAIConfig>): void {
+        this.config = {
+            ...this.config,
+            ...config
+        };
+        // Clear models cache when config changes
+        this.modelsCache = null;
+        this.modelsCacheExpiry = 0;
+    }
+
+    getRequiredConfigKeys(): string[] {
+        return ['apiKey'];
     }
 
     private async makeRequest(endpoint: string, options: RequestInit): Promise<Response> {

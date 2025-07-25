@@ -155,6 +155,17 @@ export class OllamaProvider extends GenericProvider implements AIProvider {
         return true; // Ollama supports structured output through prompt engineering
     }
 
+    updateConfig(config: Partial<OllamaConfig>): void {
+        this.config = {
+            ...this.config,
+            ...config
+        };
+    }
+
+    getRequiredConfigKeys(): string[] {
+        return []; // Ollama doesn't require API keys
+    }
+
     private buildFullPrompt(prompt: string, userInput: string): string {
         return `Context of your task: ${prompt}\n Your task: ${userInput}`
     }

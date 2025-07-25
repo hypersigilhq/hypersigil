@@ -3,6 +3,7 @@ import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../
 import { SettingsApiDefinition, SettingsDocument } from '../definitions/settings';
 import { settingsModel, SettingsDocument as SettingsModelDocument } from '../../models/settings';
 import { encryptString } from '../../util/encryption';
+import { providerRegistry } from '../../providers/provider-registry';
 
 /**
  * Helper function to format settings document to API response format
@@ -71,6 +72,23 @@ RegisterHandlers(app, SettingsApiDefinition, {
                 switch (type) {
                     case 'llm-api-key':
 
+                        let available = providerRegistry.isProviderAvailable(data.provider, data.api_key)
+
+                        if (available.err) {
+                            res.respond(500, {
+                                error: "Error while checking availability of the provider",
+                                message: available.error
+                            })
+                            return
+                        }
+
+                        if (!await available.data) {
+                            res.respond(400, {
+                                error: "Provider not available (perhaps API key is invalid)",
+                            })
+                            return
+                        }
+
                         let encrypted = encryptString(data.api_key)
 
                         if (encrypted.err) {
@@ -90,6 +108,13 @@ RegisterHandlers(app, SettingsApiDefinition, {
                 }
 
                 const setting = await settingsModel.createSetting(type, settingData);
+
+                switch (type) {
+                    case "llm-api-key":
+                        await providerRegistry.refreshProvidersFromSettings()
+                        break;
+                }
+
                 const formattedSetting = formatSettingsDocument(setting);
                 res.respond(201, formattedSetting);
             } catch (error) {

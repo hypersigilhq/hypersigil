@@ -18,11 +18,12 @@
                         <SelectContent>
                             <SelectItem value="openai">OpenAI</SelectItem>
                             <SelectItem value="anthropic">Anthropic</SelectItem>
+                            <SelectItem value="ollama">Ollama</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
 
-                <div class="space-y-2">
+                <div class="space-y-2" v-if="!['ollama'].includes(formData.provider)">
                     <Label for="api_key">API Key</Label>
                     <Input id="api_key" v-model="formData.api_key" type="password" placeholder="Enter your API key"
                         required />
@@ -94,6 +95,11 @@ const resetForm = () => {
 }
 
 const handleSubmit = async () => {
+
+    if (['ollama'].includes(formData.provider)) {
+        formData.api_key = 'foobar'
+    }
+
     if (!formData.provider || !formData.api_key) {
         toast({
             title: 'Validation Error',

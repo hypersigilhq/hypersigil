@@ -2,26 +2,20 @@ import { Model } from '../database/base-model';
 import { BaseDocument } from '../database/types';
 import { AIProviderName } from '../providers/base-provider';
 
+
+export const SettingsMultipleTypes = ['llm-api-key'] as const
+export type SettingsMultipleType = typeof SettingsMultipleTypes[number]
+
 export type SettingsMultipleTypeMap = {
     "llm-api-key": {
         document: LlmApiKeySettingsDocument;
         identifier: `${AIProviderName}`;
-    };
-    "token-limit": {
-        document: TokenLimitSettingsDocument;
-        identifier: `${AIProviderName}:${string}`;
-    };
+    }
 }
 
 export interface LlmApiKeySettingsDocument extends SettingsDocument<"llm-api-key"> {
     provider: AIProviderName;
     api_key: string;
-}
-
-export interface TokenLimitSettingsDocument extends SettingsDocument<"token-limit"> {
-    provider: AIProviderName;
-    model: string;
-    limit: number;
 }
 
 export type SettingsSingleTypeMap = {
@@ -57,7 +51,7 @@ const themeConfig: GlobalThemeSettingsDocument = {
 ```
  */
 
-export type SettingsMultipleType = keyof SettingsMultipleTypeMap;
+// export type SettingsMultipleType = keyof SettingsMultipleTypeMap;
 export type SettingsSingleType = keyof SettingsSingleTypeMap;
 
 export type SettingsIdentifierMap = {
@@ -204,6 +198,10 @@ export class SettingsModel extends Model<SettingsDocument> {
         } else {
             return this.createSetting(type, data);
         }
+    }
+
+    async getLLMKeys(): Promise<LlmApiKeySettingsDocument[]> {
+        return this.getSettingsByType("llm-api-key");
     }
 
 }

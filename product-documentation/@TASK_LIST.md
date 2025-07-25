@@ -69,3 +69,4 @@
 - [done] Add prompt preview endpoint for compiling prompts with user input using Mustache templating
 - [done] Implement per-provider parallelism in execution worker to replace global concurrency limit with provider-specific limits
 - [done] Implement General settings tab with LLM API key management for adding and removing provider API keys
+- [done] Integrate provider registry with settings model to use database-stored API keys instead of environment variables with dynamic refresh capability

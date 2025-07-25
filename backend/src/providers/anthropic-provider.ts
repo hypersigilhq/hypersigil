@@ -63,7 +63,7 @@ export class AnthropicProvider extends GenericProvider implements AIProvider {
         super()
         this.config = {
             name: 'anthropic',
-            apiKey: config.apiKey || process.env.ANTHROPIC_API_KEY || '',
+            apiKey: config.apiKey || '',
             baseUrl: config.baseUrl || 'https://api.anthropic.com',
             timeout: config.timeout || 240_000,
             version: config.version || '2023-06-01',
@@ -253,6 +253,20 @@ export class AnthropicProvider extends GenericProvider implements AIProvider {
 
     supportsStructuredOutput(): boolean {
         return true; // Anthropic supports structured output through prompt engineering
+    }
+
+    updateConfig(config: Partial<AnthropicConfig>): void {
+        this.config = {
+            ...this.config,
+            ...config
+        };
+        // Clear models cache when config changes
+        this.modelsCache = null;
+        this.modelsCacheExpiry = 0;
+    }
+
+    getRequiredConfigKeys(): string[] {
+        return ['apiKey'];
     }
 
     private async makeRequest(endpoint: string, options: RequestInit): Promise<Response> {

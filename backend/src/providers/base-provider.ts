@@ -43,6 +43,8 @@ export interface AIProvider {
     isAvailable(): Promise<boolean>;
     getSupportedModels(): Promise<string[]>;
     supportsStructuredOutput?(): boolean;
+    updateConfig(config: Partial<ProviderConfig>): void;
+    getRequiredConfigKeys(): string[];
 }
 
 // Provider configuration interface

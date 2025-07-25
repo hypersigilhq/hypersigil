@@ -2,13 +2,17 @@ import { AIProvider, AIProviderName } from './base-provider';
 import { OllamaProvider } from './ollama-provider';
 import { AnthropicProvider } from './anthropic-provider';
 import { OpenAIProvider } from './openai-provider';
+import { settingsModel, LlmApiKeySettingsDocument } from '../models/settings';
 
 export class ProviderRegistry {
     private providers: Map<string, AIProvider> = new Map();
     private static instance: ProviderRegistry;
 
     private constructor() {
-        this.initializeProviders();
+        // Initialize providers from settings asynchronously (don't await to avoid blocking constructor)
+        this.initializeProviders().catch((error: any) => {
+            console.warn('Failed to initialize providers from settings during initialization:', error);
+        });
     }
 
     public static getInstance(): ProviderRegistry {
@@ -18,20 +22,31 @@ export class ProviderRegistry {
         return ProviderRegistry.instance;
     }
 
-    private initializeProviders(): void {
-        // Initialize Ollama provider
-        const ollamaProvider = new OllamaProvider();
-        this.providers.set(ollamaProvider.name, ollamaProvider);
+    private async initializeProviders(): Promise<void> {
+        const llmKeys = await settingsModel.getLLMKeys();
 
-        // Initialize Anthropic provider
-        const anthropicProvider = new AnthropicProvider();
-        this.providers.set(anthropicProvider.name, anthropicProvider);
+        for (const keyDoc of llmKeys) {
+            const providerName = keyDoc.provider;
+            const apiKey = keyDoc.api_key;
 
-        // Initialize OpenAI provider
-        const openaiProvider = new OpenAIProvider();
-        this.providers.set(openaiProvider.name, openaiProvider);
+            // Create provider instance
+            const result = this.createProviderInstance(providerName, apiKey);
 
-        // Future providers can be added here
+            if (result.err) {
+                console.error(`Failed to create provider`, providerName, result.error)
+                continue
+            }
+
+            // Check availability before adding to registry
+            let provider = result.data
+            const isAvailable = await provider.isAvailable();
+            if (isAvailable) {
+                this.providers.set(provider.name, provider);
+                console.log(`Successfully initialized ${provider.name} provider`);
+            } else {
+                console.warn(`Provider ${provider.name} is not available - skipping`);
+            }
+        }
     }
 
     public getProvider(name: string): AIProvider | null {
@@ -166,6 +181,51 @@ export class ProviderRegistry {
 
     public removeProvider(name: string): boolean {
         return this.providers.delete(name);
+    }
+
+    /**
+     * Refresh all providers with current API keys from database settings
+     */
+    public async refreshProvidersFromSettings(): Promise<void> {
+        try {
+            // Clear existing providers
+            this.providers.clear();
+
+            // Re-initialize providers from settings
+            await this.initializeProviders();
+        } catch (error) {
+            console.error('Failed to refresh providers from settings:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Create a provider instance based on provider name and configuration
+     */
+    private createProviderInstance(providerName: AIProviderName, apiKey: string): Result<AIProvider, string> {
+        switch (providerName) {
+            case 'openai':
+                return Ok(new OpenAIProvider({ apiKey }))
+            case 'anthropic':
+                return Ok(new AnthropicProvider({ apiKey }))
+            case 'ollama':
+                return Ok(new OllamaProvider())
+            default:
+                return Err(`Unknown provider: ${providerName}`);
+        }
+    }
+
+    /**
+     * Initialize a specific provider with settings-based configuration
+     */
+    public isProviderAvailable(providerName: AIProviderName, apiKey: string): Result<Promise<boolean>, string> {
+        const provider = this.createProviderInstance(providerName, apiKey);
+
+        if (provider.err) {
+            return Err(provider.error)
+        }
+
+        return Ok(provider.data.isAvailable())
     }
 }
 
