@@ -9,11 +9,22 @@
 
         <Separator />
 
-        <Tabs default-value="users" class="w-full">
-            <TabsList class="grid w-full grid-cols-2">
+        <Tabs default-value="general" class="w-full">
+            <TabsList class="grid w-full grid-cols-3">
+                <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="users">Users</TabsTrigger>
                 <TabsTrigger value="api-keys">API Keys</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="general" class="space-y-4">
+                <div>
+                    <h3 class="text-lg font-medium">General Settings</h3>
+                    <p class="text-sm text-muted-foreground">
+                        Manage general application settings and configurations.
+                    </p>
+                </div>
+                <LlmApiKeysTable />
+            </TabsContent>
 
             <TabsContent value="users" class="space-y-4">
                 <div>
@@ -37,4 +48,5 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import UsersTable from '@/components/settings/UsersTable.vue'
 import ApiKeysTable from '@/components/settings/ApiKeysTable.vue'
+import LlmApiKeysTable from '@/components/settings/LlmApiKeysTable.vue'
 </script>

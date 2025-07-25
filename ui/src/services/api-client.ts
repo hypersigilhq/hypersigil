@@ -7,6 +7,7 @@ import { CommentApiDefinition, type CreateCommentRequest, type CommentListQuery 
 import { AuthApiDefinition, type LoginRequest, type RegisterFirstAdminRequest } from './definitions/auth';
 import { UserApiDefinition, type ListUsersQuery, type ListUsersResponse, type UserSummary } from './definitions/user';
 import { ApiKeyApiDefinition, type CreateApiKeyRequest, type UpdateApiKeyRequest } from './definitions/api-key';
+import { SettingsApiDefinition, type CreateSettingsRequest, type UpdateSettingsRequest } from './definitions/settings';
 
 // Create the API client with the base URL
 export const apiClient = new ApiClient(
@@ -49,6 +50,11 @@ export const apiKeyApiClient = new ApiClient(
     ApiKeyApiDefinition
 );
 
+export const settingsApiClient = new ApiClient(
+    document.location.origin, // Adjust this to match your backend URL
+    SettingsApiDefinition
+);
+
 // Array of all API clients for token management
 const allApiClients = [
     apiClient,
@@ -58,7 +64,8 @@ const allApiClients = [
     commentApiClient,
     userApiClient,
     authApiClient,
-    apiKeyApiClient
+    apiKeyApiClient,
+    settingsApiClient
 ];
 
 // Token management function
@@ -447,6 +454,57 @@ export const apiKeysApi = {
 
     stats: () =>
         apiKeyApiClient.callApi('apiKeys', 'stats', {}, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        })
+};
+
+// Helper functions for settings API
+export const settingsApi = {
+    list: () =>
+        settingsApiClient.callApi('settings', 'list', {}, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    create: (body: CreateSettingsRequest) =>
+        settingsApiClient.callApi('settings', 'create', { body }, {
+            ...errorHandle,
+            201: (payload) => payload.data,
+        }),
+
+    get: (id: string) =>
+        settingsApiClient.callApi('settings', 'get', { params: { id } }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    update: (id: string, body: UpdateSettingsRequest) =>
+        settingsApiClient.callApi('settings', 'update', { params: { id }, body }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    delete: (id: string) =>
+        settingsApiClient.callApi('settings', 'delete', { params: { id } }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    listByType: (type: 'llm-api-key') =>
+        settingsApiClient.callApi('settings', 'listByType', { params: { type } }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    getByTypeAndIdentifier: (type: 'llm-api-key', identifier: string) =>
+        settingsApiClient.callApi('settings', 'getByTypeAndIdentifier', { params: { type, identifier } }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    deleteByTypeAndIdentifier: (type: 'llm-api-key', identifier: string) =>
+        settingsApiClient.callApi('settings', 'deleteByTypeAndIdentifier', { params: { type, identifier } }, {
             ...errorHandle,
             200: (payload) => payload.data,
         })

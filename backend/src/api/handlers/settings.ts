@@ -2,6 +2,7 @@ import { RegisterHandlers } from 'ts-typed-api';
 import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import { SettingsApiDefinition, SettingsDocument } from '../definitions/settings';
 import { settingsModel, SettingsDocument as SettingsModelDocument } from '../../models/settings';
+import { encryptString } from '../../util/encryption';
 
 /**
  * Helper function to format settings document to API response format
@@ -69,10 +70,21 @@ RegisterHandlers(app, SettingsApiDefinition, {
 
                 switch (type) {
                     case 'llm-api-key':
+
+                        let encrypted = encryptString(data.api_key)
+
+                        if (encrypted.err) {
+                            res.respond(500, {
+                                error: "Error while encrypting API key",
+                                message: encrypted.error
+                            })
+                            return
+                        }
+
                         settingData = {
                             identifier: data.provider,
                             provider: data.provider,
-                            api_key: data.api_key
+                            api_key: encrypted.data
                         };
                         break
                 }

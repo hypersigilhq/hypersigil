@@ -190,7 +190,7 @@ export class ExecutionService {
                 }
 
                 const result = await this.createExecution(executionData);
-                if (!result.success) {
+                if (result.err) {
                     return Err(result.error);
                 }
                 executionIds.push(result.data!.id!);

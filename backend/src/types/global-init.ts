@@ -2,9 +2,9 @@
 
 // Initialize global Result helper functions
 (global as any).Ok = function Ok<T>(data: T): Result<T, never> {
-    return { success: true, data };
+    return { success: true, data, err: false };
 };
 
 (global as any).Err = function Err<E>(error: E): Result<never, E> {
-    return { success: false, error };
+    return { success: false, error, err: true };
 };

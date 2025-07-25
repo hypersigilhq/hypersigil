@@ -7,7 +7,7 @@ class PromptService {
     // Method to compile a prompt with test data using mustache
     public compilePromptVersion(testDataItem: TestDataItem, promptVersion: PromptVersion): { success: true; compiledPrompt: string } | { success: false; error: string } {
         const res = this.compilePrompt(testDataItem.content, promptVersion.prompt)
-        if (!res.success) {
+        if (res.err) {
             return { success: false, error: res.error.error }
         }
         return { success: true, compiledPrompt: res.data }

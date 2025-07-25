@@ -41,7 +41,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     options as ExecutionOptions
                 );
 
-                if (!result.success) {
+                if (result.err) {
                     console.error('Error creating batch executions:', result.error);
                     res.respond(500, {
                         error: 'Internal server error',
@@ -67,7 +67,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                         traceId
                     });
 
-                    if (!result.success) {
+                    if (result.err) {
                         res.respond(500, {
                             error: 'Internal server error',
                             message: 'Failed to create execution',

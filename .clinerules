@@ -74,7 +74,7 @@ __Design Consistency:__
 
 - Follow existing design patterns from PromptsTable.vue
 - Use the same UI components (shadcn/ui) in ./ui/src/components/ui
-- There is global toast and confirmation-dialog under useUI for confirmations, warnings and notifications
+- There is global toast and confirmation-dialog under useUI composable `./ui/src/services/ui/index.ts` for confirmations, warnings and notifications. Use it across the app for create/update/delete actions.
 - Consistent spacing, typography, and color scheme
 
 __Accessibility:__

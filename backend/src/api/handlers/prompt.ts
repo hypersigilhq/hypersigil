@@ -348,7 +348,7 @@ RegisterHandlers(app, PromptApiDefinition, {
 
             const compilationResult = promptService.compilePrompt(userInput, promptToCompile, jsonSchema);
 
-            if (!compilationResult.success) {
+            if (compilationResult.err) {
                 return res.respond(400, {
                     error: 'Compilation Error',
                     message: compilationResult.error.error,
