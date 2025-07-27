@@ -17,16 +17,15 @@
 import { computed } from 'vue'
 import type { ExecutionResponse } from '@/services/definitions/execution'
 
-import { Button } from '@/components/ui/button'
 import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
 import ExecutionDetailsView from './ExecutionDetailsView.vue'
+import CopyToClipboard from '../ui/copy-to-clipboard/CopyToClipboard.vue'
 
 interface Props {
     modelValue: boolean

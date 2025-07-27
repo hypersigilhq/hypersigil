@@ -8,18 +8,6 @@ import { Prompt, promptModel, PromptVersion } from '../../models/prompt';
 import { ExecutionApiDefinition, ExecutionResponse } from '../definitions/execution';
 import { executionModel } from '../../models';
 
-// Provider cache - simple in-memory cache with no TTL
-let providerHealthCache: any = null;
-let providerNamesCache: string[] | null = null;
-let availableModelsCache: any = null;
-
-// Cache invalidation function
-export function clearProviderCache() {
-    providerHealthCache = null;
-    providerNamesCache = null;
-    availableModelsCache = null;
-}
-
 RegisterHandlers(app, ExecutionApiDefinition, {
     executions: {
         create: async (req, res) => {
@@ -339,10 +327,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
     providers: {
         getProviderHealth: async (req, res) => {
             try {
-                if (providerHealthCache === null) {
-                    providerHealthCache = await providerRegistry.getProviderHealth();
-                }
-                res.respond(200, providerHealthCache);
+                const health = await providerRegistry.getProviderHealth();
+                res.respond(200, health);
             } catch (error) {
                 console.error('Error getting provider health:', error);
                 res.respond(500, {
@@ -354,10 +340,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
         listProviders: async (req, res) => {
             try {
-                if (providerNamesCache === null) {
-                    providerNamesCache = providerRegistry.getProviderNames();
-                }
-                res.respond(200, providerNamesCache);
+                const providers = providerRegistry.getProviderNames();
+                res.respond(200, providers);
             } catch (error) {
                 console.error('Error listing providers:', error);
                 res.respond(500, {
@@ -369,10 +353,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
         getAvailableModels: async (req, res) => {
             try {
-                if (availableModelsCache === null) {
-                    availableModelsCache = await providerRegistry.getAvailableModels();
-                }
-                res.respond(200, availableModelsCache);
+                const models = await providerRegistry.getAvailableModels();
+                res.respond(200, models);
             } catch (error) {
                 console.error('Error getting available models:', error);
                 res.respond(500, {

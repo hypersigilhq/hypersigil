@@ -502,10 +502,4 @@ export const settingsApi = {
             ...errorHandle,
             200: (payload) => payload.data,
         }),
-
-    deleteByTypeAndIdentifier: (type: 'llm-api-key', identifier: string) =>
-        settingsApiClient.callApi('settings', 'deleteByTypeAndIdentifier', { params: { type, identifier } }, {
-            ...errorHandle,
-            200: (payload) => payload.data,
-        })
 };

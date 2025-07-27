@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 import { ErrorResponseSchema } from './common';
-import { AIProviderNames } from '../../providers/base-provider';
+import { AIProviderNamesDefinition } from './execution';
 
 const settingsTypeLLMApiKey = "llm-api-key"
 // more types can be added here
 
 // AI Provider enum schema
-export const AIProviderNameSchema = z.enum(AIProviderNames);
+export const AIProviderNameSchema = z.enum(AIProviderNamesDefinition);
 
 // Base settings document schema
 export const BaseSettingsDocumentSchema = z.object({
@@ -196,22 +196,6 @@ export const SettingsApiDefinition = CreateApiDefinition({
                     500: ErrorResponseSchema
                 })
             },
-
-            // Delete setting by type and identifier
-            deleteByTypeAndIdentifier: {
-                method: 'DELETE',
-                path: '/type/:type/identifier/:identifier',
-                params: z.object({
-                    type: z.enum([settingsTypeLLMApiKey]),
-                    identifier: z.string()
-                }),
-                responses: CreateResponses({
-                    200: z.object({ success: z.boolean(), deletedCount: z.number() }),
-                    401: ErrorResponseSchema,
-                    404: ErrorResponseSchema,
-                    500: ErrorResponseSchema
-                })
-            }
         }
     }
 });

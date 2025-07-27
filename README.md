@@ -75,7 +75,7 @@ Pull and run the latest Hypersigil image from Docker Hub:
 
 ```bash
 # Run on port 8080
-docker run -d --name hypersigil -p 8080:80 -v $(pwd)/hypersigil/.env:/app/.env -v $(pwd)/hypersigil:/app/data --init hypersigil:latest
+docker run -d --name hypersigil -p 8080:80 -v $(pwd)/hypersigil:/app/data --init hypersigil:latest
 ```
 
 **Important**: Make sure you have a `backend/.env` file configured before running. You can use `backend/.env.example` as a template.
@@ -117,7 +117,6 @@ docker run -d --name hypersigil -p 8080:80 -v $(pwd)/hypersigil/.env:/app/.env -
 - `-d`: Run container in detached mode (background)
 - `--name hypersigil`: Assign a name to the container for easy management
 - `-p 8080:8080`: Map host port 8080 to container port 80 (change first number for different host port)
-- `-v $(pwd)/backend/.env:/app/.env`: Mount your environment configuration file
 - `-v $(pwd)/backend/data:/app/data`: Mount data directory for persistent storage
 - `--init`: Use proper init system for signal handling
 </details>
@@ -199,52 +198,6 @@ docker run -d --name hypersigil -p 8080:80 -v $(pwd)/hypersigil/.env:/app/.env -
 - **Anthropic**: Advanced reasoning and analysis
 - **Extensible**: Plugin system for additional providers
 </details>
-
-### First Steps
-
-1. **Create your first user** through the registration flow
-2. **Configure AI providers** in the settings panel
-3. **Create a prompt** and test it with different inputs
-4. **Set up test data** for systematic validation
-5. **Execute and calibrate** your prompts to perfection
-
-## Configuration
-
-### Environment Variables
-
-```bash
-# Server Configuration
-PORT=3000
-NODE_ENV=development
-
-# Database
-DATABASE_PATH=./data/hypersigil.db
-
-# AI Providers
-OPENAI_API_KEY=your_openai_key
-ANTHROPIC_API_KEY=your_anthropic_key
-OLLAMA_BASE_URL=http://localhost:11434
-
-# Authentication
-JWT_SECRET=your_jwt_secret
-```
-
-### AI Provider Setup
-
-#### Ollama (Local)
-```bash
-# Install Ollama
-curl -fsSL https://ollama.ai/install.sh | sh
-
-# Pull a model
-ollama pull qwen2.5:7b
-```
-
-#### OpenAI
-Add your API key to the environment variables and configure in the settings panel.
-
-#### Anthropic
-Add your Anthropic API key to the environment variables and configure in the settings panel.
 
 ## Contributing
 

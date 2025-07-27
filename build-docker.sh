@@ -86,15 +86,6 @@ fi
 print_success "Backend build completed successfully"
 cd ..
 
-# Check if .env.example exists and warn about .env
-if [ -f "backend/.env.example" ]; then
-    if [ ! -f "backend/.env" ]; then
-        print_warning "No .env file found in backend directory."
-        print_warning "Make sure to create backend/.env before running the container."
-        print_warning "You can use backend/.env.example as a template."
-    fi
-fi
-
 # Build Docker image
 print_status "Building Docker image..."
 DOCKER_BUILDKIT=1 docker build -t hypersigil:latest .
@@ -107,7 +98,6 @@ if [ $? -eq 0 ]; then
     echo "docker run -d \\"
     echo "  --name hypersigil \\"
     echo "  -p 80:80 \\"
-    echo "  -v \$(pwd)/backend/.env:/app/.env \\"
     echo "  -v \$(pwd)/backend/data:/app/data \\"
     echo "  --init \\"
     echo "  hypersigil:latest"
@@ -116,7 +106,6 @@ if [ $? -eq 0 ]; then
     echo "docker run -d \\"
     echo "  --name hypersigil \\"
     echo "  -p 8080:80 \\"
-    echo "  -v \$(pwd)/backend/.env:/app/.env \\"
     echo "  -v \$(pwd)/backend/data:/app/data \\"
     echo "  --init \\"
     echo "  hypersigil:latest"

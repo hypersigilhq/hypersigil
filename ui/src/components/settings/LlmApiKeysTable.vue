@@ -136,7 +136,7 @@ const deleteApiKey = async (apiKey: LlmApiKeySettings) => {
     if (!confirmed) return
 
     try {
-        await settingsApi.deleteByTypeAndIdentifier('llm-api-key', apiKey.provider)
+        await settingsApi.delete(apiKey.id)
         toast({
             title: 'Success',
             description: 'API key deleted successfully'

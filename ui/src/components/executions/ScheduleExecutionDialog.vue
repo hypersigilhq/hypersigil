@@ -85,12 +85,23 @@
 
                     <div>
                         <Label for="providerModel">Provider/Model (Select multiple)</Label>
-                        <div class="border rounded-md p-3 min-h-[40px] bg-background">
+
+                        <!-- Warning for no models available -->
+                        <div v-if="showNoModelsWarning"
+                            class="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-3">
+                            <p class="text-sm text-yellow-800">
+                                You need to add LLM API keys in
+                                <button type="button" @click="router.push({ name: 'settings' })"
+                                    class="text-yellow-900 underline hover:text-yellow-700 font-medium">
+                                    Settings
+                                </button>
+                                to enable model selection.
+                            </p>
+                        </div>
+
+                        <div v-else class="border rounded-md p-3 min-h-[40px] bg-background">
                             <div v-if="loadingModels" class="text-sm text-muted-foreground">
                                 Loading models...
-                            </div>
-                            <div v-else-if="modelOptions.length === 0" class="text-sm text-muted-foreground">
-                                No models available
                             </div>
                             <div v-else class="space-y-2">
                                 <div v-if="formData.providerModel.length > 0" class="flex flex-wrap gap-2 mb-3">
@@ -114,11 +125,8 @@
                                     <template v-for="(models, provider) in filteredAvailableModels" :key="provider">
                                         <div v-for="model in models" :key="`${provider}:${model}`"
                                             class="flex items-center space-x-2 p-2 hover:bg-muted rounded-md cursor-pointer"
-                                            @click="toggleModel(`${provider}:${model}`)">
-                                            <input type="checkbox"
-                                                :checked="formData.providerModel.includes(`${provider}:${model}`)"
-                                                @change="toggleModel(`${provider}:${model}`)"
-                                                class="rounded border-gray-300">
+                                            :class="{ 'bg-muted': formData.providerModel.includes(`${provider}:${model}`) }"
+                                            @click.stop="toggleModel(`${provider}:${model}`)">
                                             <label class="text-sm cursor-pointer flex-1">
                                                 {{ provider }}: {{ model }}
                                             </label>
@@ -131,7 +139,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div v-if="formData.providerModel.length === 0" class="text-sm text-red-500 mt-1">
+                        <div v-if="!showNoModelsWarning && formData.providerModel.length === 0"
+                            class="text-sm text-red-500 mt-1">
                             Please select at least one provider/model
                         </div>
                     </div>
@@ -218,6 +227,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -241,6 +251,8 @@ import {
 
 import { executionsApi, testDataApi, promptsApi } from '@/services/api-client'
 import PromptSelector from '@/components/prompts/PromptSelector.vue'
+
+const router = useRouter()
 
 // Props
 interface Props {
@@ -360,6 +372,10 @@ const filteredAvailableModels = computed(() => {
     }
 
     return filtered
+})
+
+const showNoModelsWarning = computed(() => {
+    return !loadingModels.value && Object.keys(availableModels.value).length === 0
 })
 
 const previewDisabled = computed(() => {

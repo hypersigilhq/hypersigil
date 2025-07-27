@@ -3,9 +3,30 @@ import { OllamaProvider } from './ollama-provider';
 import { AnthropicProvider } from './anthropic-provider';
 import { OpenAIProvider } from './openai-provider';
 import { settingsModel, LlmApiKeySettingsDocument } from '../models/settings';
+import { decryptString } from '../util/encryption';
+
+interface ProviderStatus {
+    name: AIProviderName;
+    available: boolean;
+    models: string[];
+    error?: string;
+    lastChecked: number;
+    provider: AIProvider;
+}
+
+interface ConsolidatedProviderData {
+    providers: Map<AIProviderName, ProviderStatus>;
+    lastUpdated: number;
+    isRefreshing: boolean;
+}
 
 export class ProviderRegistry {
-    private providers: Map<string, AIProvider> = new Map();
+    private consolidatedData: ConsolidatedProviderData = {
+        providers: new Map(),
+        lastUpdated: 0,
+        isRefreshing: false
+    };
+    private readonly cacheTTL = 60 * 60 * 1000; // 5 minutes
     private static instance: ProviderRegistry;
 
     private constructor() {
@@ -24,54 +45,191 @@ export class ProviderRegistry {
 
     private async initializeProviders(): Promise<void> {
         const llmKeys = await settingsModel.getLLMKeys();
+        const now = Date.now();
 
         for (const keyDoc of llmKeys) {
             const providerName = keyDoc.provider;
-            const apiKey = keyDoc.api_key;
+            const apiKey = decryptString(keyDoc.api_key);
+
+            if (apiKey.err) {
+                console.error(`Failed to decrypt api key for provider`, providerName)
+                continue
+            }
 
             // Create provider instance
-            const result = this.createProviderInstance(providerName, apiKey);
+            const result = this.createProviderInstance(providerName, apiKey.data);
 
             if (result.err) {
                 console.error(`Failed to create provider`, providerName, result.error)
                 continue
             }
 
-            // Check availability before adding to registry
+            // Check availability and get models
             let provider = result.data
             const isAvailable = await provider.isAvailable();
+            let models: string[] = [];
+            let error: string | undefined;
+
             if (isAvailable) {
-                this.providers.set(provider.name, provider);
-                console.log(`Successfully initialized ${provider.name} provider`);
+                try {
+                    models = await provider.getSupportedModels();
+                    console.log(`Successfully initialized ${provider.name} provider`);
+                } catch (modelError) {
+                    console.warn(`Failed to get models for provider ${provider.name}:`, modelError);
+                    models = [];
+                    error = modelError instanceof Error ? modelError.message : String(modelError);
+                }
             } else {
                 console.warn(`Provider ${provider.name} is not available - skipping`);
+                error = 'Provider is not available';
             }
+
+            // Add to consolidated data directly
+            const status: ProviderStatus = {
+                name: provider.name,
+                available: isAvailable,
+                models,
+                lastChecked: now,
+                provider
+            };
+
+            if (error) {
+                status.error = error;
+            }
+
+            this.consolidatedData.providers.set(provider.name, status);
+        }
+
+        // Update consolidated data timestamp
+        this.consolidatedData.lastUpdated = now;
+        this.consolidatedData.isRefreshing = false;
+    }
+
+    /**
+     * Refresh consolidated provider status data
+     */
+    private async refreshProviderStatus(): Promise<void> {
+        if (this.consolidatedData.isRefreshing) {
+            return; // Avoid concurrent refreshes
+        }
+
+        this.consolidatedData.isRefreshing = true;
+        const now = Date.now();
+
+        try {
+            // Get all provider status in parallel using Promise.allSettled
+            const providerStatusPromises = Array.from(this.consolidatedData.providers.entries()).map(
+                async ([name, existingStatus]): Promise<[AIProviderName, ProviderStatus]> => {
+                    const provider = existingStatus.provider;
+                    try {
+                        const available = await provider.isAvailable();
+                        let models: string[] = [];
+                        let error: string | undefined;
+
+                        if (available) {
+                            try {
+                                models = await provider.getSupportedModels();
+                            } catch (modelError) {
+                                console.warn(`Failed to get models for provider ${name}:`, modelError);
+                                models = [];
+                                error = modelError instanceof Error ? modelError.message : String(modelError);
+                            }
+                        } else {
+                            error = 'Provider is not available';
+                        }
+
+                        const status: ProviderStatus = {
+                            name,
+                            available,
+                            models,
+                            lastChecked: now,
+                            provider
+                        };
+
+                        if (error) {
+                            status.error = error;
+                        }
+
+                        return [name, status];
+                    } catch (error) {
+                        return [name, {
+                            name,
+                            available: false,
+                            models: [],
+                            error: error instanceof Error ? error.message : String(error),
+                            lastChecked: now,
+                            provider
+                        }];
+                    }
+                }
+            );
+
+            const results = await Promise.allSettled(providerStatusPromises);
+            const newProviderMap = new Map<AIProviderName, ProviderStatus>();
+
+            results.forEach((result) => {
+                if (result.status === 'fulfilled') {
+                    const [name, status] = result.value;
+                    newProviderMap.set(name, status);
+                } else {
+                    console.error('Failed to get provider status:', result.reason);
+                }
+            });
+
+            // Update consolidated data
+            this.consolidatedData = {
+                providers: newProviderMap,
+                lastUpdated: now,
+                isRefreshing: false
+            };
+
+            console.log(`Refreshed status for ${newProviderMap.size} providers`);
+        } catch (error) {
+            console.error('Error refreshing provider status:', error);
+            this.consolidatedData.isRefreshing = false;
         }
     }
 
-    public getProvider(name: string): AIProvider | null {
-        return this.providers.get(name) || null;
+    /**
+     * Ensure consolidated data is fresh, refresh if needed
+     */
+    private async ensureFreshConsolidatedData(): Promise<void> {
+        const now = Date.now();
+        const isExpired = (now - this.consolidatedData.lastUpdated) > this.cacheTTL;
+        const isEmpty = this.consolidatedData.providers.size === 0;
+
+        if (isExpired || isEmpty) {
+            await this.refreshProviderStatus();
+        }
+    }
+
+    /**
+     * Invalidate consolidated cache
+     */
+    private invalidateConsolidatedCache(): void {
+        this.consolidatedData.lastUpdated = 0;
+    }
+
+    public getProvider(name: AIProviderName): AIProvider | null {
+        const status = this.consolidatedData.providers.get(name);
+        return status ? status.provider : null;
     }
 
     public getAllProviders(): AIProvider[] {
-        return Array.from(this.providers.values());
+        return Array.from(this.consolidatedData.providers.values()).map(status => status.provider);
     }
 
     public getProviderNames(): string[] {
-        return Array.from(this.providers.keys());
+        return Array.from(this.consolidatedData.providers.keys());
     }
 
     public async getAvailableProviders(): Promise<AIProvider[]> {
-        const availableProviders: AIProvider[] = [];
+        await this.ensureFreshConsolidatedData();
 
-        for (const provider of this.providers.values()) {
-            try {
-                const isAvailable = await provider.isAvailable();
-                if (isAvailable) {
-                    availableProviders.push(provider);
-                }
-            } catch (error) {
-                console.warn(`Provider ${provider.name} availability check failed:`, error);
+        const availableProviders: AIProvider[] = [];
+        for (const status of this.consolidatedData.providers.values()) {
+            if (status.available) {
+                availableProviders.push(status.provider);
             }
         }
 
@@ -84,48 +242,27 @@ export class ProviderRegistry {
         error?: string;
         [key: string]: any;
     }>> {
-        const health: Record<string, any> = {};
+        await this.ensureFreshConsolidatedData();
 
-        for (const [name, provider] of this.providers.entries()) {
-            try {
-                if ('healthCheck' in provider && typeof provider.healthCheck === 'function') {
-                    // Use provider-specific health check if available
-                    health[name] = await (provider as any).healthCheck();
-                } else {
-                    // Fallback to basic availability check
-                    const available = await provider.isAvailable();
-                    const models = available ? await provider.getSupportedModels() : [];
-                    health[name] = {
-                        available,
-                        models,
-                        ...(available ? {} : { error: 'Provider is not available' })
-                    };
-                }
-            } catch (error) {
-                health[name] = {
-                    available: false,
-                    models: [],
-                    error: error instanceof Error ? error.message : String(error)
-                };
-            }
+        const health: Record<string, any> = {};
+        for (const [name, status] of this.consolidatedData.providers.entries()) {
+            health[name] = {
+                available: status.available,
+                models: status.models,
+                ...(status.error && { error: status.error })
+            };
         }
 
         return health;
     }
 
     public async getAvailableModels(): Promise<Record<string, string[]>> {
-        const models: Record<string, string[]> = {};
+        await this.ensureFreshConsolidatedData();
 
-        for (const [name, provider] of this.providers.entries()) {
-            try {
-                const isAvailable = await provider.isAvailable();
-                if (isAvailable) {
-                    const supportedModels = await provider.getSupportedModels();
-                    models[name] = supportedModels;
-                }
-            } catch (error) {
-                console.warn(`Failed to get models for provider ${name}:`, error);
-                // Skip providers that fail - don't include them in the response
+        const models: Record<string, string[]> = {};
+        for (const [name, status] of this.consolidatedData.providers.entries()) {
+            if (status.available) {
+                models[name] = status.models;
             }
         }
 
@@ -145,7 +282,7 @@ export class ProviderRegistry {
             throw new Error(`Invalid provider:model format: ${providerModel}. Expected format: provider:model`);
         }
 
-        if (!this.providers.has(provider)) {
+        if (!this.consolidatedData.providers.has(provider)) {
             throw new Error(`Unknown provider: ${provider}. Available providers: ${this.getProviderNames().join(', ')}`);
         }
 
@@ -176,11 +313,24 @@ export class ProviderRegistry {
     }
 
     public addProvider(provider: AIProvider): void {
-        this.providers.set(provider.name, provider);
+        const now = Date.now();
+        const status: ProviderStatus = {
+            name: provider.name,
+            available: false, // Will be updated on next refresh
+            models: [],
+            lastChecked: 0,
+            provider
+        };
+        this.consolidatedData.providers.set(provider.name, status);
+        this.invalidateConsolidatedCache();
     }
 
-    public removeProvider(name: string): boolean {
-        return this.providers.delete(name);
+    public removeProvider(name: AIProviderName): boolean {
+        const removed = this.consolidatedData.providers.delete(name);
+        if (removed) {
+            this.invalidateConsolidatedCache();
+        }
+        return removed;
     }
 
     /**
@@ -188,8 +338,9 @@ export class ProviderRegistry {
      */
     public async refreshProvidersFromSettings(): Promise<void> {
         try {
-            // Clear existing providers
-            this.providers.clear();
+            // Clear existing providers and cache
+            this.consolidatedData.providers.clear();
+            this.invalidateConsolidatedCache();
 
             // Re-initialize providers from settings
             await this.initializeProviders();

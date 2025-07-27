@@ -22,21 +22,6 @@ print_error() {
     echo "❌ [ERROR] $1"
 }
 
-# Check if .env file is mounted
-if [ -f "/app/.env" ]; then
-    print_info "Environment file found, loading variables..."
-    # Export environment variables from .env file
-    set -a
-    . /app/.env
-    set +a
-    print_success "Environment variables loaded"
-else
-    print_warning "No .env file found at /app/.env"
-    print_warning "Using default environment variables"
-    export NODE_ENV=production
-    export PORT=3000
-fi
-
 # Ensure data directory exists and has correct permissions
 if [ ! -d "/app/data" ]; then
     print_info "Creating data directory..."

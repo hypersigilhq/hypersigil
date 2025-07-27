@@ -33,14 +33,6 @@ chmod +x build-docker.sh
 
 Create your environment file:
 
-```bash
-# Copy the example environment file
-cp backend/.env.example backend/.env
-
-# Edit the environment file with your settings
-nano backend/.env
-```
-
 ### 3. Run the Container
 
 ```bash
@@ -48,7 +40,6 @@ nano backend/.env
 docker run -d \
   --name hypersigil \
   -p 80:80 \
-  -v $(pwd)/backend/.env:/app/.env \
   -v $(pwd)/backend/data:/app/data \
   --init \
   hypersigil:latest
@@ -57,37 +48,12 @@ docker run -d \
 docker run -d \
   --name hypersigil \
   -p 8080:80 \
-  -v $(pwd)/backend/.env:/app/.env \
   -v $(pwd)/backend/data:/app/data \
   --init \
   hypersigil:latest
 ```
 
-## Configuration
-
-### Environment Variables
-
-The container reads configuration from the mounted `.env` file. Key variables include:
-
-```bash
-# Server Configuration
-PORT=3000                    # Backend port (internal)
-NODE_ENV=production         # Environment mode
-
-# CORS Configuration
-CORS_ORIGIN=http://localhost # Frontend origin
-
-# API Configuration
-API_PREFIX=/api/v1          # API prefix
-ANTHROPIC_API_KEY=your_key  # Anthropic API key
-OPENAI_API_KEY=your_key     # OpenAI API key
-```
-
 ### Volume Mounts
-
-- **Environment File**: `-v $(pwd)/backend/.env:/app/.env`
-  - Mounts your local environment configuration
-  - Required for API keys and configuration
 
 - **Data Directory**: `-v $(pwd)/backend/data:/app/data`
   - Persists SQLite database and application data
@@ -152,7 +118,6 @@ docker rmi hypersigil:latest
 ### Common Issues
 
 1. **Container won't start**
-   - Check if `.env` file exists and is properly formatted
    - Verify data directory permissions
    - Check Docker logs: `docker logs hypersigil`
 
@@ -179,7 +144,6 @@ To run the container with more verbose logging:
 docker run -d \
   --name hypersigil-debug \
   -p 8080:80 \
-  -v $(pwd)/backend/.env:/app/.env \
   -v $(pwd)/backend/data:/app/data \
   -e NODE_ENV=development \
   --init \
@@ -203,7 +167,6 @@ cat /etc/supervisor/conf.d/supervisord.conf
 ## Security Considerations
 
 - The container runs nginx as root (required for port 80) but the Node.js backend runs as the `node` user
-- Environment variables are loaded from the mounted `.env` file
 - Database files are stored in the mounted data directory with proper permissions
 - nginx includes security headers and basic protection against common attacks
 
@@ -227,7 +190,6 @@ docker run -d \
   --memory=1g \
   --cpus=1.0 \
   -p 80:80 \
-  -v $(pwd)/backend/.env:/app/.env \
   -v $(pwd)/backend/data:/app/data \
   --init \
   hypersigil:latest

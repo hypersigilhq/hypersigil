@@ -200,14 +200,22 @@ RegisterHandlers(app, SettingsApiDefinition, {
         delete: async (req, res) => {
             try {
                 const { id } = req.params;
-                const deleted = await settingsModel.deleteSetting(id);
 
-                if (!deleted) {
+                const setting = await settingsModel.getSettingById(id);
+                if (!setting) {
                     res.respond(404, {
                         error: 'Not Found',
                         message: 'Setting not found'
                     });
                     return;
+                }
+
+                const deleted = await settingsModel.deleteSetting(id);
+
+                switch (setting.type) {
+                    case "llm-api-key":
+                        await providerRegistry.refreshProvidersFromSettings()
+                        break;
                 }
 
                 res.respond(200, { success: true });
@@ -258,29 +266,7 @@ RegisterHandlers(app, SettingsApiDefinition, {
                     message: 'Failed to get setting by type and identifier'
                 });
             }
-        },
 
-        deleteByTypeAndIdentifier: async (req, res) => {
-            try {
-                const { type, identifier } = req.params;
-                const deletedCount = await settingsModel.deleteSettingByTypeAndIdentifier(type, identifier);
-
-                if (deletedCount === 0) {
-                    res.respond(404, {
-                        error: 'Not Found',
-                        message: 'Setting not found'
-                    });
-                    return;
-                }
-
-                res.respond(200, { success: true, deletedCount });
-            } catch (error) {
-                console.error('Error deleting setting by type and identifier:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to delete setting by type and identifier'
-                });
-            }
         }
     }
 }, [loggingMiddleware, timingMiddleware, authMiddleware]);
