@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 
 // Shared error response schema
 export const ErrorResponseSchema = z.object({
@@ -8,6 +9,14 @@ export const ErrorResponseSchema = z.object({
 });
 
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
+
+// Onboarding status schema
+export const OnboardingStatusSchema = z.object({
+    promptAvailable: z.boolean(),
+    llmApiKeyAvailable: z.boolean()
+});
+
+export type OnboardingStatus = z.infer<typeof OnboardingStatusSchema>;
 
 // Shared pagination query parameters
 export const PaginationQuerySchema = z.object({
@@ -32,3 +41,20 @@ export const createPaginationResponseSchema = <T extends z.ZodTypeAny>(dataSchem
 export const OrderDirectionSchema = z.enum(['ASC', 'DESC']);
 
 export type OrderDirection = z.infer<typeof OrderDirectionSchema>;
+
+// Common API Definition
+export const CommonApiDefinition = CreateApiDefinition({
+    prefix: '/api/v1/common',
+    endpoints: {
+        common: {
+            getOnboardingStatus: {
+                method: 'GET',
+                path: '/onboarding-status',
+                responses: CreateResponses({
+                    200: OnboardingStatusSchema,
+                    500: ErrorResponseSchema
+                })
+            }
+        }
+    }
+});

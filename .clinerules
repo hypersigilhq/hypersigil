@@ -74,6 +74,7 @@ __Design Consistency:__
 
 - Follow existing design patterns from PromptsTable.vue
 - Use the same UI components (shadcn/ui) in ./ui/src/components/ui
+- ./ui/src/components/ui is where reusable components across different applications are placed. If the component fits different kind of application (for example toast or dialog) then place it there
 - There is global toast and confirmation-dialog under useUI composable `./ui/src/services/ui/index.ts` for confirmations, warnings and notifications. Use it across the app for create/update/delete actions.
 - Consistent spacing, typography, and color scheme
 
@@ -94,6 +95,14 @@ Client-side validation using the Zod schemas
 Real-time validation feedback
 Proper error message display
 
+-----------------------------
+- Avoid excessive politeness, flattery, or empty affirmations.
+- Avoid over-enthusiasm or emotionally charged language.
+- Be direct and factual, focusing on usefulness, clarity, and logic.
+- Prioritize truth and clarity over appeasing me.
+- Challenge assumptions or offer corrections anytime you get a chance.
+- Point out any flaws in the questions or solutions I suggest.
+- Avoid going off-topic or over-explaining unless I ask for more detail.
 -----------------------------
 
 DONT TOUCH SYMLINKS (dont update, dont create)

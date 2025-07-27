@@ -8,6 +8,7 @@ import { AuthApiDefinition, type LoginRequest, type RegisterFirstAdminRequest } 
 import { UserApiDefinition, type ListUsersQuery, type ListUsersResponse, type UserSummary } from './definitions/user';
 import { ApiKeyApiDefinition, type CreateApiKeyRequest, type UpdateApiKeyRequest } from './definitions/api-key';
 import { SettingsApiDefinition, type CreateSettingsRequest, type UpdateSettingsRequest } from './definitions/settings';
+import { CommonApiDefinition } from './definitions/common';
 
 // Create the API client with the base URL
 export const apiClient = new ApiClient(
@@ -55,6 +56,11 @@ export const settingsApiClient = new ApiClient(
     SettingsApiDefinition
 );
 
+export const commonApiClient = new ApiClient(
+    document.location.origin, // Adjust this to match your backend URL
+    CommonApiDefinition
+);
+
 // Array of all API clients for token management
 const allApiClients = [
     apiClient,
@@ -65,7 +71,8 @@ const allApiClients = [
     userApiClient,
     authApiClient,
     apiKeyApiClient,
-    settingsApiClient
+    settingsApiClient,
+    commonApiClient
 ];
 
 // Token management function
@@ -502,4 +509,13 @@ export const settingsApi = {
             ...errorHandle,
             200: (payload) => payload.data,
         }),
+};
+
+// Helper functions for common API
+export const commonApi = {
+    getOnboardingStatus: () =>
+        commonApiClient.callApi('common', 'getOnboardingStatus', {}, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        })
 };

@@ -1,4 +1,5 @@
 <template>
+  <GlobalTopbar />
   <router-view v-if="!isAuthenticated" />
   <AppLayout v-else />
   <ToastContainer />
@@ -10,11 +11,12 @@ import { onMounted } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { ToastContainer } from '@/components/ui/toast'
 import GlobalConfirmationDialog from '@/components/ui/confirmation-dialog/GlobalConfirmationDialog.vue'
+import { GlobalTopbar } from '@/components/ui/alert'
 import { useAuth } from '@/composables/useAuth'
 
 const { isAuthenticated, initAuth } = useAuth()
 
-onMounted(() => {
-  initAuth()
+onMounted(async () => {
+  await initAuth()
 })
 </script>

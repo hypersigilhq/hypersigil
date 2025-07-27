@@ -1,10 +1,12 @@
 <template>
-    <div class="min-h-screen bg-background">
+    <div class="min-h-screen bg-background" :class="{ 'pt-16': currentAlert }"
+        :style="currentAlert ? 'padding-top: var(--topbar-height, 4rem)' : ''">
         <!-- Mobile menu button -->
         <div class="lg:hidden">
             <Sheet v-model:open="isMobileMenuOpen">
                 <SheetTrigger as-child>
-                    <Button variant="ghost" size="icon" class="fixed top-4 left-4 z-50 lg:hidden">
+                    <Button variant="ghost" size="icon"
+                        :class="['fixed left-4 z-50 lg:hidden', currentAlert ? 'top-20' : 'top-4']">
                         <Menu class="h-6 w-6" />
                     </Button>
                 </SheetTrigger>
@@ -40,10 +42,12 @@ import { ref } from 'vue'
 import { Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { useTopbarAlert } from '@/components/ui/alert'
 import AppSidebar from './AppSidebar.vue'
 
 const isMobileMenuOpen = ref(false)
 const sidebarCollapsed = ref(false)
+const { currentAlert } = useTopbarAlert()
 
 const closeMobileMenu = () => {
     isMobileMenuOpen.value = false
