@@ -9,6 +9,7 @@ import { UserApiDefinition, type ListUsersQuery, type ListUsersResponse, type Us
 import { ApiKeyApiDefinition, type CreateApiKeyRequest, type UpdateApiKeyRequest } from './definitions/api-key';
 import { SettingsApiDefinition, type CreateSettingsRequest, type UpdateSettingsRequest } from './definitions/settings';
 import { CommonApiDefinition } from './definitions/common';
+import { eventBus } from './event-bus';
 
 // Create the API client with the base URL
 export const apiClient = new ApiClient(
@@ -109,7 +110,11 @@ authApiClient.setHeader('Content-Type', 'application/json');
 
 let errorHandle = {
     400: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message || 'Bad request'); },
-    401: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message || 'Unauthorzed'); },
+    401: (payload: { data: { error: string, message?: string, details?: unknown } }) => {
+        // Emit token expired event for 401 errors
+        eventBus.emit('auth:token-expired');
+        throw new Error(payload.data?.error + ": " + payload.data.message || 'Unauthorized');
+    },
     409: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message || 'Conflict'); },
     500: (payload: { data: { error: string, message?: string, details?: unknown } }) => { throw new Error(payload.data?.error + ": " + payload.data.message + (payload.data.details ? ` (${payload.data.details})` : ``) || 'Server error'); },
     422: (payload: { error: any }) => { throw new Error(payload.error?.[0]?.message || 'Validation error'); },
@@ -133,7 +138,16 @@ export const promptsApi = {
     create: (body: CreatePromptRequest) =>
         apiClient.callApi('prompts', 'create', { body }, {
             ...errorHandle,
-            201: (payload) => payload.data,
+            201: (payload) => {
+                // Emit prompt created event
+                if (payload.data?.id && payload.data?.name) {
+                    eventBus.emit('prompt:created', {
+                        promptId: payload.data.id,
+                        name: payload.data.name
+                    });
+                }
+                return payload.data;
+            },
         }),
 
     getById: (id: string) =>
@@ -145,13 +159,26 @@ export const promptsApi = {
     update: (id: string, body: CreatePromptRequest) =>
         apiClient.callApi('prompts', 'update', { params: { id }, body }, {
             ...errorHandle,
-            200: (payload) => payload.data,
+            200: (payload) => {
+                // Emit prompt updated event
+                if (payload.data?.id && payload.data?.name) {
+                    eventBus.emit('prompt:updated', {
+                        promptId: payload.data.id,
+                        name: payload.data.name
+                    });
+                }
+                return payload.data;
+            },
         }),
 
     delete: (id: string) =>
         apiClient.callApi('prompts', 'delete', { params: { id } }, {
             ...errorHandle,
-            204: () => undefined,
+            204: () => {
+                // Emit prompt deleted event
+                eventBus.emit('prompt:deleted', { promptId: id });
+                return undefined;
+            },
         }),
 
     searchByName: (pattern: string) =>
@@ -379,19 +406,46 @@ export const authApi = {
     login: (body: LoginRequest) =>
         authApiClient.callApi('auth', 'login', { body }, {
             ...errorHandle,
-            200: (payload) => payload.data,
+            200: (payload) => {
+                // Emit login event with user data
+                if (payload.data?.user) {
+                    eventBus.emit('auth:login', {
+                        userId: payload.data.user.email, // Use email as userId since id is not available
+                        email: payload.data.user.email
+                    });
+                }
+                return payload.data;
+            },
         }),
 
     registerFirstAdmin: (body: RegisterFirstAdminRequest) =>
         authApiClient.callApi('auth', 'registerFirstAdmin', { body }, {
             ...errorHandle,
-            201: (payload) => payload.data,
+            201: (payload) => {
+                // Emit login event with user data for first admin registration
+                if (payload.data?.user) {
+                    eventBus.emit('auth:login', {
+                        userId: payload.data.user.email, // Use email as userId since id is not available
+                        email: payload.data.user.email
+                    });
+                }
+                return payload.data;
+            },
         }),
 
     activate: (body: { invitation_token: string; password: string }) =>
         (authApiClient as any).callApi('auth', 'activate', { body }, {
             ...errorHandle,
-            200: (payload: any) => payload.data,
+            200: (payload: any) => {
+                // Emit login event with user data for user activation
+                if (payload.data?.user) {
+                    eventBus.emit('auth:login', {
+                        userId: payload.data.user.email, // Use email as userId since id is not available
+                        email: payload.data.user.email
+                    });
+                }
+                return payload.data;
+            },
         })
 };
 
@@ -477,7 +531,15 @@ export const settingsApi = {
     create: (body: CreateSettingsRequest) =>
         settingsApiClient.callApi('settings', 'create', { body }, {
             ...errorHandle,
-            201: (payload) => payload.data,
+            201: (payload) => {
+                // Emit settings event for LLM API key creation
+                if (payload.data?.type === 'llm-api-key' && payload.data?.identifier) {
+                    eventBus.emit('settings:llm-api-key-added', {
+                        provider: payload.data.identifier
+                    });
+                }
+                return payload.data;
+            },
         }),
 
     get: (id: string) =>
@@ -495,7 +557,11 @@ export const settingsApi = {
     delete: (id: string) =>
         settingsApiClient.callApi('settings', 'delete', { params: { id } }, {
             ...errorHandle,
-            200: (payload) => payload.data,
+            200: (payload) => {
+                // Note: Delete response only contains { success: boolean }
+                // Cannot emit specific provider event without additional context
+                return payload.data;
+            },
         }),
 
     listByType: (type: 'llm-api-key') =>

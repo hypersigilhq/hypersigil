@@ -11,6 +11,9 @@ export {
     createEventPattern
 } from '../event-patterns'
 
+// Global event listeners service
+export { useGlobalEventListeners, globalEventListenersService } from '../global-event-listeners'
+
 // Import eventBus for internal use
 import { eventBus } from '../event-bus'
 

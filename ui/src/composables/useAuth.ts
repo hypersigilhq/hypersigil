@@ -1,6 +1,8 @@
 import { ref, computed } from 'vue'
 import { authApi, setAuthToken, userApi, userApiClient } from '@/services/api-client'
 import type { AuthLoginResponse, AuthResponse, CheckResponse } from '@/services/definitions/auth'
+import { useEventListener } from '@/services/event-patterns'
+import { eventBus } from '@/services/event-bus'
 import router from '@/router'
 
 const currentUser = ref<AuthLoginResponse['user'] | null>(null)
@@ -9,6 +11,10 @@ const isLoading = ref(false)
 const isAuthenticated = computed(() => !!authToken.value && !!currentUser.value)
 
 export function useAuth() {
+    // Listen for token expiration events
+    useEventListener('auth:token-expired', () => {
+        logout()
+    })
 
     const login = async (email: string, password: string): Promise<AuthLoginResponse> => {
         isLoading.value = true
@@ -55,6 +61,9 @@ export function useAuth() {
     }
 
     const logout = (): void => {
+        // Emit logout event
+        eventBus.emit('auth:logout')
+
         // Clear auth state
         authToken.value = null
         currentUser.value = null
@@ -93,6 +102,7 @@ export function useAuth() {
 
                 if (user) {
                     currentUser.value = user
+                    eventBus.emit('app:loaded')
                 }
             } catch (e) {
                 console.error(e)

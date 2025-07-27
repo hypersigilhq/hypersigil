@@ -42,6 +42,11 @@ class OnboardingService {
             this.ui.topbarWarning(
                 `There ${stepCount === 1 ? 'is' : 'are'} ${stepCount} onboarding ${stepText} to be completed: ${stepsDescription}.`
             )
+            return
+        }
+
+        if (missingSteps.length == 0) {
+            this.ui.dismissTopbarAlert()
         }
     }
 

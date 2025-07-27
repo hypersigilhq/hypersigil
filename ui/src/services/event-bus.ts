@@ -2,6 +2,7 @@ import { ref, type Ref } from 'vue'
 
 // Event type definitions
 export interface EventMap {
+    'app:loaded': void,
     // Authentication events
     'auth:login': { userId: string; email: string }
     'auth:logout': void
