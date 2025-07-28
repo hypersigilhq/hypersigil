@@ -20,9 +20,26 @@ Token usage tracking provides visibility into the cost implications of your prom
 
 The execution results system provides multiple ways to examine and understand how your prompts perform. Individual execution details show the complete conversation flow, including the original prompt, the input data, and the AI's response. This granular view helps you understand exactly what happened during each test.
 
-For batch testing scenarios, the execution bundles view organizes related executions together, making it easier to analyze patterns across multiple test cases. This organizational structure becomes particularly valuable when you're testing a single prompt against dozens or hundreds of different inputs.
+For batch testing scenarios, the execution bundles view organizes related executions together, making it easier to analyze patterns across multiple test cases. This organizational structure becomes particularly valuable when you're testing a single prompt against dozens or hundreds of different inputs. The bundles interface provides a macOS Finder-style experience with resizable columns and keyboard navigation for efficient result analysis.
 
 The platform provides comprehensive status tracking for executions, with visual indicators showing whether tests are pending, running, completed successfully, or have failed. This real-time feedback helps you understand the progress of your testing campaigns and quickly identify any issues that need attention.
+
+### Advanced Execution Features
+
+#### Multimodal Execution Support
+Executions can include file attachments when prompts are configured to accept file uploads. This enables sophisticated testing scenarios where you can evaluate how your prompts perform with different types of visual or document inputs. The system automatically handles file processing and provider-specific formatting for images, PDFs, and other supported file types.
+
+#### Execution Duration and Performance Tracking
+Each execution captures detailed timing information, allowing you to analyze not just the quality of AI responses but also their performance characteristics. This data helps you optimize prompts for both accuracy and efficiency, particularly important when scaling to production environments.
+
+#### Token Usage and Cost Analysis
+Comprehensive token usage tracking provides visibility into the cost implications of different prompts and providers. The system tracks both input and output tokens, helping you understand the full cost structure of your prompt testing and optimize for budget efficiency.
+
+#### Per-Provider Parallelism
+The execution system implements intelligent concurrency management with per-provider parallelism limits. This ensures optimal throughput while respecting rate limits and avoiding provider-specific bottlenecks. Different providers can run executions simultaneously at their optimal concurrency levels.
+
+#### Execution Result Validation
+The platform includes robust validation for execution results, ensuring data integrity and providing clear feedback when executions encounter issues. This validation system helps maintain the reliability of your testing data and provides actionable information for troubleshooting.
 
 ### Data Export and System Integration
 

@@ -12,26 +12,32 @@ Hypersigil transforms prompt engineering from an art into a scientific process b
 - Create and version your AI prompts with template variable support
 - Test prompts against multiple AI providers (OpenAI, Anthropic Claude, Ollama)
 - Track performance metrics and token usage across different models
+- Multimodal support with file uploads for image analysis and document processing
 
 ### 📊 **Comprehensive Test Data Management**
 - Organize test cases into logical groups
 - Import test data from various file formats
 - Run batch executions across entire test suites
+- Advanced file management with tagging and search capabilities
 
 ### 🔄 **Execution Management**
 - Asynchronous processing with real-time status updates
 - Provider-specific concurrency limits and rate limiting
 - Detailed execution history and result analysis
+- Execution bundles for organized batch testing results
 
 ### 💬 **Collaborative Features**
 - Comment system for execution result analysis
-- Prompt calibration based on feedback
+- Prompt calibration based on feedback and AI-generated suggestions
 - Team collaboration with role-based access control
+- Real-time notifications and event-driven updates
 
 ### ⚙️ **Enterprise Ready**
 - User management with invitation-based access
-- API key management for external integrations
+- Database-driven API key management with dynamic provider configuration
 - Comprehensive audit trails and data export
+- Docker deployment with multi-architecture support
+- Onboarding system for guided setup
 
 ## Getting Started
 
@@ -39,7 +45,8 @@ Hypersigil transforms prompt engineering from an art into a scientific process b
 2. **[Prompts](prompts.md)** - Understand prompt creation, versioning, and templating
 3. **[Executions](executions.md)** - Explore the testing and execution system
 4. **[Test Data](test-data.md)** - Manage your test datasets effectively
-5. **[Settings](settings.md)** - Configure users, API access, and system settings
+5. **[Files](files.md)** - Upload and manage files for multimodal AI testing
+6. **[Settings](settings.md)** - Configure users, API access, and system settings
 
 ## Quick Start Guide
 

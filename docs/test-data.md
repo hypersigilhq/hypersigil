@@ -20,3 +20,16 @@ Test data groups enable powerful batch testing scenarios where you can run a sin
 
 The batch testing system maintains the relationship between test data groups and the executions they generate, making it easy to analyze results across the entire test suite. This organizational structure supports both immediate analysis of batch results and long-term tracking of how prompt changes affect performance across different test scenarios.
 
+### Test Data Compilation and Templating
+
+The platform includes sophisticated test data compilation capabilities that work seamlessly with prompt templating:
+
+#### Mustache Template Integration
+- **Variable Substitution**: Test data can include template variables that are compiled with prompts
+- **JSON Mode Support**: Special handling for JSON-formatted test data with automatic parsing
+- **Preview Functionality**: See how test data will be compiled before running executions
+
+#### Flexible Data Formats
+- **Text Mode**: Simple text-based test data for straightforward prompt testing
+- **JSON Mode**: Structured data that can be used with complex prompt templates
+- **Mixed Content**: Combine structured data with file attachments for comprehensive testing scenarios

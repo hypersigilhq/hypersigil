@@ -82,3 +82,4 @@
 - [done] Implement file viewer dialog for PDF and image files with full-screen viewing experience
 - [done] Implement tag functionality for file uploads with batch tagging support and intuitive badge-based UI
 - [done] Implement file download endpoint with base64 decoding and binary streaming with appropriate headers
+- [done] 28-07-25 17:37 Update documentation to reflect all implemented features from July 25th onwards including settings management, file upload system, onboarding, and multimodal capabilities
