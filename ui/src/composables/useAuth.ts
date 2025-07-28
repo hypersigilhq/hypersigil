@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
-import { authApi, setAuthToken, userApi, userApiClient } from '@/services/api-client'
-import type { AuthLoginResponse, AuthResponse, CheckResponse } from '@/services/definitions/auth'
+import { authApi, setAuthToken, userApi } from '@/services/api-client'
+import type { AuthLoginResponse, CheckResponse } from '@/services/definitions/auth'
 import { useEventListener } from '@/services/event-patterns'
 import { eventBus } from '@/services/event-bus'
 import router from '@/router'
@@ -9,6 +9,28 @@ const currentUser = ref<AuthLoginResponse['user'] | null>(null)
 const authToken = ref<string | null>(null)
 const isLoading = ref(false)
 const isAuthenticated = computed(() => !!authToken.value && !!currentUser.value)
+
+// Cookie utility functions
+const setCookie = (name: string, value: string, days: number = 30) => {
+    const expires = new Date()
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000))
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`
+}
+
+const getCookie = (name: string): string | null => {
+    const nameEQ = name + "="
+    const ca = document.cookie.split(';')
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i]
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length)
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
+    }
+    return null
+}
+
+const deleteCookie = (name: string) => {
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`
+}
 
 export function useAuth() {
     // Listen for token expiration events
@@ -25,6 +47,7 @@ export function useAuth() {
             authToken.value = response.token
             currentUser.value = response.user
             localStorage.setItem('auth_token', response.token)
+            setCookie('auth-token', response.token)
 
             // Update all API clients with new token
             setAuthToken(response.token)
@@ -47,6 +70,7 @@ export function useAuth() {
             authToken.value = response.token
             currentUser.value = response.user
             localStorage.setItem('auth_token', response.token)
+            setCookie('auth-token', response.token)
 
             // Update all API clients with new token
             setAuthToken(response.token)
@@ -68,6 +92,7 @@ export function useAuth() {
         authToken.value = null
         currentUser.value = null
         localStorage.removeItem('auth_token')
+        deleteCookie('auth-token')
 
         // Remove token from all API clients
         setAuthToken(null)
@@ -92,10 +117,18 @@ export function useAuth() {
     }
 
     const initAuth = async (): Promise<void> => {
-        const token = localStorage.getItem('auth_token')
+        const token = localStorage.getItem('auth_token') || getCookie('auth-token')
         if (token) {
             authToken.value = token
             setAuthToken(token)
+
+            // Sync token between localStorage and cookie
+            if (!localStorage.getItem('auth_token')) {
+                localStorage.setItem('auth_token', token)
+            }
+            if (!getCookie('auth-token')) {
+                setCookie('auth-token', token)
+            }
 
             try {
                 let user = await userApi.me()

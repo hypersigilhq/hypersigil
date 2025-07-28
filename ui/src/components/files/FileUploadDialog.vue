@@ -21,6 +21,27 @@
                     </Label>
                 </div>
 
+                <!-- Tags Section -->
+                <div class="space-y-2">
+                    <Label class="text-sm font-medium">Tags (apply to all files)</Label>
+                    <div class="space-y-2">
+                        <Input v-model="tagInput" @keydown.enter.prevent="addTag" @keydown.comma.prevent="addTag"
+                            placeholder="Type a tag and press Enter or comma to add..." class="text-sm"
+                            :disabled="isUploading" />
+                        <div v-if="tags.length > 0" class="flex flex-wrap gap-1">
+                            <Badge v-for="(tag, index) in tags" :key="index" variant="secondary"
+                                class="text-xs cursor-pointer hover:bg-secondary/80 flex items-center gap-1"
+                                @click="removeTag(index)">
+                                {{ tag }}
+                                <X class="w-3 h-3" />
+                            </Badge>
+                        </div>
+                        <p v-if="tags.length > 0" class="text-xs text-muted-foreground">
+                            Click on a tag to remove it
+                        </p>
+                    </div>
+                </div>
+
                 <!-- File List -->
                 <div v-if="fileQueue.length > 0" class="flex-1 overflow-hidden flex flex-col">
                     <div class="flex items-center justify-between mb-2">
@@ -130,6 +151,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import {
     Dialog,
     DialogContent,
@@ -174,6 +196,8 @@ interface FileUploadItem {
 const fileInput = ref<HTMLInputElement>()
 const fileQueue = ref<FileUploadItem[]>([])
 const isUploading = ref(false)
+const tagInput = ref('')
+const tags = ref<string[]>([])
 
 // Computed properties
 const isOpen = computed({
@@ -223,6 +247,19 @@ const clearQueue = () => {
     fileQueue.value = fileQueue.value.filter(item => item.status === 'uploading')
 }
 
+// Tag management
+const addTag = () => {
+    const trimmedTag = tagInput.value.trim()
+    if (trimmedTag && !tags.value.includes(trimmedTag)) {
+        tags.value.push(trimmedTag)
+        tagInput.value = ''
+    }
+}
+
+const removeTag = (index: number) => {
+    tags.value.splice(index, 1)
+}
+
 // Convert file to base64
 const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -261,7 +298,8 @@ const uploadFiles = async () => {
                 mimeType: fileItem.file.type || 'application/octet-stream',
                 size: fileItem.file.size,
                 data: base64Data,
-                description: fileItem.description || undefined
+                description: fileItem.description || undefined,
+                tags: tags.value.length > 0 ? tags.value : undefined
             }
 
             await filesApi.create(fileData)
@@ -299,6 +337,8 @@ const uploadFiles = async () => {
 const closeDialog = () => {
     if (!isUploading.value) {
         fileQueue.value = []
+        tags.value = []
+        tagInput.value = ''
         if (fileInput.value) {
             fileInput.value.value = ''
         }
@@ -310,6 +350,8 @@ const closeDialog = () => {
 watch(isOpen, (newValue) => {
     if (!newValue && !isUploading.value) {
         fileQueue.value = []
+        tags.value = []
+        tagInput.value = ''
     }
 })
 </script>

@@ -81,12 +81,13 @@ export class FileModel extends Model<File> {
 
         if (search) {
             whereConditions.push(`(
+                id = ? OR
                 JSON_EXTRACT(data, '$.name') LIKE ? OR 
                 JSON_EXTRACT(data, '$.originalName') LIKE ? OR
                 JSON_EXTRACT(data, '$.description') LIKE ?
             )`);
             const searchPattern = `%${search}%`;
-            params.push(searchPattern, searchPattern, searchPattern);
+            params.push(search, searchPattern, searchPattern, searchPattern);
         }
 
         if (mimeType) {

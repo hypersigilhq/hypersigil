@@ -44,6 +44,14 @@
                             <div class="flex items-center justify-between w-full">
                                 <span class="truncate">{{ file.name }}</span>
                                 <div class="flex items-center gap-2 text-xs text-muted-foreground ml-2">
+                                    <span>
+                                        <div v-if="file.tags && file.tags.length > 0" class="flex flex-wrap gap-1">
+                                            <Badge v-for="tag in file.tags" :key="tag" variant="secondary"
+                                                class="text-xs">
+                                                {{ tag }}
+                                            </Badge>
+                                        </div>
+                                    </span>
                                     <span>{{ formatFileSize(file.size) }}</span>
                                     <span>{{ file.mimeType.split('/')[1]?.toUpperCase() || file.mimeType }}</span>
                                 </div>
@@ -63,6 +71,7 @@ import { Input } from '@/components/ui/input'
 import { filesApi } from '@/services/api-client'
 import type { FileSelectListResponse } from '@/services/definitions/file'
 import { formatFileSize } from '@/lib/utils'
+import Badge from '../ui/badge/Badge.vue'
 
 interface Props {
     modelValue?: string,

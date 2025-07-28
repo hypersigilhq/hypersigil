@@ -55,13 +55,14 @@
                         <TableHead>Extension</TableHead>
                         <TableHead>MIME Type</TableHead>
                         <TableHead>Size</TableHead>
+                        <TableHead>Tags</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead class="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     <TableRow v-if="files.length === 0">
-                        <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
+                        <TableCell colspan="8" class="text-center py-8 text-muted-foreground">
                             No files found
                         </TableCell>
                     </TableRow>
@@ -71,12 +72,29 @@
                         <TableCell>{{ getFileExtension(file.originalName) }}</TableCell>
                         <TableCell>{{ file.mimeType }}</TableCell>
                         <TableCell>{{ formatFileSize(file.size) }}</TableCell>
+                        <TableCell>
+                            <div v-if="file.tags && file.tags.length > 0" class="flex flex-wrap gap-1">
+                                <Badge v-for="tag in file.tags" :key="tag" variant="secondary" class="text-xs">
+                                    {{ tag }}
+                                </Badge>
+                            </div>
+                            <span v-else class="text-muted-foreground text-sm">—</span>
+                        </TableCell>
                         <TableCell>{{ formatDate(file.created_at) }}</TableCell>
                         <TableCell class="text-right">
-                            <Button variant="ghost" size="sm" @click="deleteFile(file)"
-                                class="text-destructive hover:text-destructive">
-                                <Trash2 class="h-4 w-4" />
-                            </Button>
+                            <div class="flex items-center justify-end gap-1">
+                                <Button variant="ghost" size="sm" @click="viewFile(file)" class="hover:text-primary">
+                                    <Eye class="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" @click="downloadFile(file)"
+                                    class="hover:text-primary">
+                                    <Download class="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" @click="deleteFile(file)"
+                                    class="text-destructive hover:text-destructive">
+                                    <Trash2 class="h-4 w-4" />
+                                </Button>
+                            </div>
                         </TableCell>
                     </TableRow>
                 </TableBody>
@@ -107,13 +125,16 @@
 
         <!-- Upload Dialog -->
         <FileUploadDialog v-model:open="showUploadDialog" @uploaded="loadFiles" />
+
+        <!-- View Dialog -->
+        <FileViewDialog v-model="showViewDialog" :file="selectedFile" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { debounce } from 'lodash-es'
-import { Upload, Trash2 } from 'lucide-vue-next'
+import { Upload, Trash2, Eye, Download } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -132,11 +153,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
 
 import { filesApi } from '@/services/api-client'
 import type { FileResponse } from '../../services/definitions/file'
 import { useUI } from '@/services/ui'
 import FileUploadDialog from './FileUploadDialog.vue'
+import FileViewDialog from './FileViewDialog.vue'
 import { formatFileSize } from '@/lib/utils'
 
 const { toast, confirm } = useUI()
@@ -162,6 +185,10 @@ const pagination = ref<{
 
 // Upload dialog state
 const showUploadDialog = ref(false)
+
+// View dialog state
+const showViewDialog = ref(false)
+const selectedFile = ref<FileResponse | null>(null)
 
 // Debounced search
 const debouncedSearch = debounce(() => {
@@ -207,6 +234,21 @@ const goToPage = (page: number) => {
     loadFiles()
 }
 
+
+// View file
+const viewFile = (file: FileResponse) => {
+    selectedFile.value = file
+    showViewDialog.value = true
+}
+
+// Download file
+const downloadFile = (file: FileResponse) => {
+    // Construct download URL using API definition prefix and path
+    const downloadUrl = `/api/v1/files/${file.id}/download`
+
+    // Open in new tab to trigger download
+    window.open(downloadUrl, '_blank')
+}
 
 // Delete file
 const deleteFile = async (file: FileResponse) => {

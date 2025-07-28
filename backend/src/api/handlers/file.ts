@@ -33,7 +33,8 @@ RegisterHandlers(app, FileApiDefinition, {
                             name: file.name,
                             originalName: file.originalName,
                             mimeType: file.mimeType,
-                            size: file.size
+                            size: file.size,
+                            tags: file.tags,
                         })).sort((a, b) => {
                             return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1
                         })
@@ -169,6 +170,38 @@ RegisterHandlers(app, FileApiDefinition, {
                 res.respond(500, {
                     error: 'Internal Server Error',
                     message: 'Failed to search files'
+                });
+            }
+        },
+
+        download: async (req, res) => {
+            try {
+                const { id } = req.params;
+
+                const file = await fileModel.findById(id);
+                if (!file) {
+                    return res.respond(404, {
+                        error: 'Not Found',
+                        message: 'File not found'
+                    });
+                }
+
+                // Decode base64 data to buffer
+                const fileBuffer = Buffer.from(file.data, 'base64');
+
+                // Set appropriate headers for file download
+                res.setHeader('Content-Type', file.mimeType);
+                res.setHeader('Content-Length', fileBuffer.length.toString());
+                res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.originalName)}"`);
+                res.setHeader('Cache-Control', 'no-cache');
+
+                // Send the file buffer
+                res.send(fileBuffer);
+            } catch (error) {
+                console.error('Error downloading file:', error);
+                res.respond(500, {
+                    error: 'Internal Server Error',
+                    message: 'Failed to download file'
                 });
             }
         }

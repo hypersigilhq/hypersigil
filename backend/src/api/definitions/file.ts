@@ -28,7 +28,7 @@ export const CreateFileRequestSchema = z.object({
     data: z.string().min(1), // base64 encoded file data
     uploadedBy: z.string().optional(),
     description: z.string().optional(),
-    tags: z.array(z.string()).optional()
+    tags: z.array(z.string().min(1).max(25)).optional()
 });
 
 export type CreateFileRequest = z.infer<typeof CreateFileRequestSchema>;
@@ -106,7 +106,8 @@ export const FileSelectListSchema = z.object({
         name: z.string(),
         originalName: z.string(),
         mimeType: z.string(),
-        size: z.number()
+        size: z.number(),
+        tags: z.array(z.string()).optional()
     }))
 });
 
@@ -176,6 +177,17 @@ export const FileApiDefinition = CreateApiDefinition({
                 responses: CreateResponses({
                     200: z.array(FileResponseSchema),
                     400: ErrorResponseSchema,
+                    500: ErrorResponseSchema
+                })
+            },
+
+            download: {
+                method: 'GET',
+                path: '/:id/download',
+                params: FileParamsSchema,
+                responses: CreateResponses({
+                    200: z.any(), // Binary response - file stream
+                    404: ErrorResponseSchema,
                     500: ErrorResponseSchema
                 })
             },

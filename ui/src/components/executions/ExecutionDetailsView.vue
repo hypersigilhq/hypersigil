@@ -26,6 +26,22 @@
                     Custom
                 </Badge>
             </div>
+            <div v-if="execution.fileId">
+                <Label>File</Label>
+                <div class="mt-1 text-sm flex items-center gap-2 min-w-0">
+                    <div class="flex-1 min-w-0">
+                        <div v-if="fileInfo" class="truncate">{{ fileInfo.originalName }}</div>
+                        <div v-else-if="fileLoading">Loading...</div>
+                        <div v-else-if="fileError" class="text-destructive truncate">Error loading file</div>
+                        <div v-else class="truncate">{{ execution.fileId }}</div>
+                        <div class="text-muted-foreground text-xs truncate">{{ execution.fileId.slice(0, 8) }}...</div>
+                    </div>
+                    <Button v-if="fileInfo" variant="ghost" size="sm" class="h-6 w-6 p-0 flex-shrink-0"
+                        @click="showFileDialog = true">
+                        <Eye class="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
             <div>
                 <Label>Origin</Label>
                 <div class="mt-1 text-sm">
@@ -175,21 +191,27 @@
             </div>
         </div>
     </div>
+
+    <!-- File View Dialog -->
+    <FileViewDialog v-model="showFileDialog" :file="fileInfo" />
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue'
 import type { ExecutionResponse } from '@/services/definitions/execution'
 import type { PromptResponse } from '@/services/definitions/prompt'
+import type { FileResponse } from '@/services/definitions/file'
 import type { Comment } from '@/components/ui/text-commentable/types'
-import { executionsApi, promptsApi, commentsApi } from '@/services/api-client'
+import { executionsApi, promptsApi, commentsApi, filesApi } from '@/services/api-client'
 
-import { Star } from 'lucide-vue-next'
+import { Star, Eye } from 'lucide-vue-next'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { Button } from '@/components/ui/button'
 import { TextCommentable } from '@/components/ui/text-commentable'
 import CopyToClipboard from '@/components/ui/copy-to-clipboard/CopyToClipboard.vue'
+import FileViewDialog from '@/components/files/FileViewDialog.vue'
 
 interface Props {
     execution: ExecutionResponse | null
@@ -205,6 +227,12 @@ const promptError = ref<string | null>(null)
 const comments = ref<Comment[]>([])
 const commentsLoading = ref(false)
 const commentsError = ref<string | null>(null)
+
+// File state
+const fileInfo = ref<FileResponse | null>(null)
+const fileLoading = ref(false)
+const fileError = ref<string | null>(null)
+const showFileDialog = ref(false)
 
 // Column visibility state
 const showUserInput = ref(true)
@@ -306,12 +334,28 @@ const fetchComments = async () => {
     }
 }
 
+const fetchFile = async () => {
+    if (!props.execution?.fileId) return
+
+    try {
+        fileLoading.value = true
+        fileError.value = null
+        fileInfo.value = await filesApi.getById(props.execution.fileId)
+    } catch (error) {
+        fileError.value = error instanceof Error ? error.message : 'Failed to load file'
+    } finally {
+        fileLoading.value = false
+    }
+}
+
 // Reset state when execution changes
 watch(() => props.execution, async () => {
     prompt.value = null
     promptError.value = null
     comments.value = []
     commentsError.value = null
+    fileInfo.value = null
+    fileError.value = null
 
     if (showPrompt.value) {
         await fetchPrompt()
@@ -322,6 +366,7 @@ watch(() => props.execution, async () => {
 
 const onLoad = async () => {
     await fetchComments()
+    await fetchFile()
     showUserInput.value = !!props.execution?.user_input
     showPrompt.value = !!props.execution?.prompt_text
 }

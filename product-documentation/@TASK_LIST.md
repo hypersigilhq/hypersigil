@@ -79,3 +79,6 @@
 - [done] Integrate file selection in ScheduleExecutionDialog for prompts with acceptFileUpload option enabled
 - [done] Add fileId validation and storage in execution model for file upload support
 - [done] Implement file upload integration in execution worker with provider support validation and file fetching
+- [done] Implement file viewer dialog for PDF and image files with full-screen viewing experience
+- [done] Implement tag functionality for file uploads with batch tagging support and intuitive badge-based UI
+- [done] Implement file download endpoint with base64 decoding and binary streaming with appropriate headers

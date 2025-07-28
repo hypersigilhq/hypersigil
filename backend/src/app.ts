@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { EndpointMiddleware, ApiDefinitionSchema, EndpointInfo, generateOpenApiSpec2, CreateApiDefinition, CreateResponses } from 'ts-typed-api';
 import { config, isDevelopment } from './config';
 import { AuthService } from './services/auth-service';
@@ -13,6 +14,7 @@ const app = express();
 
 // Basic middleware
 app.use(helmet());
+app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -110,16 +112,27 @@ export const authMiddleware: EndpointMiddleware = async (req, res, next) => {
             return
         }
 
-        const authHeader = req.headers.authorization;
-        if (!authHeader?.startsWith('Bearer ')) {
+        let token = req.headers.authorization || req.cookies['auth-token'];
+        if (req.headers.authorization && !token?.startsWith('Bearer ')) {
             res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Missing or invalid authorization header'
+                message: 'Missing or invalid authorization header/cookie'
+            });
+            return;
+        } else if (req.headers.authorization) {
+            token = token.substring(7);
+        } else {
+            token = req.cookies['auth-token']
+        }
+
+        if (!token) {
+            res.status(401).json({
+                error: 'Unauthorized',
+                message: 'Missing or invalid authorization header/cookie'
             });
             return;
         }
 
-        const token = authHeader.substring(7);
         const tokenData = AuthService.validateToken(token);
 
         if (!tokenData) {
