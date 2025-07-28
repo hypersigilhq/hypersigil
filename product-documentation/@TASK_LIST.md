@@ -85,3 +85,4 @@
 - [done] 28-07-25 17:37 Update documentation to reflect all implemented features from July 25th onwards including settings management, file upload system, onboarding, and multimodal capabilities
 - [done] 28-07-28 21:44 Implement deployment model with CRUD endpoints and run functionality for prompt execution management
 - [done] 28-07-28 21:57 Add deployment options (temperature, topP, topK) to deployment model and API definitions with execution integration
+- [done] 28-07-28 22:12 Build deployment CRUD interface with table view, dialog forms, and full integration with existing UI patterns

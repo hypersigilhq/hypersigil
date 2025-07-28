@@ -83,8 +83,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { Settings, User, FileText, Play, Database, PanelLeftClose, PanelLeftOpen, Terminal, File } from 'lucide-vue-next'
+import { Settings, User, FileText, Play, Database, PanelLeftClose, PanelLeftOpen, Terminal, File, Rocket } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import NavigationItem from './NavigationItem.vue'
 import { useAuth } from '@/composables/useAuth'
@@ -99,8 +98,6 @@ interface NavigationItemType {
 }
 
 const { currentAlert } = useTopbarAlert()
-
-const route = useRoute()
 
 const navigationItems = computed<NavigationItemType[]>(() => [
     {
@@ -122,6 +119,11 @@ const navigationItems = computed<NavigationItemType[]>(() => [
         name: 'Files',
         path: '/files',
         icon: File,
+    },
+    {
+        name: 'Deployments',
+        path: '/deployments',
+        icon: Rocket,
     },
     {
         name: 'Settings',

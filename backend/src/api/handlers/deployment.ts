@@ -303,7 +303,7 @@ RegisterHandlers(app, DeploymentApiDefinition, {
                     });
                 }
 
-                res.respond(201, { executionIds: [result.data.id!] });
+                res.respond(201, { executionId: result.data.id! });
             } catch (error) {
                 console.error('Error running deployment by name:', error);
 
@@ -323,6 +323,7 @@ RegisterHandlers(app, DeploymentApiDefinition, {
         }
     }
 }, [loggingMiddleware, timingMiddleware, apiKeyMiddleware<typeof DeploymentApiDefinition>((scopes, endpointInfo) => {
+    console.log(scopes, endpointInfo)
     if (endpointInfo.domain !== 'deployments') {
         return false;
     }

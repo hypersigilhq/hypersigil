@@ -17,6 +17,11 @@ export interface EventMap {
     'file:created': { fileId: string; name: string }
     'file:deleted': { fileId: string }
 
+    // Deployment events
+    'deployment:created': { deploymentId: string; name: string }
+    'deployment:updated': { deploymentId: string; name: string }
+    'deployment:deleted': { deploymentId: string }
+
     // Settings events
     'settings:llm-api-key-added': { provider: string }
     'settings:llm-api-key-removed': { provider: string }

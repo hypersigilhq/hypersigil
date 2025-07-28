@@ -5,7 +5,7 @@ import { AIProviderNameSchema } from './settings';
 
 // Deployment options schema
 export const DeploymentOptionsSchema = z.object({
-    temperature: z.number().min(0).max(2).optional(),
+    temperature: z.number().min(0).max(1).optional(),
     topP: z.number().min(0).max(1).optional(),
     topK: z.number().min(1).optional()
 });
@@ -84,7 +84,7 @@ export const RunDeploymentRequestSchema = z.object({
 export type RunDeploymentRequest = z.infer<typeof RunDeploymentRequestSchema>;
 
 export const RunDeploymentResponseSchema = z.object({
-    executionIds: z.array(z.string())
+    executionId: z.string()
 });
 
 export type RunDeploymentResponse = z.infer<typeof RunDeploymentResponseSchema>;
