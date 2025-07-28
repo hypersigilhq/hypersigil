@@ -1,4 +1,4 @@
-import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult, GenericProvider } from './base-provider';
+import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult, GenericProvider, FileAttachment } from './base-provider';
 
 export interface AnthropicConfig extends ProviderConfig {
     apiKey: string;
@@ -9,7 +9,15 @@ export interface AnthropicConfig extends ProviderConfig {
 
 interface AnthropicMessage {
     role: 'user' | 'assistant';
-    content: string;
+    content: string | Array<{
+        type: 'text' | 'image' | 'document';
+        text?: string;
+        source?: {
+            type: 'base64';
+            media_type: string;
+            data: string;
+        };
+    }>;
 }
 
 interface AnthropicRequest {
@@ -89,8 +97,58 @@ export class AnthropicProvider extends GenericProvider implements AIProvider {
             systemPrompt = this.buildPromptWithSchema(prompt, options.schema);
         }
 
-        // Build user message
-        const userMessage = userInput;
+        // Build user message with file attachments if provided
+        let userMessage: string | Array<{ type: 'text' | 'image' | 'document'; text?: string; source?: { type: 'base64'; media_type: string; data: string } }>;
+
+        if (options?.files && options.files.length > 0) {
+            const userContent: Array<{ type: 'text' | 'image' | 'document'; text?: string; source?: { type: 'base64'; media_type: string; data: string } }> = [
+                { type: 'text', text: userInput }
+            ];
+
+            // Process file attachments
+            for (const file of options.files) {
+                if (file.mimeType.startsWith('image/')) {
+                    // Add image attachments for vision models
+                    userContent.push({
+                        type: 'image',
+                        source: {
+                            type: 'base64',
+                            media_type: file.mimeType,
+                            data: file.dataBase64
+                        }
+                    });
+                } else if (file.mimeType === 'application/pdf' ||
+                    file.mimeType === 'text/plain' ||
+                    file.mimeType === 'text/csv' ||
+                    file.mimeType === 'application/json' ||
+                    file.mimeType === 'text/markdown' ||
+                    file.mimeType.startsWith('text/')) {
+                    // Use document type for PDFs and text-based documents
+                    userContent.push({
+                        type: 'document',
+                        source: {
+                            type: 'base64',
+                            media_type: file.mimeType,
+                            data: file.dataBase64
+                        }
+                    });
+                } else {
+                    // For unsupported file types, add as document and let Anthropic handle it
+                    userContent.push({
+                        type: 'document',
+                        source: {
+                            type: 'base64',
+                            media_type: file.mimeType,
+                            data: file.dataBase64
+                        }
+                    });
+                }
+            }
+
+            userMessage = userContent;
+        } else {
+            userMessage = userInput;
+        }
 
         const requestBody: AnthropicRequest = {
             model,
@@ -253,6 +311,10 @@ export class AnthropicProvider extends GenericProvider implements AIProvider {
 
     supportsStructuredOutput(): boolean {
         return true; // Anthropic supports structured output through prompt engineering
+    }
+
+    supportsFileUpload(): boolean {
+        return true; // Anthropic supports file uploads through vision API
     }
 
     updateConfig(config: Partial<AnthropicConfig>): void {

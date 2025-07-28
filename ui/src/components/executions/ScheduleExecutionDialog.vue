@@ -86,8 +86,18 @@
                     <div>
                         <Label for="providerModel">Provider/Model (Select multiple)</Label>
 
-                        <!-- Warning for no models available -->
-                        <div v-if="showNoModelsWarning"
+                        <!-- Warning for no models available that support file upload -->
+                        <div v-if="showNoFileUploadModelsWarning"
+                            class="p-3 bg-orange-50 border border-orange-200 rounded-md mb-3">
+                            <p class="text-sm text-orange-800">
+                                No models are available that support file upload. This prompt requires file upload
+                                support but no configured
+                                providers support this feature.
+                            </p>
+                        </div>
+
+                        <!-- Warning for no models available (regular) -->
+                        <div v-else-if="showRegularNoModelsWarning"
                             class="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-3">
                             <p class="text-sm text-yellow-800">
                                 You need to add LLM API keys in
@@ -306,6 +316,7 @@ const testDataGroups = ref<Array<{ id: string; name: string }>>([])
 const successMessage = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
 const modelSearchQuery = ref('')
+const promptData = ref<any>(null)
 
 // Preview state
 const showPreviewDialog = ref(false)
@@ -378,6 +389,16 @@ const showNoModelsWarning = computed(() => {
     return !loadingModels.value && Object.keys(availableModels.value).length === 0
 })
 
+const showNoFileUploadModelsWarning = computed(() => {
+    const promptRequiresFileUpload = promptData.value?.options?.acceptFileUpload === true
+    return !loadingModels.value && Object.keys(availableModels.value).length === 0 && promptRequiresFileUpload
+})
+
+const showRegularNoModelsWarning = computed(() => {
+    const promptRequiresFileUpload = promptData.value?.options?.acceptFileUpload === true
+    return !loadingModels.value && Object.keys(availableModels.value).length === 0 && !promptRequiresFileUpload
+})
+
 const previewDisabled = computed(() => {
     if (previewLoading.value) return true
 
@@ -394,10 +415,21 @@ const previewDisabled = computed(() => {
 })
 
 // Methods
+const loadPromptData = async (promptId: string) => {
+    try {
+        promptData.value = await promptsApi.getById(promptId)
+    } catch (err) {
+        console.error('Failed to load prompt data:', err)
+        promptData.value = null
+    }
+}
+
 const loadModels = async () => {
     loadingModels.value = true
     try {
-        availableModels.value = await executionsApi.getAvailableModels()
+        // Check if prompt supports file upload
+        const supportsFileUpload = promptData.value?.options?.acceptFileUpload === true
+        availableModels.value = await executionsApi.getAvailableModels({ supportsFileUpload })
     } catch (err) {
         console.error('Failed to load models:', err)
     } finally {
@@ -627,13 +659,28 @@ const submitScheduleExecution = async () => {
 }
 
 // Watchers
-watch(() => props.open, (newValue) => {
+watch(() => props.open, async (newValue) => {
     if (newValue) {
+        // Load prompt data first if promptId is provided
+        if (props.promptId) {
+            await loadPromptData(props.promptId)
+        }
+
+        // Then load models (which will use the prompt data to determine file upload support)
         loadModels()
+
         if (props.mode !== 'item') {
             loadTestDataGroups()
         }
         populateForm()
+    }
+})
+
+// Watch for changes in formData.promptId (for item mode)
+watch(() => formData.promptId, async (newPromptId) => {
+    if (newPromptId && props.mode === 'item') {
+        await loadPromptData(newPromptId)
+        loadModels()
     }
 })
 </script>

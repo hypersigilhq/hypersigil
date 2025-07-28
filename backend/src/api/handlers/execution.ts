@@ -353,7 +353,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
 
         getAvailableModels: async (req, res) => {
             try {
-                const models = await providerRegistry.getAvailableModels();
+                const models = await providerRegistry.getAvailableModels(req.query.supportsFileUpload || false);
                 res.respond(200, models);
             } catch (error) {
                 console.error('Error getting available models:', error);

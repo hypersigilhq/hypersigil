@@ -12,6 +12,7 @@ interface ProviderStatus {
     error?: string;
     lastChecked: number;
     provider: AIProvider;
+    supportsFileUpload: boolean;
 }
 
 interface ConsolidatedProviderData {
@@ -90,7 +91,8 @@ export class ProviderRegistry {
                 available: isAvailable,
                 models,
                 lastChecked: now,
-                provider
+                provider,
+                supportsFileUpload: provider.supportsFileUpload()
             };
 
             if (error) {
@@ -143,7 +145,8 @@ export class ProviderRegistry {
                             available,
                             models,
                             lastChecked: now,
-                            provider
+                            provider,
+                            supportsFileUpload: provider.supportsFileUpload()
                         };
 
                         if (error) {
@@ -158,7 +161,8 @@ export class ProviderRegistry {
                             models: [],
                             error: error instanceof Error ? error.message : String(error),
                             lastChecked: now,
-                            provider
+                            provider,
+                            supportsFileUpload: false
                         }];
                     }
                 }
@@ -240,6 +244,7 @@ export class ProviderRegistry {
         available: boolean;
         models: string[];
         error?: string;
+        supportsFileUpload: boolean;
         [key: string]: any;
     }>> {
         await this.ensureFreshConsolidatedData();
@@ -249,6 +254,7 @@ export class ProviderRegistry {
             health[name] = {
                 available: status.available,
                 models: status.models,
+                supportsFileUpload: status.supportsFileUpload,
                 ...(status.error && { error: status.error })
             };
         }
@@ -256,12 +262,17 @@ export class ProviderRegistry {
         return health;
     }
 
-    public async getAvailableModels(): Promise<Record<string, string[]>> {
+    public async getAvailableModels(supportsFileUpload: boolean): Promise<Record<string, string[]>> {
         await this.ensureFreshConsolidatedData();
 
         const models: Record<string, string[]> = {};
         for (const [name, status] of this.consolidatedData.providers.entries()) {
             if (status.available) {
+
+                if (supportsFileUpload && !status.supportsFileUpload) {
+                    continue
+                }
+
                 models[name] = status.models;
             }
         }
@@ -319,7 +330,8 @@ export class ProviderRegistry {
             available: false, // Will be updated on next refresh
             models: [],
             lastChecked: 0,
-            provider
+            provider,
+            supportsFileUpload: false
         };
         this.consolidatedData.providers.set(provider.name, status);
         this.invalidateConsolidatedCache();

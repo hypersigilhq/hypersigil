@@ -49,7 +49,7 @@ export const ExecutionResponseSchema = z.object({
     traceId: z.string().optional(),
     origin: z.enum(['app', 'api']),
     starred: z.boolean().optional(),
-
+    filesIds: z.array(z.string()).optional(),
     options: ExecutionOptionsSchema.optional()
 }).refine(input => {
     return input.prompt_id || input.prompt_text
@@ -107,7 +107,8 @@ export const ProviderHealthResponseSchema = z.record(z.string(), z.object({
     available: z.boolean(),
     models: z.array(z.string()),
     version: z.string().optional(),
-    error: z.string().optional()
+    error: z.string().optional(),
+    supportsFileUpload: z.boolean(),
 }));
 
 export type ProviderHealthResponse = z.infer<typeof ProviderHealthResponseSchema>;
@@ -155,6 +156,12 @@ export const ExecutionUpdateRequestSchema = z.object({
     userStatus: z.string().optional()
 })
 export type ExecutionUpdateRequest = z.infer<typeof ExecutionUpdateRequestSchema>;
+
+export const ExecutionAvailableModelsQuerySchema = z.object({
+    supportsFileUpload: z.boolean().optional()
+})
+
+export type ExecutionAvailableModelsQueryRequest = z.infer<typeof ExecutionAvailableModelsQuerySchema>;
 
 export const ExecutionApiDefinition = CreateApiDefinition({
     prefix: '/api/v1/executions',
@@ -249,6 +256,7 @@ export const ExecutionApiDefinition = CreateApiDefinition({
             getAvailableModels: {
                 method: 'GET',
                 path: '/providers/models',
+                query: ExecutionAvailableModelsQuerySchema,
                 responses: CreateResponses({
                     200: ProviderModelsResponseSchema,
                     500: ErrorResponseSchema

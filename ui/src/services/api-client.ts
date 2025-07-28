@@ -1,6 +1,6 @@
 import { ApiClient } from 'ts-typed-api/client';
 import { PromptApiDefinition, type CreatePromptRequest, type GenerateAdjustmentRequest, type PreviewPromptRequest } from './definitions/prompt';
-import { ExecutionApiDefinition, type CreateExecutionRequest, type ExecutionUpdateRequest, type AIProviderNameDefinition } from './definitions/execution';
+import { ExecutionApiDefinition, type CreateExecutionRequest, type ExecutionUpdateRequest, type AIProviderNameDefinition, type ExecutionAvailableModelsQueryRequest } from './definitions/execution';
 import { ExecutionBundleApiDefinition, type ExecutionBundleListQuery } from './definitions/execution-bundle';
 import { TestDataApiDefinition, type CreateTestDataGroupRequest } from './definitions/test-data';
 import { CommentApiDefinition, type CreateCommentRequest, type CommentListQuery } from './definitions/comment';
@@ -8,6 +8,7 @@ import { AuthApiDefinition, type LoginRequest, type RegisterFirstAdminRequest } 
 import { UserApiDefinition, type ListUsersQuery, type ListUsersResponse, type UserSummary } from './definitions/user';
 import { ApiKeyApiDefinition, type CreateApiKeyRequest, type UpdateApiKeyRequest } from './definitions/api-key';
 import { SettingsApiDefinition, type CreateSettingsRequest, type UpdateSettingsRequest } from './definitions/settings';
+import { FileApiDefinition, type CreateFileRequest, type UpdateFileRequest } from './definitions/file';
 import { CommonApiDefinition } from './definitions/common';
 import { eventBus } from './event-bus';
 
@@ -57,6 +58,11 @@ export const settingsApiClient = new ApiClient(
     SettingsApiDefinition
 );
 
+export const fileApiClient = new ApiClient(
+    document.location.origin, // Adjust this to match your backend URL
+    FileApiDefinition
+);
+
 export const commonApiClient = new ApiClient(
     document.location.origin, // Adjust this to match your backend URL
     CommonApiDefinition
@@ -73,6 +79,7 @@ const allApiClients = [
     authApiClient,
     apiKeyApiClient,
     settingsApiClient,
+    fileApiClient,
     commonApiClient
 ];
 
@@ -269,8 +276,8 @@ export const executionsApi = {
             200: (payload) => payload.data,
         }),
 
-    getAvailableModels: () =>
-        executionApiClient.callApi('providers', 'getAvailableModels', {}, {
+    getAvailableModels: (query: ExecutionAvailableModelsQueryRequest) =>
+        executionApiClient.callApi('providers', 'getAvailableModels', { query }, {
             ...errorHandle,
             200: (payload) => payload.data,
         })
@@ -575,6 +582,58 @@ export const settingsApi = {
             ...errorHandle,
             200: (payload) => payload.data,
         }),
+};
+
+// Helper functions for files API
+export const filesApi = {
+    selectList: () =>
+        fileApiClient.callApi('files', 'selectList', {}, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    list: (options?: { query?: { page?: string; limit?: string; search?: string; mimeType?: string; orderBy?: 'name' | 'originalName' | 'size' | 'created_at' | 'updated_at'; orderDirection?: 'ASC' | 'DESC' } }) =>
+        fileApiClient.callApi('files', 'list', options, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    create: (body: CreateFileRequest) =>
+        fileApiClient.callApi('files', 'create', { body }, {
+            ...errorHandle,
+            201: (payload) => {
+                // Emit file created event
+                if (payload.data?.id && payload.data?.name) {
+                    eventBus.emit('file:created', {
+                        fileId: payload.data.id,
+                        name: payload.data.name
+                    });
+                }
+                return payload.data;
+            },
+        }),
+
+    getById: (id: string) =>
+        fileApiClient.callApi('files', 'getById', { params: { id } }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    delete: (id: string) =>
+        fileApiClient.callApi('files', 'delete', { params: { id } }, {
+            ...errorHandle,
+            204: () => {
+                // Emit file deleted event
+                eventBus.emit('file:deleted', { fileId: id });
+                return undefined;
+            },
+        }),
+
+    searchByName: (pattern: string) =>
+        fileApiClient.callApi('files', 'searchByName', { params: { pattern } }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        })
 };
 
 // Helper functions for common API

@@ -288,6 +288,10 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
         this.modelsCacheExpiry = 0;
     }
 
+    supportsFileUpload(): boolean {
+        return false; // OpenAI supports file uploads through vision API
+    }
+
     getRequiredConfigKeys(): string[] {
         return ['apiKey'];
     }

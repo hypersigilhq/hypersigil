@@ -10,6 +10,7 @@ import "./api/handlers/auth"
 import "./api/handlers/api-key"
 import "./api/handlers/settings"
 import "./api/handlers/common"
+import "./api/handlers/file"
 import { config } from "./config";
 import { migrationManager } from './database/index'
 import { executionWorker } from "./services/execution-worker";

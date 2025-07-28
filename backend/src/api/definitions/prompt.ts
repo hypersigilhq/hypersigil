@@ -5,6 +5,13 @@ import { ErrorResponseSchema, createPaginationResponseSchema, PaginationQuerySch
 // JSON Schema validation
 export const JSONSchemaSchema: z.ZodType<Record<string, unknown>> = z.record(z.string(), z.unknown());
 
+// Options schema
+export const PromptOptionsSchema = z.object({
+    acceptFileUpload: z.boolean().optional()
+}).optional();
+
+export type PromptOptions = z.infer<typeof PromptOptionsSchema>;
+
 // Prompt version schema
 export const PromptVersionSchema = z.object({
     version: z.number(),
@@ -12,6 +19,7 @@ export const PromptVersionSchema = z.object({
     prompt: z.string(),
     json_schema_response: JSONSchemaSchema.optional(),
     json_schema_input: JSONSchemaSchema.optional(),
+    options: PromptOptionsSchema,
     created_at: z.string()
 });
 
@@ -25,6 +33,7 @@ export const PromptResponseSchema = z.object({
     json_schema_response: JSONSchemaSchema.optional(),
     json_schema_input: JSONSchemaSchema.optional(),
     current_version: z.number(),
+    options: PromptOptionsSchema,
     versions: z.array(PromptVersionSchema),
     created_at: z.string(),
     updated_at: z.string()
@@ -38,6 +47,7 @@ export const CreatePromptRequestSchema = z.object({
     prompt: z.string().min(1),
     json_schema_response: JSONSchemaSchema.optional(),
     json_schema_input: JSONSchemaSchema.optional(),
+    options: PromptOptionsSchema
 });
 
 export type CreatePromptRequest = z.infer<typeof CreatePromptRequestSchema>;
@@ -46,7 +56,8 @@ export const UpdatePromptRequestSchema = z.object({
     name: z.string().min(1).max(255).optional(),
     prompt: z.string().min(1).optional(),
     json_schema_response: JSONSchemaSchema.optional(),
-    json_schema_input: JSONSchemaSchema.optional()
+    json_schema_input: JSONSchemaSchema.optional(),
+    options: PromptOptionsSchema
 });
 
 export type UpdatePromptRequest = z.infer<typeof UpdatePromptRequestSchema>;

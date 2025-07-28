@@ -53,6 +53,28 @@
                     </div>
 
                     <div class="flex flex-col min-h-0">
+                        <div class="my-2" v-if="currentDisplayVersion.options">
+                            <Label>Options
+                                <Switch :model-value="optionsVisible"
+                                    @update:model-value="(v: boolean) => optionsVisible = v" />
+                            </Label>
+                            <div v-if="optionsVisible" class="mt-1 p-3 bg-muted rounded-md">
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium">Accept file upload</span>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs text-muted-foreground">
+                                                {{ currentDisplayVersion.options.acceptFileUpload ? 'Enabled' :
+                                                    'Disabled' }}
+                                            </span>
+                                            <div class="w-2 h-2 rounded-full"
+                                                :class="currentDisplayVersion.options.acceptFileUpload ? 'bg-green-500' : 'bg-gray-400'">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="my-2" v-if="currentDisplayVersion.json_schema_response">
                             <Label>JSON Schema Response
                                 <Switch :model-value="jsonSchemaOutputVisible"
@@ -179,6 +201,7 @@ const selectedComments = ref<Set<string>>(new Set())
 const showCalibrateDialog = ref(false)
 const jsonSchemaInputVisible = ref(true)
 const jsonSchemaOutputVisible = ref(true)
+const optionsVisible = ref(true)
 
 // Computed properties
 const sortedVersions = computed(() => {

@@ -16,6 +16,14 @@ export interface JSONSchema {
     [key: string]: any;
 }
 
+// File attachment interface for AI providers
+export interface FileAttachment {
+    name: string;
+    mimeType: string;
+    dataBase64: string; // base64 encoded file data
+    size: number;
+}
+
 // Execution options for AI providers
 export interface ExecutionOptions {
     schema?: JSONSchema | undefined;
@@ -23,6 +31,7 @@ export interface ExecutionOptions {
     maxTokens?: number;
     topP?: number;
     topK?: number;
+    files?: FileAttachment[];
     [key: string]: any;
 }
 
@@ -43,6 +52,7 @@ export interface AIProvider {
     isAvailable(): Promise<boolean>;
     getSupportedModels(): Promise<string[]>;
     supportsStructuredOutput?(): boolean;
+    supportsFileUpload(): boolean;
     updateConfig(config: Partial<ProviderConfig>): void;
     getRequiredConfigKeys(): string[];
 }

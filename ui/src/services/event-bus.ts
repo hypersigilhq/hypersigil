@@ -13,6 +13,10 @@ export interface EventMap {
     'prompt:updated': { promptId: string; name: string }
     'prompt:deleted': { promptId: string }
 
+    // File events
+    'file:created': { fileId: string; name: string }
+    'file:deleted': { fileId: string }
+
     // Settings events
     'settings:llm-api-key-added': { provider: string }
     'settings:llm-api-key-removed': { provider: string }

@@ -40,6 +40,9 @@ export interface PromptVersion {
     prompt: string;
     json_schema_input?: object | undefined;
     json_schema_response?: object | undefined;
+    options?: {
+        acceptFileUpload?: boolean | undefined
+    } | undefined;
     created_at: Date;
 }
 
@@ -50,6 +53,9 @@ export interface Prompt extends BaseDocument {
     json_schema_input?: object | undefined;
     json_schema_response?: object | undefined;
     current_version: number;
+    options?: {
+        acceptFileUpload?: boolean | undefined
+    } | undefined;
     versions: PromptVersion[];
 }
 
@@ -66,6 +72,7 @@ export class PromptModel extends Model<Prompt> {
             name: data.name,
             prompt: data.prompt,
             json_schema_response: processedSchema,
+            options: data.options,
             created_at: now
         };
 
@@ -109,6 +116,7 @@ export class PromptModel extends Model<Prompt> {
                 prompt: data.prompt || existing.prompt,
                 json_schema_response: processedSchemaOutput,
                 json_schema_input: processedSchemaInput,
+                options: data.options || existing.options,
                 created_at: new Date()
             };
 

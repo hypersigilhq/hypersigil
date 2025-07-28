@@ -15,12 +15,14 @@ function formatPromptForResponse(prompt: Prompt): PromptResponse {
         json_schema_response: <Record<string, string>>prompt.json_schema_response,
         json_schema_input: <Record<string, string>>prompt.json_schema_input,
         current_version: prompt.current_version,
+        options: prompt.options,
         versions: prompt.versions.map((v: any) => ({
             version: v.version,
             name: v.name,
             prompt: v.prompt,
             json_schema_response: v.json_schema_response,
             json_schema_input: v.json_schema_input,
+            options: v.options,
             created_at: v.created_at instanceof Date ? v.created_at.toISOString() : v.created_at
         })),
         created_at: (prompt.created_at instanceof Date ? prompt.created_at.toISOString() : prompt.created_at)!,

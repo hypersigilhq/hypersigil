@@ -55,6 +55,11 @@ const router = createRouter({
       name: 'execution-bundles',
       component: () => import('../views/ExecutionBundlesView.vue'),
     },
+    {
+      path: '/files',
+      name: 'files',
+      component: () => import('../views/FilesView.vue'),
+    },
   ],
 })
 

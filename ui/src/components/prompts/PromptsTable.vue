@@ -171,6 +171,19 @@
                         <!-- Right Column -->
                         <div class="flex flex-col">
                             <div class="flex-1 flex flex-col">
+                                <div class="flex items-center justify-between">
+                                    <Label for="acceptFileUpload">Accept file upload</Label>
+                                    <Switch id="acceptFileUpload"
+                                        :model-value="formData.options?.acceptFileUpload || false" @update:model-value="(v: boolean) => {
+                                            formData.options!.acceptFileUpload = v;
+                                        }" />
+                                </div>
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    Enable file upload support for this prompt. When enabled, users can upload files as
+                                    part of their input.
+                                </p>
+                            </div>
+                            <div class="flex-1 flex flex-col">
                                 <Label for="schema">JSON Schema Input</Label>
                                 <p class="text-sm text-muted-foreground mt-1">
                                     Enter a valid JSON schema that defines the expected input structure.
@@ -262,6 +275,7 @@ import ViewPromptDialog from './ViewPromptDialog.vue'
 import DropdownMenu from '../ui/dropdown-menu/DropdownMenu.vue'
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { useUI } from '@/services/ui'
+import Switch from '../ui/switch/Switch.vue'
 
 const router = useRouter()
 const { toast, confirm } = useUI()
@@ -295,12 +309,15 @@ const viewingPrompt = ref<PromptResponse | null>(null)
 const schedulingPrompt = ref<PromptResponse | null>(null)
 const saving = ref(false)
 
+let defaultOptions: CreatePromptRequest['options'] = { acceptFileUpload: false }
+
 // Form data
 const formData = reactive<CreatePromptRequest>({
     name: '',
     prompt: '',
     json_schema_response: {},
-    json_schema_input: {}
+    json_schema_input: {},
+    options: { ...defaultOptions }
 })
 
 const schemaOutputText = ref('')
@@ -358,6 +375,7 @@ const openCreateDialog = () => {
     formData.prompt = ''
     formData.json_schema_response = {}
     formData.json_schema_input = {}
+    formData.options = { ...defaultOptions }
     schemaOutputText.value = ''
     schemaInputText.value = ''
     showDialog.value = true
@@ -370,6 +388,7 @@ const editPrompt = (prompt: PromptResponse) => {
     formData.prompt = prompt.prompt
     formData.json_schema_response = prompt.json_schema_response
     formData.json_schema_input = prompt.json_schema_input
+    formData.options = prompt.options || { ...defaultOptions }
     schemaOutputText.value = JSON.stringify(prompt.json_schema_response, null, 2)
     schemaInputText.value = JSON.stringify(prompt.json_schema_input, null, 2)
     showDialog.value = true
@@ -382,6 +401,7 @@ const clonePrompt = (prompt: PromptResponse) => {
     formData.prompt = prompt.prompt
     formData.json_schema_response = prompt.json_schema_response
     formData.json_schema_input = prompt.json_schema_input
+    formData.options = prompt.options || { ...defaultOptions }
     schemaOutputText.value = JSON.stringify(prompt.json_schema_response, null, 2)
     schemaInputText.value = JSON.stringify(prompt.json_schema_input, null, 2)
     showDialog.value = true
@@ -407,6 +427,7 @@ const savePrompt = async () => {
         const promptData: CreatePromptRequest = {
             name: formData.name,
             prompt: formData.prompt,
+            options: formData.options
         }
         try {
             if (schemaOutputText.value) {

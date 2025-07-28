@@ -8,7 +8,7 @@ import { userModel } from '../models/user';
 import { apiKeyModel } from '../models/api-key';
 import { commentModel } from '../models/comment';
 import { modelRegistry } from './model-registry';
-import { settingsModel } from '../models';
+import { fileModel, settingsModel } from '../models';
 
 /**
  * Explicitly register all models with the registry
@@ -27,7 +27,8 @@ export async function initializeAllModels(): Promise<void> {
         userModel,
         apiKeyModel,
         commentModel,
-        settingsModel
+        settingsModel,
+        fileModel
     ];
 
     // Register each model explicitly

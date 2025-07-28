@@ -166,6 +166,10 @@ export class OllamaProvider extends GenericProvider implements AIProvider {
         return []; // Ollama doesn't require API keys
     }
 
+    supportsFileUpload(): boolean {
+        return false; // Ollama supports file uploads through vision models
+    }
+
     private buildFullPrompt(prompt: string, userInput: string): string {
         return `Context of your task: ${prompt}\n Your task: ${userInput}`
     }

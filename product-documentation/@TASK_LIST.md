@@ -70,3 +70,9 @@
 - [done] Implement per-provider parallelism in execution worker to replace global concurrency limit with provider-specific limits
 - [done] Implement General settings tab with LLM API key management for adding and removing provider API keys
 - [done] Integrate provider registry with settings model to use database-stored API keys instead of environment variables with dynamic refresh capability
+- [done] Implement file upload support for AI providers (OpenAI, Anthropic, Ollama) with vision capabilities and multimodal interactions
+- [done] Add options property to prompt model, API definitions, and handlers to support prompt configuration settings
+- [done] Implement accept file upload option setting in PromptsTable.vue with switch component for prompt configuration
+- [done] Create new file model with basic metadata properties and base64 encoded data storage for upload data management
+- [done] Implement Files UI route with table view, debounced search, upload modal, and file management functionality
+- [done] Extract upload dialog to separate component and implement multiple file upload with status tracking
