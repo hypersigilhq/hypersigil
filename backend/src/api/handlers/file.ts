@@ -1,5 +1,5 @@
 import { RegisterHandlers } from 'ts-typed-api';
-import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
+import app, { apiKeyMiddleware, authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import { File, fileModel } from '../../models/file';
 import { z } from 'zod';
 import { FileApiDefinition, FileResponse } from '../definitions/file';
@@ -206,4 +206,14 @@ RegisterHandlers(app, FileApiDefinition, {
             }
         }
     }
-}, [loggingMiddleware, timingMiddleware, authMiddleware]);
+}, [loggingMiddleware, timingMiddleware, apiKeyMiddleware<typeof FileApiDefinition>((scopes, endpointInfo) => {
+    if (endpointInfo.domain !== 'files') {
+        return false
+    }
+    switch (endpointInfo.routeKey) {
+        case 'create':
+            return scopes.includes('files:upload')
+        default:
+            return false
+    }
+}), authMiddleware]);

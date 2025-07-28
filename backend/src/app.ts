@@ -10,6 +10,7 @@ import { UserDocument, userModel } from './models/user';
 import { apiKeyModel, Permission } from './models/api-key';
 import { ExecutionApiDefinition } from './api/definitions/execution';
 import { PromptApiDefinition } from './api/definitions/prompt';
+import { FileApiDefinition } from './api/definitions/file';
 const app = express();
 
 // Basic middleware
@@ -54,11 +55,17 @@ app.get('/api/health', (req, res) => {
 });
 
 app.get('/api/json-schema', (req, res) => {
-    const spec = generateOpenApiSpec2([{
-        prefix: ExecutionApiDefinition.prefix, endpoints: { executions: pick(ExecutionApiDefinition.endpoints.executions, ['getById', 'create']) }
-    }, {
-        prefix: PromptApiDefinition.prefix, endpoints: { prompts: pick(PromptApiDefinition.endpoints.prompts, ['preview', 'getById']) }
-    }], {
+    const spec = generateOpenApiSpec2([
+        {
+            prefix: ExecutionApiDefinition.prefix, endpoints: { executions: pick(ExecutionApiDefinition.endpoints.executions, ['getById', 'create']) }
+        },
+        {
+            prefix: PromptApiDefinition.prefix, endpoints: { prompts: pick(PromptApiDefinition.endpoints.prompts, ['preview', 'getById']) }
+        },
+        {
+            prefix: FileApiDefinition.prefix, endpoints: { prompts: pick(FileApiDefinition.endpoints.files, ['create']) }
+        }
+    ], {
         info: {
             description: "Hypesigil API",
             title: "Hypesigil API",

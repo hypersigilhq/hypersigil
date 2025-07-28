@@ -6,6 +6,7 @@ import bcrypt from 'bcrypt';
 export type Permission =
     | "executions:run" | "executions:read"
     | "prompts:preview" | "prompts:read"
+    | "files:upload"
 
 export interface ApiKeyDocument extends BaseDocument {
     name: string;
