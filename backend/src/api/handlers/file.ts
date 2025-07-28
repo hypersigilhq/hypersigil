@@ -83,16 +83,10 @@ RegisterHandlers(app, FileApiDefinition, {
 
         create: async (req, res) => {
             try {
-                const createData: any = { ...req.body };
+                const createData = { ...req.body };
+                createData.uploadedBy = req.user?.id
 
-                // Remove undefined values to avoid TypeScript strict optional property issues
-                Object.keys(createData).forEach(key => {
-                    if (createData[key] === undefined) {
-                        delete createData[key];
-                    }
-                });
-
-                const newFile = await fileModel.create(createData);
+                const newFile = await fileModel.create(createData as any);
 
                 res.respond(201, formatFileForResponse(newFile));
             } catch (error) {

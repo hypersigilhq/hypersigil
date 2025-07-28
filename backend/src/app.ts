@@ -1,10 +1,9 @@
 import express from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import { EndpointMiddleware, ApiDefinitionSchema, EndpointInfo, generateOpenApiSpec2, CreateApiDefinition, CreateResponses } from 'ts-typed-api';
-import { config, isDevelopment } from './config';
+import { EndpointMiddleware, ApiDefinitionSchema, EndpointInfo, generateOpenApiSpec2 } from 'ts-typed-api';
+import { isDevelopment } from './config';
 import { AuthService } from './services/auth-service';
 import { UserDocument, userModel } from './models/user';
 import { apiKeyModel, Permission } from './models/api-key';
@@ -63,7 +62,7 @@ app.get('/api/json-schema', (req, res) => {
             prefix: PromptApiDefinition.prefix, endpoints: { prompts: pick(PromptApiDefinition.endpoints.prompts, ['preview', 'getById']) }
         },
         {
-            prefix: FileApiDefinition.prefix, endpoints: { prompts: pick(FileApiDefinition.endpoints.files, ['create']) }
+            prefix: FileApiDefinition.prefix, endpoints: { files: pick(FileApiDefinition.endpoints.files, ['create']) }
         }
     ], {
         info: {
