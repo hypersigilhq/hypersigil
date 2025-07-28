@@ -1,11 +1,15 @@
 <template>
     <div class="flex h-full flex-col bg-white border-r transition-all duration-300 ease-in-out relative" :class="[
         isCollapsed ? 'w-16' : 'w-64',
-        isHovered && isCollapsed ? 'shadow-lg' : ''
+        isHovered && isCollapsed ? 'shadow-lg' : '',
+        currentAlert ? 'pt-16' : '',
     ]" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
         <!-- Overlay expanded sidebar when collapsed and hovered -->
         <div v-if="isCollapsed && isHovered"
-            class="absolute left-0 top-0 w-64 h-full bg-white border-r shadow-xl z-10 flex flex-col backdrop-blur-sm">
+            class="absolute left-0 top-0 w-64 h-full bg-white border-r shadow-xl z-10 flex flex-col backdrop-blur-sm"
+            :class="[
+                currentAlert ? 'pt-16' : 'top-0'
+            ]">
             <!-- Logo/Brand - Expanded -->
             <div class="flex h-16 items-center px-6 border-b">
                 <h1 class="text-xl font-semibold">Hypersigil</h1>
@@ -85,6 +89,7 @@ import { Button } from '@/components/ui/button'
 import NavigationItem from './NavigationItem.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useSettings } from '@/composables/useSettings'
+import { useTopbarAlert } from '@/components/ui/alert'
 
 interface NavigationItemType {
     name: string
@@ -92,6 +97,8 @@ interface NavigationItemType {
     icon: any
     badge?: string
 }
+
+const { currentAlert } = useTopbarAlert()
 
 const route = useRoute()
 
