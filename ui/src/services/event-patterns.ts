@@ -1,4 +1,4 @@
-import { onUnmounted, watch, ref, type Ref } from 'vue'
+import { onUnmounted, watch, ref, type Ref, getCurrentInstance } from 'vue'
 import { useEventBus, type EventMap, type EventListener } from './event-bus'
 
 // Composable for auto-cleanup event listeners
@@ -11,10 +11,13 @@ export const useEventListener = <K extends keyof EventMap>(
 
     const unsubscribe = options.once ? once(event, listener) : on(event, listener)
 
-    // Auto cleanup on component unmount
-    onUnmounted(() => {
-        unsubscribe()
-    })
+    // Auto cleanup on component unmount only if we're in a component context
+    const instance = getCurrentInstance()
+    if (instance) {
+        onUnmounted(() => {
+            unsubscribe()
+        })
+    }
 
     return unsubscribe
 }
