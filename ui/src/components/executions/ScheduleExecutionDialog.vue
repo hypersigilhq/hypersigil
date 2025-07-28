@@ -39,6 +39,11 @@
                             placeholder="Enter the prompt text to execute" rows="6" required />
                     </div>
 
+                    <!-- File Selection (when prompt accepts file upload) -->
+                    <div v-if="(promptId || formData.promptId) && promptData?.options?.acceptFileUpload">
+                        <FileSelector v-model="formData.fileId" label="File" :preselected-file-id="formData.fileId" />
+                    </div>
+
                     <!-- Test Data Group Selection (for group mode) -->
                     <div v-if="mode !== 'item' && mode !== 'text'">
                         <Label for="testDataGroup">Test Data Group (Optional)</Label>
@@ -261,6 +266,7 @@ import {
 
 import { executionsApi, testDataApi, promptsApi } from '@/services/api-client'
 import PromptSelector from '@/components/prompts/PromptSelector.vue'
+import FileSelector from '@/components/files/FileSelector.vue'
 
 const router = useRouter()
 
@@ -274,6 +280,7 @@ interface Props {
     initialUserInput?: string[]
     // For cloning - pre-populate with existing execution data
     initialData?: {
+        fileId?: string
         userInput: string
         providerModel: string[]
         options?: {
@@ -332,6 +339,7 @@ const formData = reactive({
     userInputs: [] as string[],
     providerModel: <string[]>[],
     testDataGroupId: '',
+    fileId: '',
     options: {
         temperature: 0.01,
         maxTokens: undefined as number | undefined,
@@ -347,20 +355,6 @@ const isOpen = computed({
 })
 
 const isCloning = computed(() => !!props.sourceExecutionId)
-
-const modelOptions = computed(() => {
-    const options: Array<{ value: string; label: string; provider: string }> = []
-    for (const [provider, models] of Object.entries(availableModels.value)) {
-        for (const model of models) {
-            options.push({
-                value: `${provider}:${model}`,
-                label: `${provider}: ${model}`,
-                provider
-            })
-        }
-    }
-    return options
-})
 
 const filteredAvailableModels = computed(() => {
     if (!modelSearchQuery.value.trim()) {
@@ -454,6 +448,7 @@ const resetForm = () => {
     formData.userInput = ''
     formData.providerModel = []
     formData.testDataGroupId = ''
+    formData.fileId = ''
     formData.options.temperature = 0.7
     formData.options.maxTokens = undefined
     formData.options.topP = 1
@@ -472,6 +467,7 @@ const multipleUserInputs = computed(() => {
 
 const populateForm = () => {
     if (props.initialData) {
+        formData.fileId = props.initialData.fileId || ''
         formData.userInput = props.initialData.userInput
         if (props.initialUserInput) {
             formData.userInputs = props.initialUserInput
@@ -611,6 +607,11 @@ const submitScheduleExecution = async () => {
         const executionData: any = {
             providerModel: formData.providerModel,
             options: Object.keys(options).length > 0 ? options : undefined
+        }
+
+        // Include fileId if selected
+        if (formData.fileId) {
+            executionData.fileId = formData.fileId
         }
 
         // Handle different modes

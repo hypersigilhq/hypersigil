@@ -153,6 +153,7 @@ import {
 import { fileImportService } from '@/services/file-import/FileImportService'
 import { testDataApi } from '@/services/api-client'
 import type { ImportProgress } from '@/services/file-import/types'
+import { formatFileSize } from '@/lib/utils'
 
 interface Props {
     open: boolean
@@ -243,15 +244,6 @@ const startImport = async () => {
     } finally {
         processing.value = false
     }
-}
-
-// Utility functions
-const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
 // Dialog management

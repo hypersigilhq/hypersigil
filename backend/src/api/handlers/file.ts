@@ -34,7 +34,9 @@ RegisterHandlers(app, FileApiDefinition, {
                             originalName: file.originalName,
                             mimeType: file.mimeType,
                             size: file.size
-                        }))
+                        })).sort((a, b) => {
+                            return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1
+                        })
                 };
 
                 res.respond(200, selectList);

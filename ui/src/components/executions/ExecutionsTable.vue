@@ -315,6 +315,7 @@ const viewingExecution = ref<ExecutionResponse | null>(null)
 const cloningExecution = ref<ExecutionResponse | null>(null)
 const currentExecutionIndex = ref(-1)
 const cloneInitialData = ref<{
+    fileId?: string,
     userInput: string
     providerModel: string[]
     options?: {
@@ -449,7 +450,8 @@ const cloneExecution = (execution: ExecutionResponse) => {
     cloneInitialData.value = {
         userInput: execution.user_input,
         providerModel: [`${execution.provider}:${execution.model}`],
-        options: execution.options
+        options: execution.options,
+        fileId: execution.fileId
     }
     showCloneDialog.value = true
 }

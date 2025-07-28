@@ -28,6 +28,7 @@ export interface Execution extends BaseDocument {
     test_data_item_id?: string | undefined;
     // used to correlate executions together
     trace_id?: string | undefined;
+    fileId?: string | undefined;
     // whats the origin of the execution
     origin: 'app' | 'api';
 }

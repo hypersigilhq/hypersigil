@@ -17,6 +17,7 @@ export interface CreateExecutionRequest {
     testDataGroupId?: string
     testDataItemId?: string
     traceId?: string | undefined
+    fileId?: string | undefined
     origin: Execution['origin']
 }
 
@@ -74,7 +75,8 @@ export class ExecutionService {
             test_data_item_id: request.testDataItemId,
             options: request.options,
             origin: request.origin,
-            trace_id: request.traceId
+            trace_id: request.traceId,
+            fileId: request.fileId
         };
 
         const execution = await executionModel.create(executionData);

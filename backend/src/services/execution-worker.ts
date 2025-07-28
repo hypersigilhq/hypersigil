@@ -1,7 +1,8 @@
 import { executionModel, Execution } from '../models/execution';
 import { promptModel } from '../models/prompt';
+import { fileModel } from '../models/file';
 import { providerRegistry } from '../providers/provider-registry';
-import { ProviderError, ExecutionOptions, JSONSchema, AIProviderName, AIProviderNames } from '../providers/base-provider';
+import { ProviderError, ExecutionOptions, JSONSchema, AIProviderName, AIProviderNames, FileAttachment } from '../providers/base-provider';
 import { promptService } from './prompt-service';
 
 
@@ -301,6 +302,40 @@ export class ExecutionWorker {
             let options: ExecutionOptions = { ...execution.options }
             if (jsonSchemaResponse) {
                 options.schema = jsonSchemaResponse as JSONSchema
+            }
+
+            // Handle file upload if fileId is present and provider supports it
+            if (execution.fileId && provider.supportsFileUpload()) {
+                try {
+                    const file = await fileModel.findById(execution.fileId);
+                    if (!file) {
+                        await executionModel.updateStatus(executionId, 'failed', {
+                            error_message: `File not found: ${execution.fileId}`
+                        });
+                        return;
+                    }
+
+                    // Add file to options
+                    const fileAttachment: FileAttachment = {
+                        name: file.name,
+                        mimeType: file.mimeType,
+                        dataBase64: file.data,
+                        size: file.size
+                    };
+
+                    options.files = [fileAttachment];
+                    console.log(`Added file ${file.name} (${file.mimeType}) to execution ${executionId}`);
+                } catch (error) {
+                    await executionModel.updateStatus(executionId, 'failed', {
+                        error_message: `Failed to fetch file ${execution.fileId}: ${error instanceof Error ? error.message : String(error)}`
+                    });
+                    return;
+                }
+            } else if (execution.fileId && !provider.supportsFileUpload()) {
+                await executionModel.updateStatus(executionId, 'failed', {
+                    error_message: `Provider ${execution.provider} does not support file uploads`
+                });
+                return;
             }
 
             // Execute the prompt using the extracted prompt text

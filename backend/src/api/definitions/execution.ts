@@ -49,7 +49,7 @@ export const ExecutionResponseSchema = z.object({
     traceId: z.string().optional(),
     origin: z.enum(['app', 'api']),
     starred: z.boolean().optional(),
-    filesIds: z.array(z.string()).optional(),
+    fileId: z.string().optional(),
     options: ExecutionOptionsSchema.optional()
 }).refine(input => {
     return input.prompt_id || input.prompt_text
@@ -73,7 +73,8 @@ export const CreateExecutionRequestSchema = z.object({
     testDataGroupId: z.string().optional(),
     traceId: z.string().optional(),
     providerModel: z.array(z.string().regex(/^[a-zA-Z0-9_-]+:.+$/, 'Must be in format provider:model')),
-    options: ExecutionOptionsSchema.optional()
+    options: ExecutionOptionsSchema.optional(),
+    fileId: z.string().optional()
 }).superRefine((val, ctx) => {
     if (!val.promptId && !val.promptText) {
         ctx.addIssue({ message: 'promptId or promptText is required', code: 'custom' })

@@ -76,3 +76,6 @@
 - [done] Create new file model with basic metadata properties and base64 encoded data storage for upload data management
 - [done] Implement Files UI route with table view, debounced search, upload modal, and file management functionality
 - [done] Extract upload dialog to separate component and implement multiple file upload with status tracking
+- [done] Integrate file selection in ScheduleExecutionDialog for prompts with acceptFileUpload option enabled
+- [done] Add fileId validation and storage in execution model for file upload support
+- [done] Implement file upload integration in execution worker with provider support validation and file fetching

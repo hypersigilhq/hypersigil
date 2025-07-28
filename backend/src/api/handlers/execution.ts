@@ -6,7 +6,7 @@ import app from '../../app';
 import { ExecutionOptions } from '../../providers/base-provider';
 import { Prompt, promptModel, PromptVersion } from '../../models/prompt';
 import { ExecutionApiDefinition, ExecutionResponse } from '../definitions/execution';
-import { executionModel } from '../../models';
+import { executionModel, fileModel } from '../../models';
 
 RegisterHandlers(app, ExecutionApiDefinition, {
     executions: {
@@ -40,9 +40,22 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                 }
                 res.respond(201, { executionIds: result.data });
             } else {
+                const { promptId, promptVersion, userInput, options, traceId, fileId } = req.body;
+
+                // Validate fileId exists if provided
+                if (fileId) {
+                    const file = await fileModel.findById(fileId);
+                    if (!file) {
+                        res.respond(400, {
+                            error: 'Validation error',
+                            message: `File with id ${fileId} not found`
+                        });
+                        return;
+                    }
+                }
+
                 for (let i in req.body.providerModel) {
                     let providerModel = req.body.providerModel[i]!
-                    const { promptId, promptVersion, userInput, options, traceId } = req.body;
 
                     const result = await executionService.createExecution({
                         promptId,
@@ -52,7 +65,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                         providerModel,
                         options: options as ExecutionOptions,
                         origin: req.isApiCall() ? 'api' : 'app',
-                        traceId
+                        traceId,
+                        fileId
                     });
 
                     if (result.err) {
@@ -212,7 +226,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             result_validation_message: execution.result_validation_message,
                             starred: execution.starred,
                             origin: execution.origin,
-                            traceId: execution.trace_id
+                            traceId: execution.trace_id,
+                            fileId: execution.fileId
                         }
                     })
                 };
@@ -267,7 +282,8 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     options: execution.options,
                     starred: execution.starred,
                     origin: execution.origin,
-                    traceId: execution.trace_id
+                    traceId: execution.trace_id,
+                    fileId: execution.fileId
                 };
 
                 res.respond(200, response);
