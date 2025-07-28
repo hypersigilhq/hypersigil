@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "hypersigil-backend",
   "version": "1.0.0",
   "description": "TypeScript backend API server using ts-typed-api and Express",
   "main": "dist/index.js",

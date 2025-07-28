@@ -5,7 +5,8 @@ import { ErrorResponseSchema } from './common';
 export const permissions = z.enum([
     'executions:run', 'executions:read',
     'prompts:preview', 'prompts:read',
-    'files:upload'
+    'files:upload',
+    'deployments:run'
 ])
 
 // API Key schemas

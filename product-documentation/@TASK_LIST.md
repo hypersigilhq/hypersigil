@@ -83,3 +83,5 @@
 - [done] Implement tag functionality for file uploads with batch tagging support and intuitive badge-based UI
 - [done] Implement file download endpoint with base64 decoding and binary streaming with appropriate headers
 - [done] 28-07-25 17:37 Update documentation to reflect all implemented features from July 25th onwards including settings management, file upload system, onboarding, and multimodal capabilities
+- [done] 28-07-28 21:44 Implement deployment model with CRUD endpoints and run functionality for prompt execution management
+- [done] 28-07-28 21:57 Add deployment options (temperature, topP, topK) to deployment model and API definitions with execution integration

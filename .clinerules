@@ -5,9 +5,10 @@ For every [todo] item, you can expand it a little bit as a Senior Product Manage
 For every work, plan it first and act as a Software Architect with 15 years of experience. You value simplicity over complexity but also maintainability of the software.
 For implementation think like UX/UI designer first, then when writing code act as a Senior Software Engineer with 15 years of experience, you value maintainability and readability (only use comments in complex cases when the code is not very readable).
 
-After every implementation, add high-level documentation in ./product-documentation/implemented-features. Add a date and time YY-MM-DD_HH-MM_{feature title}.md in the title and at the top of the file
+After every implementation, add high-level documentation in ./product-documentation/implemented-features. Add a date and time YY-MM-DD_HH-MM_{feature title}.md in the title and at the top of the file.
+ASK for permission before logging work in ./product-documentation/@TASK_LIST.md or ./product-documentation/implemented-features. Skip logging work for small bits of work.
 
-The product name is Hypersigil
+The product name is Hypersigil.
 
 # API Definitions Architecture Rules
 

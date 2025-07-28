@@ -50,6 +50,11 @@ export class ExecutionService {
                 return Err(`Prompt version ${versionToExecute} not found`);
             }
 
+            // Validate file upload requirement
+            if (promptVersion.options?.acceptFileUpload === true && !request.fileId) {
+                return Err('File upload is required for this prompt but no fileId was provided');
+            }
+
             if (request.promptId && promptVersion && promptVersion.json_schema_input) {
                 let vr = promptService.validateData(JSON.parse(request.userInput), <JSONSchema>promptVersion.json_schema_input)
                 if (!vr.valid) {

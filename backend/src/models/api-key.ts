@@ -7,6 +7,7 @@ export type Permission =
     | "executions:run" | "executions:read"
     | "prompts:preview" | "prompts:read"
     | "files:upload"
+    | "deployments:run"
 
 export interface ApiKeyDocument extends BaseDocument {
     name: string;
