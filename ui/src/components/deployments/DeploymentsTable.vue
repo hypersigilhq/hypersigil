@@ -53,6 +53,7 @@
                     <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Prompt</TableHead>
+                        <TableHead>Version</TableHead>
                         <TableHead>Provider</TableHead>
                         <TableHead>Model</TableHead>
                         <TableHead>Options</TableHead>
@@ -74,6 +75,7 @@
                                 {{ promptNames[deployment.promptId] || deployment.promptId }}
                             </div>
                         </TableCell>
+                        <TableCell>{{ deployment.promptVersion }}</TableCell>
                         <TableCell>
                             <Badge variant="outline">{{ deployment.provider }}</Badge>
                         </TableCell>

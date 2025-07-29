@@ -14,6 +14,7 @@ export interface DeploymentOptions {
 export interface Deployment extends BaseDocument {
     name: string; // slug, unique across the table
     promptId: string;
+    promptVersion: number;
     provider: AIProviderName;
     model: string;
     options?: DeploymentOptions;
@@ -37,27 +38,29 @@ export class DeploymentModel extends Model<Deployment> {
         return this.findMany({ where: { provider } });
     }
 
-    // Override create to ensure name uniqueness
-    public override async create(data: Omit<Deployment, 'id' | 'created_at' | 'updated_at'>): Promise<Deployment> {
+    // Create with name uniqueness validation
+    public async createWithValidation(data: Omit<Deployment, 'id' | 'created_at' | 'updated_at'>): Promise<Result<Deployment>> {
         // Check if name already exists
         const existing = await this.findByName(data.name);
         if (existing) {
-            throw new Error(`Deployment with name '${data.name}' already exists`);
+            return Err(`Deployment with name '${data.name}' already exists`);
         }
 
-        return super.create(data);
+        const result = await super.create(data);
+        return Ok(result);
     }
 
-    // Override update to ensure name uniqueness
-    public override async update(id: string, data: Partial<Omit<Deployment, 'id' | 'created_at' | 'updated_at'>>): Promise<Deployment | null> {
+    // Update with name uniqueness validation
+    public async updateWithValidation(id: string, data: Partial<Omit<Deployment, 'id' | 'created_at' | 'updated_at'>>): Promise<Result<Deployment | null>> {
         if (data.name) {
             const existing = await this.findByName(data.name);
             if (existing && existing.id !== id) {
-                throw new Error(`Deployment with name '${data.name}' already exists`);
+                return Err(`Deployment with name '${data.name}' already exists`);
             }
         }
 
-        return super.update(id, data);
+        const result = await super.update(id, data);
+        return Ok(result);
     }
 
     // Method to get deployments with pagination and search

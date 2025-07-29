@@ -13,6 +13,7 @@ function formatDeploymentForResponse(deployment: Deployment): DeploymentResponse
         id: deployment.id!,
         name: deployment.name,
         promptId: deployment.promptId,
+        promptVersion: deployment.promptVersion,
         provider: deployment.provider,
         model: deployment.model,
         options: deployment.options,
@@ -43,7 +44,7 @@ RegisterHandlers(app, DeploymentApiDefinition, {
         },
 
         create: async (req, res) => {
-            const { name, promptId, provider, model, options } = req.body;
+            const { name, promptId, promptVersion, provider, model, options } = req.body;
 
             // Validate that prompt exists
             const prompt = await promptModel.findById(promptId);
@@ -66,15 +67,23 @@ RegisterHandlers(app, DeploymentApiDefinition, {
                 });
             }
 
-            const newDeployment = await deploymentModel.create({
+            const result = await deploymentModel.createWithValidation({
                 name,
                 promptId,
+                promptVersion,
                 provider,
                 model,
                 options: options as DeploymentOptions
             });
 
-            res.respond(201, formatDeploymentForResponse(newDeployment));
+            if (!result.success) {
+                return res.respond(400, {
+                    error: 'Validation Error',
+                    message: result.error
+                });
+            }
+
+            res.respond(201, formatDeploymentForResponse(result.data));
         },
 
         getById: async (req, res) => {
@@ -149,15 +158,22 @@ RegisterHandlers(app, DeploymentApiDefinition, {
                 Object.entries(updateData).filter(([_, value]) => value !== undefined)
             );
 
-            const updatedDeployment = await deploymentModel.update(id, filteredUpdateData);
-            if (!updatedDeployment) {
+            const result = await deploymentModel.updateWithValidation(id, filteredUpdateData);
+            if (!result.success) {
+                return res.respond(400, {
+                    error: 'Validation Error',
+                    message: result.error
+                });
+            }
+
+            if (!result.data) {
                 return res.respond(404, {
                     error: 'Not Found',
                     message: 'Deployment not found'
                 });
             }
 
-            res.respond(200, formatDeploymentForResponse(updatedDeployment));
+            res.respond(200, formatDeploymentForResponse(result.data));
         },
 
         delete: async (req, res) => {

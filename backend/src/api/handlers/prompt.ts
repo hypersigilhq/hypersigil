@@ -3,7 +3,7 @@ import app, { apiKeyMiddleware, authMiddleware, loggingMiddleware, timingMiddlew
 import { Prompt, promptModel } from '../../models/prompt';
 import { promptAdjustmentService } from '../../services/prompt-adjustment-service';
 import { z } from 'zod';
-import { PromptApiDefinition, PromptResponse } from '../definitions/prompt';
+import { PromptApiDefinition, PromptResponse, PromptSelectListResponse, PromptSelectListSchema } from '../definitions/prompt';
 import { JSONSchema } from '../../providers/base-provider';
 import { promptService } from '../../services/prompt-service';
 
@@ -37,10 +37,17 @@ RegisterHandlers(app, PromptApiDefinition, {
             const selectList = {
                 items: prompts
                     .filter(prompt => prompt.id) // Filter out any prompts without id
-                    .map(prompt => ({
-                        id: prompt.id!,
-                        name: prompt.name
-                    }))
+                    .map((prompt): PromptSelectListResponse['items'][0] => {
+                        return {
+                            id: prompt.id!,
+                            name: prompt.name,
+                            versions: prompt.versions.map(p => ({
+                                date: p.created_at.toISOString(),
+                                name: p.name,
+                                version: p.version
+                            })).reverse()
+                        }
+                    })
             };
 
             res.respond(200, selectList);

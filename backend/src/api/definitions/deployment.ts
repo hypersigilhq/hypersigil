@@ -17,6 +17,7 @@ export const DeploymentResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
     promptId: z.string(),
+    promptVersion: z.number().min(1),
     provider: AIProviderNameSchema,
     model: z.string(),
     options: DeploymentOptionsSchema.optional(),
@@ -30,6 +31,7 @@ export type DeploymentResponse = z.infer<typeof DeploymentResponseSchema>;
 export const CreateDeploymentRequestSchema = z.object({
     name: z.string().min(1).max(255).regex(/^[a-z0-9-_]+$/, 'Name must be a valid slug (lowercase letters, numbers, hyphens, and underscores only)'),
     promptId: z.string().uuid(),
+    promptVersion: z.number().min(1),
     provider: AIProviderNameSchema,
     model: z.string().min(1),
     options: DeploymentOptionsSchema.optional()
@@ -38,8 +40,8 @@ export const CreateDeploymentRequestSchema = z.object({
 export type CreateDeploymentRequest = z.infer<typeof CreateDeploymentRequestSchema>;
 
 export const UpdateDeploymentRequestSchema = z.object({
-    name: z.string().min(1).max(255).regex(/^[a-z0-9-_]+$/, 'Name must be a valid slug (lowercase letters, numbers, hyphens, and underscores only)').optional(),
     promptId: z.string().uuid().optional(),
+    promptVersion: z.number().min(1),
     provider: AIProviderNameSchema.optional(),
     model: z.string().min(1).optional(),
     options: DeploymentOptionsSchema.optional()

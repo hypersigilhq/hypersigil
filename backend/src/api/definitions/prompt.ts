@@ -100,6 +100,11 @@ export const PromptSelectListSchema = z.object({
     items: z.array(z.object({
         id: z.string(),
         name: z.string(),
+        versions: z.array(z.object({
+            version: z.number(),
+            date: z.string(),
+            name: z.string()
+        }))
     }))
 });
 

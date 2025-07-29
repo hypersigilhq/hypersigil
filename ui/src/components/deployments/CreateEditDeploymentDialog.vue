@@ -28,6 +28,7 @@
                         <div>
                             <Label for="prompt">Prompt</Label>
                             <PromptSelector @update:model-value="(v) => formData.promptId = v"
+                                @update:version-value="(v) => formData.promptVersion = v || 0"
                                 v-model="formData.promptId" :label="'Choose prompt'" />
                         </div>
 
@@ -135,6 +136,7 @@ const isOpen = computed({
 const formData = reactive<CreateDeploymentRequest & { options: NonNullable<CreateDeploymentRequest['options']> }>({
     name: '',
     promptId: '',
+    promptVersion: 0,
     provider: '' as AIProviderNameDefinition,
     model: '',
     options: {
@@ -182,6 +184,7 @@ const initializeForm = () => {
         // Edit mode
         formData.name = props.deployment.name
         formData.promptId = props.deployment.promptId
+        formData.promptVersion = props.deployment.promptVersion
         formData.provider = props.deployment.provider
         formData.model = props.deployment.model
         formData.options = {
@@ -196,6 +199,7 @@ const initializeForm = () => {
         // Create mode
         formData.name = ''
         formData.promptId = ''
+        formData.promptVersion = 0
         formData.provider = '' as AIProviderNameDefinition
         formData.model = ''
         formData.options = {
@@ -216,6 +220,7 @@ const saveDeployment = async () => {
         const requestData: CreateDeploymentRequest | UpdateDeploymentRequest = {
             name: formData.name,
             promptId: formData.promptId,
+            promptVersion: formData.promptVersion,
             provider: formData.provider,
             model: formData.model,
             options: {
