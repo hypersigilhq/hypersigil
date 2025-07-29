@@ -1,6 +1,6 @@
 <template>
     <Dialog v-model:open="isOpen">
-        <DialogContent class="max-w-2xl">
+        <DialogContent class="max-w-6xl">
             <DialogHeader>
                 <DialogTitle>
                     {{ deployment ? 'Edit Deployment' : 'Create New Deployment' }}
@@ -32,34 +32,8 @@
                         </div>
 
                         <div>
-                            <Label for="provider">Provider</Label>
-                            <Select v-model="formData.provider" @update:model-value="onProviderChange" required>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a provider" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="openai">OpenAI</SelectItem>
-                                    <SelectItem value="anthropic">Anthropic</SelectItem>
-                                    <SelectItem value="ollama">Ollama</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div>
-                            <Label for="model">Model</Label>
-                            <Select v-model="formData.model" :disabled="!formData.provider || loadingModels" required>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a model" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="model in availableModels" :key="model" :value="model">
-                                        {{ model }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <div v-if="loadingModels" class="text-sm text-muted-foreground mt-1">
-                                Loading models...
-                            </div>
+                            <ModelSelector v-model="selectedProviderModel" :multiple="false" label="Provider/Model"
+                                @selection-changed="onModelSelectionChanged" />
                         </div>
                     </div>
 
@@ -127,21 +101,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
 
-import { deploymentsApi, promptsApi, executionsApi } from '@/services/api-client'
+import { deploymentsApi, promptsApi } from '@/services/api-client'
 import type { DeploymentResponse, CreateDeploymentRequest, UpdateDeploymentRequest } from '../../services/definitions/deployment'
 import type { PromptSelectListResponse } from '../../services/definitions/prompt'
 import type { AIProviderNameDefinition } from '../../services/definitions/execution'
-import { AIProviderNamesDefinition } from '../../services/definitions/execution'
 import { useUI } from '@/services/ui'
 import PromptSelector from '../prompts/PromptSelector.vue'
+import ModelSelector from '@/components/ui/model-selector/ModelSelector.vue'
 
 interface Props {
     open: boolean
@@ -180,8 +147,7 @@ const formData = reactive<CreateDeploymentRequest & { options: NonNullable<Creat
 // State
 const saving = ref(false)
 const prompts = ref<PromptSelectListResponse['items']>([])
-const availableModels = ref<string[]>([])
-const loadingModels = ref(false)
+const selectedProviderModel = ref<string>('')
 
 // Load prompts for selection
 const loadPrompts = async () => {
@@ -198,39 +164,15 @@ const loadPrompts = async () => {
     }
 }
 
-// Load available models for selected provider
-const loadAvailableModels = async (provider: AIProviderNameDefinition) => {
-    if (!provider) return
-
-    loadingModels.value = true
-    try {
-        const response = await executionsApi.getAvailableModels({})
-        availableModels.value = response[provider] || []
-
-        // Reset model selection if current model is not available
-        if (formData.model && !availableModels.value.includes(formData.model)) {
-            formData.model = ''
-        }
-    } catch (err) {
-        console.error('Failed to load models:', err)
-        availableModels.value = []
-        toast({
-            title: 'Error',
-            description: 'Failed to load available models',
-            variant: 'error'
-        })
-    } finally {
-        loadingModels.value = false
-    }
-}
-
-// Handle provider change
-const onProviderChange = () => {
-    formData.model = '' // Reset model when provider changes
-    if (formData.provider && AIProviderNamesDefinition.includes(formData.provider as AIProviderNameDefinition)) {
-        loadAvailableModels(formData.provider as AIProviderNameDefinition)
+// Handle model selection change from ModelSelector
+const onModelSelectionChanged = (models: string[]) => {
+    if (models.length > 0) {
+        const [provider, model] = models[0].split(':')
+        formData.provider = provider as AIProviderNameDefinition
+        formData.model = model
     } else {
-        availableModels.value = []
+        formData.provider = '' as AIProviderNameDefinition
+        formData.model = ''
     }
 }
 
@@ -248,10 +190,8 @@ const initializeForm = () => {
             topK: props.deployment.options?.topK
         }
 
-        // Load models for the current provider
-        if (props.deployment.provider) {
-            loadAvailableModels(props.deployment.provider)
-        }
+        // Set the selected provider:model for ModelSelector
+        selectedProviderModel.value = `${props.deployment.provider}:${props.deployment.model}`
     } else {
         // Create mode
         formData.name = ''
@@ -263,7 +203,7 @@ const initializeForm = () => {
             topP: undefined,
             topK: undefined
         }
-        availableModels.value = []
+        selectedProviderModel.value = ''
     }
 }
 

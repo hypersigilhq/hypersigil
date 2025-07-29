@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model:open="isOpen">
+    <Dialog :open="isOpen" @update:open="(value) => emit('update:open', value)">
         <DialogContent class=" max-w-7xl h-screen m-0 p-2 rounded-none border-0 bg-background">
             <DialogHeader class="flex-shrink-0 border-b">
                 <DialogTitle>
@@ -88,77 +88,9 @@
                         </p>
                     </div>
 
-                    <div>
-                        <Label for="providerModel">Provider/Model (Select multiple)</Label>
-
-                        <!-- Warning for no models available that support file upload -->
-                        <div v-if="showNoFileUploadModelsWarning"
-                            class="p-3 bg-orange-50 border border-orange-200 rounded-md mb-3">
-                            <p class="text-sm text-orange-800">
-                                No models are available that support file upload. This prompt requires file upload
-                                support but no configured
-                                providers support this feature.
-                            </p>
-                        </div>
-
-                        <!-- Warning for no models available (regular) -->
-                        <div v-else-if="showRegularNoModelsWarning"
-                            class="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-3">
-                            <p class="text-sm text-yellow-800">
-                                You need to add LLM API keys in
-                                <button type="button" @click="router.push({ name: 'settings' })"
-                                    class="text-yellow-900 underline hover:text-yellow-700 font-medium">
-                                    Settings
-                                </button>
-                                to enable model selection.
-                            </p>
-                        </div>
-
-                        <div v-else class="border rounded-md p-3 min-h-[40px] bg-background">
-                            <div v-if="loadingModels" class="text-sm text-muted-foreground">
-                                Loading models...
-                            </div>
-                            <div v-else class="space-y-2">
-                                <div v-if="formData.providerModel.length > 0" class="flex flex-wrap gap-2 mb-3">
-                                    <div v-for="selectedModel in formData.providerModel" :key="selectedModel"
-                                        class="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground rounded-md text-sm">
-                                        {{ selectedModel }}
-                                        <button type="button" @click="removeModel(selectedModel)"
-                                            class="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5">
-                                            ×
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Search bar -->
-                                <div class="mb-3">
-                                    <Input v-model="modelSearchQuery" placeholder="Search providers and models..."
-                                        class="text-sm" @input="onSearchInput" />
-                                </div>
-
-                                <div class="max-h-48 overflow-y-auto space-y-1">
-                                    <template v-for="(models, provider) in filteredAvailableModels" :key="provider">
-                                        <div v-for="model in models" :key="`${provider}:${model}`"
-                                            class="flex items-center space-x-2 p-2 hover:bg-muted rounded-md cursor-pointer"
-                                            :class="{ 'bg-muted': formData.providerModel.includes(`${provider}:${model}`) }"
-                                            @click.stop="toggleModel(`${provider}:${model}`)">
-                                            <label class="text-sm cursor-pointer flex-1">
-                                                {{ provider }}: {{ model }}
-                                            </label>
-                                        </div>
-                                    </template>
-                                    <div v-if="Object.keys(filteredAvailableModels).length === 0 && modelSearchQuery"
-                                        class="text-sm text-muted-foreground p-2 text-center">
-                                        No models found matching "{{ modelSearchQuery }}"
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div v-if="!showNoModelsWarning && formData.providerModel.length === 0"
-                            class="text-sm text-red-500 mt-1">
-                            Please select at least one provider/model
-                        </div>
-                    </div>
+                    <ModelSelector v-model="formData.providerModel" label="Provider/Model (Select multiple)"
+                        :multiple="true" :supports-file-upload="promptData?.options?.acceptFileUpload === true"
+                        :preselected-models="formData.providerModel" @selection-changed="onModelSelectionChanged" />
 
                     <div class="space-y-3">
                         <Label>Execution Options (Optional)</Label>
@@ -241,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { Button } from '@/components/ui/button'
@@ -267,6 +199,7 @@ import {
 import { executionsApi, testDataApi, promptsApi } from '@/services/api-client'
 import PromptSelector from '@/components/prompts/PromptSelector.vue'
 import FileSelector from '@/components/files/FileSelector.vue'
+import { ModelSelector } from '@/components/ui/model-selector'
 
 const router = useRouter()
 
@@ -303,27 +236,16 @@ const props = withDefaults(defineProps<Props>(), {
     open: false
 })
 
-const scheduleExecutionDisabled = computed(() => {
-
-    if (props.mode === 'text' && (!formData.promptText.trim())) {
-        return true
-    }
-
-    return submitting.value || loadingModels.value || formData.providerModel.length === 0
-})
-
 const emit = defineEmits<Emits>()
 
 // Reactive state
 const submitting = ref(false)
-const loadingModels = ref(false)
 const loadingTestDataGroups = ref(false)
-const availableModels = ref<Record<string, string[]>>({})
 const testDataGroups = ref<Array<{ id: string; name: string }>>([])
 const successMessage = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
-const modelSearchQuery = ref('')
 const promptData = ref<any>(null)
+const isInitializing = ref(false)
 
 // Preview state
 const showPreviewDialog = ref(false)
@@ -349,48 +271,16 @@ const formData = reactive({
 })
 
 // Computed properties
-const isOpen = computed({
-    get: () => props.open,
-    set: (value) => emit('update:open', value)
-})
+const isOpen = computed(() => props.open)
 
 const isCloning = computed(() => !!props.sourceExecutionId)
 
-const filteredAvailableModels = computed(() => {
-    if (!modelSearchQuery.value.trim()) {
-        return availableModels.value
+const scheduleExecutionDisabled = computed(() => {
+    if (props.mode === 'text' && (!formData.promptText.trim())) {
+        return true
     }
 
-    const searchTerm = modelSearchQuery.value.toLowerCase()
-    const filtered: Record<string, string[]> = {}
-
-    for (const [provider, models] of Object.entries(availableModels.value)) {
-        const filteredModels = models.filter(model =>
-            provider.toLowerCase().includes(searchTerm) ||
-            model.toLowerCase().includes(searchTerm) ||
-            `${provider}:${model}`.toLowerCase().includes(searchTerm)
-        )
-
-        if (filteredModels.length > 0) {
-            filtered[provider] = filteredModels
-        }
-    }
-
-    return filtered
-})
-
-const showNoModelsWarning = computed(() => {
-    return !loadingModels.value && Object.keys(availableModels.value).length === 0
-})
-
-const showNoFileUploadModelsWarning = computed(() => {
-    const promptRequiresFileUpload = promptData.value?.options?.acceptFileUpload === true
-    return !loadingModels.value && Object.keys(availableModels.value).length === 0 && promptRequiresFileUpload
-})
-
-const showRegularNoModelsWarning = computed(() => {
-    const promptRequiresFileUpload = promptData.value?.options?.acceptFileUpload === true
-    return !loadingModels.value && Object.keys(availableModels.value).length === 0 && !promptRequiresFileUpload
+    return submitting.value || formData.providerModel.length === 0
 })
 
 const previewDisabled = computed(() => {
@@ -418,26 +308,17 @@ const loadPromptData = async (promptId: string) => {
     }
 }
 
-const loadModels = async () => {
-    loadingModels.value = true
-    try {
-        // Check if prompt supports file upload
-        const supportsFileUpload = promptData.value?.options?.acceptFileUpload === true
-        availableModels.value = await executionsApi.getAvailableModels({ supportsFileUpload })
-    } catch (err) {
-        console.error('Failed to load models:', err)
-    } finally {
-        loadingModels.value = false
-    }
-}
 
 const loadTestDataGroups = async () => {
+    if (loadingTestDataGroups.value) return // Prevent multiple simultaneous calls
+
     loadingTestDataGroups.value = true
     try {
         const response = await testDataApi.groups.selectList()
         testDataGroups.value = response.items
     } catch (err) {
         console.error('Failed to load test data groups:', err)
+        testDataGroups.value = []
     } finally {
         loadingTestDataGroups.value = false
     }
@@ -455,7 +336,6 @@ const resetForm = () => {
     formData.options.topK = 50
     successMessage.value = null
     errorMessage.value = null
-    modelSearchQuery.value = ''
 }
 
 const multipleUserInputs = computed(() => {
@@ -505,29 +385,14 @@ const populateForm = () => {
     }
 }
 
-const toggleModel = (modelValue: string) => {
-    const index = formData.providerModel.indexOf(modelValue)
-    if (index > -1) {
-        formData.providerModel.splice(index, 1)
-    } else {
-        formData.providerModel.push(modelValue)
-    }
-}
 
-const removeModel = (modelValue: string) => {
-    const index = formData.providerModel.indexOf(modelValue)
-    if (index > -1) {
-        formData.providerModel.splice(index, 1)
-    }
-}
-
-const onSearchInput = () => {
-    // The search filtering is handled by the computed property filteredAvailableModels
-    // This method can be used for additional search-related logic if needed
+const onModelSelectionChanged = (models: string[]) => {
+    // This method is called when the model selection changes
+    // The formData.providerModel is already updated via v-model
 }
 
 const closeDialog = () => {
-    isOpen.value = false
+    emit('update:open', false)
     successMessage.value = null
     errorMessage.value = null
 }
@@ -661,19 +526,26 @@ const submitScheduleExecution = async () => {
 
 // Watchers
 watch(() => props.open, async (newValue) => {
-    if (newValue) {
-        // Load prompt data first if promptId is provided
-        if (props.promptId) {
-            await loadPromptData(props.promptId)
-        }
+    if (newValue && !isInitializing.value) {
+        isInitializing.value = true
 
-        // Then load models (which will use the prompt data to determine file upload support)
-        loadModels()
+        await nextTick()
 
-        if (props.mode !== 'item') {
-            loadTestDataGroups()
+        try {
+            // Load prompt data first if promptId is provided
+            if (props.promptId) {
+                await loadPromptData(props.promptId)
+            }
+
+            // Models are now loaded by the ModelSelector component
+
+            if (props.mode !== 'item') {
+                await loadTestDataGroups()
+            }
+            populateForm()
+        } finally {
+            isInitializing.value = false
         }
-        populateForm()
     }
 })
 
@@ -681,7 +553,7 @@ watch(() => props.open, async (newValue) => {
 watch(() => formData.promptId, async (newPromptId) => {
     if (newPromptId && props.mode === 'item') {
         await loadPromptData(newPromptId)
-        loadModels()
+        // Models are now loaded by the ModelSelector component
     }
 })
 </script>
