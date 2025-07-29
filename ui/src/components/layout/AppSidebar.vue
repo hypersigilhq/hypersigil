@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import { Settings, User, FileText, Play, Database, PanelLeftClose, PanelLeftOpen, Terminal, File, Rocket } from 'lucide-vue-next'
+import { Settings, User, FileText, Play, Database, PanelLeftClose, PanelLeftOpen, Terminal, File, Rocket, Beaker } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import NavigationItem from './NavigationItem.vue'
 import { useAuth } from '@/composables/useAuth'
@@ -102,39 +102,53 @@ interface NavigationItemType {
 
 const { currentAlert } = useTopbarAlert()
 
-const navigationItems = computed<NavigationItemType[]>(() => [
-    {
-        name: 'Prompts',
-        path: '/prompts',
-        icon: FileText,
-    },
-    {
-        name: 'Executions',
-        path: '/executions',
-        icon: Play,
-    },
-    {
-        name: 'Test Data',
-        path: '/test-data',
-        icon: Database,
-    },
-    {
-        name: 'Files',
-        path: '/files',
-        icon: File,
-    },
-    {
-        name: 'Deployments',
-        path: '/deployments',
-        icon: Rocket,
-    },
-    {
-        name: 'Settings',
-        path: '/settings',
-        icon: Settings,
-        // badge: 'New'
-    },
-])
+const navigationItems = computed<NavigationItemType[]>(() => {
+    const items: NavigationItemType[] = [
+        {
+            name: 'Prompts',
+            path: '/prompts',
+            icon: FileText,
+        },
+        {
+            name: 'Executions',
+            path: '/executions',
+            icon: Play,
+        },
+        {
+            name: 'Test Data',
+            path: '/test-data',
+            icon: Database,
+        },
+        {
+            name: 'Files',
+            path: '/files',
+            icon: File,
+        },
+        {
+            name: 'Deployments',
+            path: '/deployments',
+            icon: Rocket,
+        },
+        {
+            name: 'Settings',
+            path: '/settings',
+            icon: Settings,
+            // badge: 'New'
+        },
+    ]
+
+    // Add playground tab only in development mode
+    if (import.meta.env.DEV) {
+        items.splice(-1, 0, {
+            name: 'Playground',
+            path: '/playground',
+            icon: Beaker,
+            badge: 'DEV'
+        })
+    }
+
+    return items
+})
 
 const emit = defineEmits<{
     navigate: []
