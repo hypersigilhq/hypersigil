@@ -6,11 +6,13 @@
 
 ## What is Hypersigil?
 
-**Hypersigil** is a comprehensive prompt management and AI orchestration platform designed to centralize, optimize, and streamline AI prompt workflows across organizations. It serves as the single source of truth for all AI prompts, enabling teams to collaborate effectively, test systematically, and deploy with confidence.
+**Hypersigil** is an AI prompt management platform that enables organizations to centralize, optimize, and dynamically deploy AI workflows across multiple providers. It provides a unified, collaborative environment for developing, testing, and hot-swapping prompts without code redeployments.
 
-Built for both technical and non-technical users, Hypersigil bridges the gap between domain experts and AI implementation, providing a collaborative environment where business stakeholders can directly contribute to prompt development without requiring coding knowledge. 
+Designed for both technical and non-technical users, Hypersigil bridges domain expertise and AI implementation through multimodal prompt management. It supports seamless transitions between different AI providers, models, and execution contexts, allowing teams to rapidly iterate and optimize AI-driven processes.
 
-Whether you're managing a few AI features or orchestrating complex multi-provider workflows, Hypersigil provides the infrastructure to develop, test, and maintain AI prompts at scale while ensuring quality, compliance, and cost efficiency.
+Key capabilities include real-time prompt hot-swapping, cross-provider orchestration, and intelligent workflow adaptation—empowering teams to build scalable, flexible AI solutions with unprecedented agility.
+
+![](docs/mov/demo.webp)
 
 ## Screenshots
 <p align="center">
@@ -27,7 +29,6 @@ Whether you're managing a few AI features or orchestrating complex multi-provide
 </p>
 
 🚧 The project is under heavy development, more fetures will be added soon. We're taking feature requests and welcome any contributions. 🚧
-
 
 ## Use Cases
 
@@ -93,7 +94,7 @@ Whether you're managing a few AI features or orchestrating complex multi-provide
 
 ## Full documentation
 
-hypersigilhq.github.io/hypersigil/introduction/
+https://hypersigilhq.github.io/hypersigil/introduction/
 
 REST API docs - https://hypersigilhq.github.io/hypersigil/api-reference/
 
