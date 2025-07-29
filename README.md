@@ -13,16 +13,16 @@ Built for both technical and non-technical users, Hypersigil bridges the gap bet
 Whether you're managing a few AI features or orchestrating complex multi-provider workflows, Hypersigil provides the infrastructure to develop, test, and maintain AI prompts at scale while ensuring quality, compliance, and cost efficiency.
 
 <p align="center">
-<img width="250" alt="Prompt view" src="docs/images/prompt-view.png" style="border:1px solid black; margin: 10px;"/>
-<img width="250" alt="Settings" src="docs/images/prompt-calibration.png" style="border:1px solid black; margin: 10px;" />
-<img width="250" alt="Settings" src="docs/images/execution-list.png" style="border:1px solid black; margin: 10px;" />
-<img width="250" alt="Settings" src="docs/images/execution-details.png" style="border:1px solid black; margin: 10px;" />
-<img width="250" alt="Settings" src="docs/images/execution-bundles.png" style="border:1px solid black; margin: 10px;" />
-<img width="250" alt="Settings" src="docs/images/schedule-execution.png" style="border:1px solid black; margin: 10px;" />
-<img width="250" alt="Settings" src="docs/images/art-crit-prompt.png" style="border:1px solid black; margin: 10px;" />
-<img width="250" alt="Settings" src="docs/images/art-crit-file.png" style="border:1px solid black; margin: 10px;" />
-<img width="250" alt="Settings" src="docs/images/art-crit-execution.png" style="border:1px solid black; margin: 10px;" />
-<img width="250" alt="Settings" src="docs/images/settings.png" style="border:1px solid black; margin: 10px;" />
+<a href="docs/images/prompt-view.png" target="_blank"><img width="250" alt="Prompt view" src="docs/images/min/prompt-view.png" style="border:1px solid black; margin: 10px;"/></a>
+<a href="docs/images/prompt-calibration.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/prompt-calibration.png" style="border:1px solid black; margin: 10px;" /></a>
+<a href="docs/images/execution-list.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/execution-list.png" style="border:1px solid black; margin: 10px;" /></a>
+<a href="docs/images/execution-details.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/execution-details.png" style="border:1px solid black; margin: 10px;" /></a>
+<a href="docs/images/execution-bundles.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/execution-bundles.png" style="border:1px solid black; margin: 10px;" /></a>
+<a href="docs/images/schedule-execution.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/schedule-execution.png" style="border:1px solid black; margin: 10px;" /></a>
+<a href="docs/images/art-crit-prompt.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/art-crit-prompt.png" style="border:1px solid black; margin: 10px;" /></a>
+<a href="docs/images/art-crit-file.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/art-crit-file.png" style="border:1px solid black; margin: 10px;" /></a>
+<a href="docs/images/art-crit-execution.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/art-crit-execution.png" style="border:1px solid black; margin: 10px;" /></a>
+<a href="docs/images/settings.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/settings.png" style="border:1px solid black; margin: 10px;" /></a>
 </p>
 
 ## Use Cases
