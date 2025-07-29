@@ -101,6 +101,7 @@ nav:
     - Executions: executions.md
     - Test Data: test-data.md
     - Files: files.md
+    - Deployments: deployments.md
     - Settings: settings.md
   - API Reference: api-reference.md
 

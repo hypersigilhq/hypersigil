@@ -46,7 +46,8 @@ Hypersigil transforms prompt engineering from an art into a scientific process b
 3. **[Executions](executions.md)** - Explore the testing and execution system
 4. **[Test Data](test-data.md)** - Manage your test datasets effectively
 5. **[Files](files.md)** - Upload and manage files for multimodal AI testing
-6. **[Settings](settings.md)** - Configure users, API access, and system settings
+6. **[Deployments](deployments.md)** - Create production-ready prompt execution endpoints
+7. **[Settings](settings.md)** - Configure users, API access, and system settings
 
 ## Quick Start Guide
 
