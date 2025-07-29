@@ -36,135 +36,87 @@ function formatSingleApiKey(key: ApiKeyDocument): PublicApiKey {
 RegisterHandlers(app, ApiKeyApiDefinition, {
     apiKeys: {
         list: async (req, res) => {
-            try {
-                const userId = req.user!.id;
-                const apiKeys = await apiKeyModel.findByUserId(userId);
+            const userId = req.user!.id;
+            const apiKeys = await apiKeyModel.findByUserId(userId);
 
-                const publicApiKeys = formatApiKeyToPublic(apiKeys);
+            const publicApiKeys = formatApiKeyToPublic(apiKeys);
 
-                res.respond(200, { api_keys: publicApiKeys });
-            } catch (error) {
-                console.error('Error listing API keys:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to list API keys'
-                });
-            }
+            res.respond(200, { api_keys: publicApiKeys });
         },
 
         create: async (req, res) => {
-            try {
-                const userId = req.user!.id;
-                const { name, scopes } = req.body;
+            const userId = req.user!.id;
+            const { name, scopes } = req.body;
 
-                const { document, plainKey } = await apiKeyModel.createApiKey(userId, name, scopes);
+            const { document, plainKey } = await apiKeyModel.createApiKey(userId, name, scopes);
 
-                const publicApiKey = formatApiKeyToPublic(document);
+            const publicApiKey = formatApiKeyToPublic(document);
 
-                res.respond(201, {
-                    api_key: publicApiKey,
-                    plain_key: plainKey
-                });
-            } catch (error) {
-                console.error('Error creating API key:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to create API key'
-                });
-            }
+            res.respond(201, {
+                api_key: publicApiKey,
+                plain_key: plainKey
+            });
         },
 
         get: async (req, res) => {
-            try {
-                const userId = req.user!.id;
-                const { id } = req.params;
+            const userId = req.user!.id;
+            const { id } = req.params;
 
-                const apiKey = await apiKeyModel.findById(id);
-                if (!apiKey || apiKey.user_id !== userId) {
-                    res.respond(404, {
-                        error: 'Not Found',
-                        message: 'API key not found'
-                    });
-                    return;
-                }
-
-                const publicApiKey = formatApiKeyToPublic(apiKey);
-
-                res.respond(200, publicApiKey);
-            } catch (error) {
-                console.error('Error getting API key:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to get API key'
+            const apiKey = await apiKeyModel.findById(id);
+            if (!apiKey || apiKey.user_id !== userId) {
+                res.respond(404, {
+                    error: 'Not Found',
+                    message: 'API key not found'
                 });
+                return;
             }
+
+            const publicApiKey = formatApiKeyToPublic(apiKey);
+
+            res.respond(200, publicApiKey);
         },
 
         update: async (req, res) => {
-            try {
-                const userId = req.user!.id;
-                const { id } = req.params;
-                const { name } = req.body;
+            const userId = req.user!.id;
+            const { id } = req.params;
+            const { name } = req.body;
 
-                const updatedApiKey = await apiKeyModel.updateName(id, userId, name);
-                if (!updatedApiKey) {
-                    res.respond(404, {
-                        error: 'Not Found',
-                        message: 'API key not found'
-                    });
-                    return;
-                }
-
-                const publicApiKey = formatApiKeyToPublic(updatedApiKey);
-
-                res.respond(200, publicApiKey);
-            } catch (error) {
-                console.error('Error updating API key:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to update API key'
+            const updatedApiKey = await apiKeyModel.updateName(id, userId, name);
+            if (!updatedApiKey) {
+                res.respond(404, {
+                    error: 'Not Found',
+                    message: 'API key not found'
                 });
+                return;
             }
+
+            const publicApiKey = formatApiKeyToPublic(updatedApiKey);
+
+            res.respond(200, publicApiKey);
         },
 
         revoke: async (req, res) => {
-            try {
-                const userId = req.user!.id;
-                const { id } = req.params;
+            const userId = req.user!.id;
+            const { id } = req.params;
 
-                const revokedApiKey = await apiKeyModel.revokeApiKey(id, userId);
-                if (!revokedApiKey) {
-                    res.respond(404, {
-                        error: 'Not Found',
-                        message: 'API key not found'
-                    });
-                    return;
-                }
-
-                const publicApiKey = formatApiKeyToPublic(revokedApiKey);
-
-                res.respond(200, publicApiKey);
-            } catch (error) {
-                console.error('Error revoking API key:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to revoke API key'
+            const revokedApiKey = await apiKeyModel.revokeApiKey(id, userId);
+            if (!revokedApiKey) {
+                res.respond(404, {
+                    error: 'Not Found',
+                    message: 'API key not found'
                 });
+                return;
             }
+
+            const publicApiKey = formatApiKeyToPublic(revokedApiKey);
+
+            res.respond(200, publicApiKey);
         },
 
         stats: async (req, res) => {
-            try {
-                const userId = req.user!.id;
-                const stats = await apiKeyModel.getUserApiKeyStats(userId);
-                res.respond(200, stats);
-            } catch (error) {
-                console.error('Error getting API key stats:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to get API key statistics'
-                });
-            }
+            const userId = req.user!.id;
+            const stats = await apiKeyModel.getUserApiKeyStats(userId);
+            res.respond(200, stats);
         }
     }
 }, [loggingMiddleware, timingMiddleware, authMiddleware]);

@@ -37,450 +37,356 @@ RegisterHandlers(app, TestDataApiDefinition, {
             })
         },
         list: async (req, res) => {
-            try {
-                const { page, limit, search, orderBy, orderDirection } = req.query;
+            const { page, limit, search, orderBy, orderDirection } = req.query;
 
-                const result = await testDataGroupModel.findWithSearch({
-                    page,
-                    limit,
-                    search,
-                    orderBy,
-                    orderDirection
+            const result = await testDataGroupModel.findWithSearch({
+                page,
+                limit,
+                search,
+                orderBy,
+                orderDirection
+            });
+
+            const formattedResult = {
+                ...result,
+                data: result.data.map(formatTestDataGroupForResponse)
+            };
+
+            res.respond(200, formattedResult);
+        },
+        create: async (req, res) => {
+            const { name, description, mode } = req.body;
+
+            // Check if group with same name already exists
+            const existingGroup = await testDataGroupModel.findByName(name);
+            if (existingGroup) {
+                res.respond(400, {
+                    error: 'Validation error',
+                    message: 'A test data group with this name already exists'
                 });
-
-                const formattedResult = {
-                    ...result,
-                    data: result.data.map(formatTestDataGroupForResponse)
-                };
-
-                res.respond(200, formattedResult);
-            } catch (error) {
-                console.error('Error listing test data groups:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to list test data groups'
-                });
+                return;
             }
+
+            const groupData: TestDataGroup = { name, mode };
+            if (description !== undefined) {
+                groupData.description = description;
+            }
+
+            const newGroup = await testDataGroupModel.create(groupData);
+
+            res.respond(201, formatTestDataGroupForResponse(newGroup));
         },
 
-        create: async (req, res) => {
-            try {
-                const { name, description, mode } = req.body;
+        getById: async (req, res) => {
+            const { id } = req.params;
 
-                // Check if group with same name already exists
-                const existingGroup = await testDataGroupModel.findByName(name);
-                if (existingGroup) {
+            const group = await testDataGroupModel.findById(id);
+            if (!group) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data group not found'
+                });
+                return;
+            }
+
+            res.respond(200, formatTestDataGroupForResponse(group));
+        },
+
+        update: async (req, res) => {
+            const { id } = req.params;
+            const { name, description } = req.body;
+
+            // Check if group exists
+            const existingGroup = await testDataGroupModel.findById(id);
+            if (!existingGroup) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data group not found'
+                });
+                return;
+            }
+
+            // Check if name is being changed and if new name already exists
+            if (name && name !== existingGroup.name) {
+                const groupWithSameName = await testDataGroupModel.findByName(name);
+                if (groupWithSameName) {
                     res.respond(400, {
                         error: 'Validation error',
                         message: 'A test data group with this name already exists'
                     });
                     return;
                 }
-
-                const groupData: TestDataGroup = { name, mode };
-                if (description !== undefined) {
-                    groupData.description = description;
-                }
-
-                const newGroup = await testDataGroupModel.create(groupData);
-
-                res.respond(201, formatTestDataGroupForResponse(newGroup));
-            } catch (error) {
-                console.error('Error creating test data group:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to create test data group'
-                });
             }
-        },
 
-        getById: async (req, res) => {
-            try {
-                const { id } = req.params;
-
-                const group = await testDataGroupModel.findById(id);
-                if (!group) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data group not found'
-                    });
-                    return;
-                }
-
-                res.respond(200, formatTestDataGroupForResponse(group));
-            } catch (error) {
-                console.error('Error getting test data group:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to get test data group'
-                });
+            const updateData: any = {};
+            if (name !== undefined) {
+                updateData.name = name;
             }
-        },
-
-        update: async (req, res) => {
-            try {
-                const { id } = req.params;
-                const { name, description } = req.body;
-
-                // Check if group exists
-                const existingGroup = await testDataGroupModel.findById(id);
-                if (!existingGroup) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data group not found'
-                    });
-                    return;
-                }
-
-                // Check if name is being changed and if new name already exists
-                if (name && name !== existingGroup.name) {
-                    const groupWithSameName = await testDataGroupModel.findByName(name);
-                    if (groupWithSameName) {
-                        res.respond(400, {
-                            error: 'Validation error',
-                            message: 'A test data group with this name already exists'
-                        });
-                        return;
-                    }
-                }
-
-                const updateData: any = {};
-                if (name !== undefined) {
-                    updateData.name = name;
-                }
-                if (description !== undefined) {
-                    updateData.description = description;
-                }
-
-                const updatedGroup = await testDataGroupModel.update(id, updateData);
-
-                if (!updatedGroup) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data group not found'
-                    });
-                    return;
-                }
-
-                res.respond(200, formatTestDataGroupForResponse(updatedGroup));
-            } catch (error) {
-                console.error('Error updating test data group:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to update test data group'
-                });
+            if (description !== undefined) {
+                updateData.description = description;
             }
+
+            const updatedGroup = await testDataGroupModel.update(id, updateData);
+
+            if (!updatedGroup) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data group not found'
+                });
+                return;
+            }
+
+            res.respond(200, formatTestDataGroupForResponse(updatedGroup));
         },
 
         delete: async (req, res) => {
-            try {
-                const { id } = req.params;
+            const { id } = req.params;
 
-                // Check if group exists
-                const existingGroup = await testDataGroupModel.findById(id);
-                if (!existingGroup) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data group not found'
-                    });
-                    return;
-                }
-
-                // Delete all items in the group first (cascade delete)
-                await testDataItemModel.deleteByGroupId(id);
-
-                // Delete the group
-                const deleted = await testDataGroupModel.delete(id);
-                if (!deleted) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data group not found'
-                    });
-                    return;
-                }
-
-                res.respond(204, {});
-            } catch (error) {
-                console.error('Error deleting test data group:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to delete test data group'
+            // Check if group exists
+            const existingGroup = await testDataGroupModel.findById(id);
+            if (!existingGroup) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data group not found'
                 });
+                return;
             }
+
+            // Delete all items in the group first (cascade delete)
+            await testDataItemModel.deleteByGroupId(id);
+
+            // Delete the group
+            const deleted = await testDataGroupModel.delete(id);
+            if (!deleted) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data group not found'
+                });
+                return;
+            }
+
+            res.respond(204, {});
+
         },
 
         listItems: async (req, res) => {
-            try {
-                const { groupId } = req.params;
-                const { page, limit, search, orderBy, orderDirection } = req.query;
+            const { groupId } = req.params;
+            const { page, limit, search, orderBy, orderDirection } = req.query;
 
-                // Check if group exists
-                const group = await testDataGroupModel.findById(groupId);
-                if (!group) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data group not found'
-                    });
-                    return;
-                }
-
-                const result = await testDataItemModel.findByGroupWithSearch({
-                    groupId,
-                    page,
-                    limit,
-                    search,
-                    orderBy,
-                    orderDirection
+            // Check if group exists
+            const group = await testDataGroupModel.findById(groupId);
+            if (!group) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data group not found'
                 });
-
-                const formattedResult = {
-                    ...result,
-                    data: result.data.map(formatTestDataItemForResponse)
-                };
-
-                res.respond(200, formattedResult);
-            } catch (error) {
-                console.error('Error listing test data items:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to list test data items'
-                });
+                return;
             }
+
+            const result = await testDataItemModel.findByGroupWithSearch({
+                groupId,
+                page,
+                limit,
+                search,
+                orderBy,
+                orderDirection
+            });
+
+            const formattedResult = {
+                ...result,
+                data: result.data.map(formatTestDataItemForResponse)
+            };
+
+            res.respond(200, formattedResult);
         },
 
         createItem: async (req, res) => {
-            try {
-                const { groupId } = req.params;
-                const { name, content } = req.body;
+            const { groupId } = req.params;
+            const { name, content } = req.body;
 
-                // Check if group exists
-                const group = await testDataGroupModel.findById(groupId);
-                if (!group) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data group not found'
+            // Check if group exists
+            const group = await testDataGroupModel.findById(groupId);
+            if (!group) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data group not found'
+                });
+                return;
+            }
+
+            if (group.mode === 'json') {
+                try {
+                    JSON.parse(content)
+                } catch (e) {
+                    res.respond(400, {
+                        error: 'Invalid format',
+                        message: 'Expected JSON format'
                     });
                     return;
                 }
+            }
 
-                if (group.mode === 'json') {
+            const itemData: any = {
+                group_id: groupId,
+                content
+            };
+            if (name !== undefined) {
+                itemData.name = name;
+            }
+
+            const newItem = await testDataItemModel.create(itemData);
+
+            res.respond(201, formatTestDataItemForResponse(newItem));
+        },
+
+        bulkCreateItems: async (req, res) => {
+            const { groupId } = req.params;
+            const { items } = req.body;
+
+            // Check if group exists
+            const group = await testDataGroupModel.findById(groupId);
+            if (!group) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data group not found'
+                });
+                return;
+            }
+
+
+            if (group.mode === 'json') {
+                for (let i of items) {
                     try {
-                        JSON.parse(content)
+                        JSON.parse(i.content)
                     } catch (e) {
                         res.respond(400, {
                             error: 'Invalid format',
-                            message: 'Expected JSON format'
+                            message: 'Expected JSON format in: ' + i.name
                         });
                         return;
                     }
                 }
+            }
 
+            // Add group_id to each item and filter undefined values
+            const itemsWithGroupId = items.map(item => {
                 const itemData: any = {
                     group_id: groupId,
-                    content
+                    content: item.content
                 };
-                if (name !== undefined) {
-                    itemData.name = name;
+                if (item.name !== undefined) {
+                    itemData.name = item.name;
                 }
+                return itemData;
+            });
 
-                const newItem = await testDataItemModel.create(itemData);
+            const result = await testDataItemModel.bulkCreate(itemsWithGroupId);
 
-                res.respond(201, formatTestDataItemForResponse(newItem));
-            } catch (error) {
-                console.error('Error creating test data item:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to create test data item'
-                });
-            }
-        },
+            const response = {
+                created: result.created.map(formatTestDataItemForResponse),
+                errors: result.errors
+            };
 
-        bulkCreateItems: async (req, res) => {
-            try {
-                const { groupId } = req.params;
-                const { items } = req.body;
-
-                // Check if group exists
-                const group = await testDataGroupModel.findById(groupId);
-                if (!group) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data group not found'
-                    });
-                    return;
-                }
-
-
-                if (group.mode === 'json') {
-                    for (let i of items) {
-                        try {
-                            JSON.parse(i.content)
-                        } catch (e) {
-                            res.respond(400, {
-                                error: 'Invalid format',
-                                message: 'Expected JSON format in: ' + i.name
-                            });
-                            return;
-                        }
-                    }
-                }
-
-                // Add group_id to each item and filter undefined values
-                const itemsWithGroupId = items.map(item => {
-                    const itemData: any = {
-                        group_id: groupId,
-                        content: item.content
-                    };
-                    if (item.name !== undefined) {
-                        itemData.name = item.name;
-                    }
-                    return itemData;
-                });
-
-                const result = await testDataItemModel.bulkCreate(itemsWithGroupId);
-
-                const response = {
-                    created: result.created.map(formatTestDataItemForResponse),
-                    errors: result.errors
-                };
-
-                res.respond(201, response);
-            } catch (error) {
-                console.error('Error bulk creating test data items:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to bulk create test data items'
-                });
-            }
+            res.respond(201, response);
         }
     },
 
     items: {
         getById: async (req, res) => {
-            try {
-                const { id } = req.params;
+            const { id } = req.params;
 
-                const item = await testDataItemModel.findById(id);
-                if (!item) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data item not found'
-                    });
-                    return;
-                }
-
-                res.respond(200, formatTestDataItemForResponse(item));
-            } catch (error) {
-                console.error('Error getting test data item:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to get test data item'
+            const item = await testDataItemModel.findById(id);
+            if (!item) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data item not found'
                 });
+                return;
             }
+
+            res.respond(200, formatTestDataItemForResponse(item));
+
         },
 
         update: async (req, res) => {
-            try {
-                const { id } = req.params;
-                const { name, content } = req.body;
+            const { id } = req.params;
+            const { name, content } = req.body;
 
-                const updateData: any = {};
-                if (name !== undefined) {
-                    updateData.name = name;
-                }
-                if (content !== undefined) {
-                    updateData.content = content;
-                }
-
-                const updatedItem = await testDataItemModel.update(id, updateData);
-
-                if (!updatedItem) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data item not found'
-                    });
-                    return;
-                }
-
-                res.respond(200, formatTestDataItemForResponse(updatedItem));
-            } catch (error) {
-                console.error('Error updating test data item:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to update test data item'
-                });
+            const updateData: any = {};
+            if (name !== undefined) {
+                updateData.name = name;
             }
+            if (content !== undefined) {
+                updateData.content = content;
+            }
+
+            const updatedItem = await testDataItemModel.update(id, updateData);
+
+            if (!updatedItem) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data item not found'
+                });
+                return;
+            }
+
+            res.respond(200, formatTestDataItemForResponse(updatedItem));
+
         },
 
         delete: async (req, res) => {
-            try {
-                const { id } = req.params;
+            const { id } = req.params;
 
-                const deleted = await testDataItemModel.delete(id);
-                if (!deleted) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data item not found'
-                    });
-                    return;
-                }
-
-                res.respond(204, {});
-            } catch (error) {
-                console.error('Error deleting test data item:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to delete test data item'
+            const deleted = await testDataItemModel.delete(id);
+            if (!deleted) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data item not found'
                 });
+                return;
             }
+
+            res.respond(204, {});
         },
 
         compilePrompt: async (req, res) => {
-            try {
-                const { promptId, testDataItemId, promptVersion } = req.body;
+            const { promptId, testDataItemId, promptVersion } = req.body;
 
-                // Get the prompt
-                const prompt = await promptModel.findById(promptId);
-                if (!prompt) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Prompt not found'
-                    });
-                    return;
-                }
-
-                // Get the test data item
-                const testDataItem = await testDataItemModel.findById(testDataItemId);
-                if (!testDataItem) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: 'Test data item not found'
-                    });
-                    return;
-                }
-
-                // Get the specific prompt version or use current version
-                const versionToUse = promptVersion || prompt.current_version;
-                const promptVersionData = promptModel.getVersion(prompt, versionToUse);
-
-                if (!promptVersionData) {
-                    res.respond(404, {
-                        error: 'Not found',
-                        message: `Prompt version ${versionToUse} not found`
-                    });
-                    return;
-                }
-
-                const result = promptService.compilePromptVersion(testDataItem, promptVersionData);
-
-                res.respond(200, result);
-            } catch (error) {
-                console.error('Error compiling prompt:', error);
-                res.respond(500, {
-                    error: 'Internal server error',
-                    message: 'Failed to compile prompt'
+            // Get the prompt
+            const prompt = await promptModel.findById(promptId);
+            if (!prompt) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Prompt not found'
                 });
+                return;
             }
+
+            // Get the test data item
+            const testDataItem = await testDataItemModel.findById(testDataItemId);
+            if (!testDataItem) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: 'Test data item not found'
+                });
+                return;
+            }
+
+            // Get the specific prompt version or use current version
+            const versionToUse = promptVersion || prompt.current_version;
+            const promptVersionData = promptModel.getVersion(prompt, versionToUse);
+
+            if (!promptVersionData) {
+                res.respond(404, {
+                    error: 'Not found',
+                    message: `Prompt version ${versionToUse} not found`
+                });
+                return;
+            }
+
+            const result = promptService.compilePromptVersion(testDataItem, promptVersionData);
+
+            res.respond(200, result);
         }
     }
 }, [loggingMiddleware, timingMiddleware, authMiddleware]);

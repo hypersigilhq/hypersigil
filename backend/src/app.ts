@@ -10,6 +10,23 @@ import { apiKeyModel, Permission } from './models/api-key';
 import { ExecutionApiDefinition } from './api/definitions/execution';
 import { PromptApiDefinition } from './api/definitions/prompt';
 import { FileApiDefinition } from './api/definitions/file';
+import { DeploymentApiDefinition } from './api/definitions/deployment';
+
+// Global error handlers
+process.on('uncaughtException', (error: Error) => {
+    console.error('Uncaught Exception:', error);
+    console.error('Stack:', error.stack);
+    // Graceful shutdown
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+    console.error('Unhandled Rejection at:', promise);
+    console.error('Reason:', reason);
+    // Graceful shutdown
+    process.exit(1);
+});
+
 const app = express();
 
 // Basic middleware
@@ -63,6 +80,9 @@ app.get('/api/json-schema', (req, res) => {
         },
         {
             prefix: FileApiDefinition.prefix, endpoints: { files: pick(FileApiDefinition.endpoints.files, ['create']) }
+        },
+        {
+            prefix: DeploymentApiDefinition.prefix, endpoints: { deployments: pick(DeploymentApiDefinition.endpoints.deployments, ['run']) }
         }
     ], {
         info: {
@@ -271,5 +291,31 @@ export const apiKeyMiddleware = <T extends ApiDefinitionSchema>(fn: (scopes: Per
         }
     };
 };
+
+// Express error handling middleware (must be last)
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Express error handler caught:', err);
+    console.error('Stack:', err.stack);
+    console.error('Request:', {
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        body: req.body
+    });
+
+    // Don't expose internal errors in production
+    const isDev = isDevelopment;
+
+    if (res.headersSent) {
+        // If response headers were already sent, delegate to default Express error handler
+        return next(err);
+    }
+
+    res.status(500).json({
+        error: 'Internal Server Error',
+        message: isDev ? err.message : 'Something went wrong',
+        ...(isDev && { stack: err.stack })
+    });
+});
 
 export default app;

@@ -33,282 +33,150 @@ function formatPromptForResponse(prompt: Prompt): PromptResponse {
 RegisterHandlers(app, PromptApiDefinition, {
     prompts: {
         selectList: async (req, res) => {
-            try {
-                const prompts = await promptModel.findAll();
-                const selectList = {
-                    items: prompts
-                        .filter(prompt => prompt.id) // Filter out any prompts without id
-                        .map(prompt => ({
-                            id: prompt.id!,
-                            name: prompt.name
-                        }))
-                };
+            const prompts = await promptModel.findAll();
+            const selectList = {
+                items: prompts
+                    .filter(prompt => prompt.id) // Filter out any prompts without id
+                    .map(prompt => ({
+                        id: prompt.id!,
+                        name: prompt.name
+                    }))
+            };
 
-                res.respond(200, selectList);
-            } catch (error) {
-                console.error('Error getting prompt select list:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to retrieve prompt select list'
-                });
-            }
+            res.respond(200, selectList);
         },
 
         list: async (req, res) => {
-            try {
-                const { page, limit, search, orderBy, orderDirection } = req.query;
+            const { page, limit, search, orderBy, orderDirection } = req.query;
 
-                const result = await promptModel.findWithSearch({
-                    page: page || 1,
-                    limit: limit || 10,
-                    search,
-                    orderBy,
-                    orderDirection
-                });
+            const result = await promptModel.findWithSearch({
+                page: page || 1,
+                limit: limit || 10,
+                search,
+                orderBy,
+                orderDirection
+            });
 
-                const formattedResult = {
-                    ...result,
-                    data: result.data.map(formatPromptForResponse)
-                };
+            const formattedResult = {
+                ...result,
+                data: result.data.map(formatPromptForResponse)
+            };
 
-                res.respond(200, formattedResult);
-            } catch (error) {
-                console.error('Error listing prompts:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to retrieve prompts'
-                });
-            }
+            res.respond(200, formattedResult);
         },
 
         create: async (req, res) => {
-            try {
 
-                const existingPrompt = await promptModel.findByName(req.body.name);
-                if (existingPrompt) {
+            const existingPrompt = await promptModel.findByName(req.body.name);
+            if (existingPrompt) {
+                return res.respond(400, {
+                    error: 'Validation Error',
+                    message: 'A prompt with this name already exists'
+                });
+            }
+
+            const newPrompt = await promptModel.create(req.body);
+
+            res.respond(201, formatPromptForResponse(newPrompt));
+        },
+
+        getById: async (req, res) => {
+            const { id } = req.params;
+
+            const prompt = await promptModel.findById(id);
+            if (!prompt) {
+                return res.respond(404, {
+                    error: 'Not Found',
+                    message: 'Prompt not found'
+                });
+            }
+
+            res.respond(200, formatPromptForResponse(prompt));
+        },
+
+        update: async (req, res) => {
+            const { id } = req.params;
+            const updateData = req.body;
+
+            const existingPrompt = await promptModel.findById(id);
+            if (!existingPrompt) {
+                return res.respond(404, {
+                    error: 'Not Found',
+                    message: 'Prompt not found'
+                });
+            }
+
+            if (updateData.name && updateData.name !== existingPrompt.name) {
+                const nameConflict = await promptModel.findByName(updateData.name);
+                if (nameConflict) {
                     return res.respond(400, {
                         error: 'Validation Error',
                         message: 'A prompt with this name already exists'
                     });
                 }
+            }
 
-                const newPrompt = await promptModel.create(req.body);
+            const filteredUpdateData = Object.fromEntries(
+                Object.entries(updateData).filter(([_, value]) => value !== undefined)
+            );
 
-                res.respond(201, formatPromptForResponse(newPrompt));
-            } catch (error) {
-                console.error('Error creating prompt:', error);
-
-                if (error instanceof z.ZodError) {
-                    return res.respond(400, {
-                        error: 'Validation Error',
-                        message: 'Invalid input data',
-                        details: error.issues
-                    });
-                }
-
-                if (error instanceof Error && error.message.includes('Invalid JSON schema')) {
-                    return res.respond(400, {
-                        error: 'Validation Error',
-                        message: error.message
-                    });
-                }
-
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to create prompt'
+            const updatedPrompt = await promptModel.update(id, filteredUpdateData);
+            if (!updatedPrompt) {
+                return res.respond(404, {
+                    error: 'Not Found',
+                    message: 'Prompt not found'
                 });
             }
-        },
 
-        getById: async (req, res) => {
-            try {
-                const { id } = req.params;
-
-                const prompt = await promptModel.findById(id);
-                if (!prompt) {
-                    return res.respond(404, {
-                        error: 'Not Found',
-                        message: 'Prompt not found'
-                    });
-                }
-
-                res.respond(200, formatPromptForResponse(prompt));
-            } catch (error) {
-                console.error('Error getting prompt by ID:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to retrieve prompt'
-                });
-            }
-        },
-
-        update: async (req, res) => {
-            try {
-                const { id } = req.params;
-                const updateData = req.body;
-
-                const existingPrompt = await promptModel.findById(id);
-                if (!existingPrompt) {
-                    return res.respond(404, {
-                        error: 'Not Found',
-                        message: 'Prompt not found'
-                    });
-                }
-
-                if (updateData.name && updateData.name !== existingPrompt.name) {
-                    const nameConflict = await promptModel.findByName(updateData.name);
-                    if (nameConflict) {
-                        return res.respond(400, {
-                            error: 'Validation Error',
-                            message: 'A prompt with this name already exists'
-                        });
-                    }
-                }
-
-                const filteredUpdateData = Object.fromEntries(
-                    Object.entries(updateData).filter(([_, value]) => value !== undefined)
-                );
-
-                const updatedPrompt = await promptModel.update(id, filteredUpdateData);
-                if (!updatedPrompt) {
-                    return res.respond(404, {
-                        error: 'Not Found',
-                        message: 'Prompt not found'
-                    });
-                }
-
-                res.respond(200, formatPromptForResponse(updatedPrompt));
-            } catch (error) {
-                console.error('Error updating prompt:', error);
-
-                if (error instanceof z.ZodError) {
-                    return res.respond(400, {
-                        error: 'Validation Error',
-                        message: 'Invalid input data',
-                        details: error.issues
-                    });
-                }
-
-                if (error instanceof Error && error.message.includes('Invalid JSON schema')) {
-                    return res.respond(400, {
-                        error: 'Validation Error',
-                        message: error.message
-                    });
-                }
-
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to update prompt'
-                });
-            }
+            res.respond(200, formatPromptForResponse(updatedPrompt));
         },
 
         delete: async (req, res) => {
-            try {
-                const { id } = req.params;
+            const { id } = req.params;
 
-                const deleted = await promptModel.delete(id);
-                if (!deleted) {
-                    return res.respond(404, {
-                        error: 'Not Found',
-                        message: 'Prompt not found'
-                    });
-                }
-
-                res.respond(204, {});
-            } catch (error) {
-                console.error('Error deleting prompt:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to delete prompt'
+            const deleted = await promptModel.delete(id);
+            if (!deleted) {
+                return res.respond(404, {
+                    error: 'Not Found',
+                    message: 'Prompt not found'
                 });
             }
+
+            res.respond(204, {});
         },
 
         searchByName: async (req, res) => {
-            try {
-                const { pattern } = req.params;
+            const { pattern } = req.params;
 
-                const prompts = await promptModel.searchByName(pattern);
-                const formattedPrompts = prompts.map(formatPromptForResponse);
+            const prompts = await promptModel.searchByName(pattern);
+            const formattedPrompts = prompts.map(formatPromptForResponse);
 
-                res.respond(200, formattedPrompts);
-            } catch (error) {
-                console.error('Error searching prompts by name:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to search prompts'
-                });
-            }
+            res.respond(200, formattedPrompts);
         },
 
         getRecent: async (req, res) => {
-            try {
-                const { limit } = req.query;
+            const { limit } = req.query;
 
-                const prompts = await promptModel.getRecent(limit || 10);
-                const formattedPrompts = prompts.map(formatPromptForResponse);
+            const prompts = await promptModel.getRecent(limit || 10);
+            const formattedPrompts = prompts.map(formatPromptForResponse);
 
-                res.respond(200, formattedPrompts);
-            } catch (error) {
-                console.error('Error getting recent prompts:', error);
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to retrieve recent prompts'
-                });
-            }
+            res.respond(200, formattedPrompts);
         },
 
         generateAdjustment: async (req, res) => {
-            try {
-                const { id } = req.params;
-                const { commentIds, summarize } = req.body;
+            const { id } = req.params;
+            const { commentIds, summarize } = req.body;
 
-                // Validate input
-                if (!commentIds || commentIds.length === 0) {
-                    return res.respond(400, {
-                        error: 'Validation Error',
-                        message: 'At least one comment ID must be provided'
-                    });
-                }
-
-                const result = await promptAdjustmentService.generateAdjustmentPrompt(commentIds, id, summarize);
-                res.respond(200, result);
-            } catch (error) {
-                console.error('Error generating adjustment prompt:', error);
-
-                if (error instanceof z.ZodError) {
-                    return res.respond(400, {
-                        error: 'Validation Error',
-                        message: 'Invalid input data',
-                        details: error.issues
-                    });
-                }
-
-                if (error instanceof Error) {
-                    // Handle specific error cases
-                    if (error.message.includes('not found')) {
-                        return res.respond(404, {
-                            error: 'Not Found',
-                            message: error.message
-                        });
-                    }
-
-                    if (error.message.includes('does not belong to prompt') ||
-                        error.message.includes('has not completed successfully') ||
-                        error.message.includes('has no result')) {
-                        return res.respond(400, {
-                            error: 'Validation Error',
-                            message: error.message
-                        });
-                    }
-                }
-
-                res.respond(500, {
-                    error: 'Internal Server Error',
-                    message: 'Failed to generate adjustment prompt'
+            // Validate input
+            if (!commentIds || commentIds.length === 0) {
+                return res.respond(400, {
+                    error: 'Validation Error',
+                    message: 'At least one comment ID must be provided'
                 });
             }
+
+            const result = await promptAdjustmentService.generateAdjustmentPrompt(commentIds, id, summarize);
+            res.respond(200, result);
         },
 
         preview: async (req, res) => {

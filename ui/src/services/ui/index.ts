@@ -11,7 +11,7 @@ export { useTopbarAlert } from '@/components/ui/alert'
 export type { AlertOptions, AlertItem } from '@/components/ui/alert'
 
 // Re-export event bus functionality
-export { useEventBus, useEventListener, events } from '../events'
+export { useEventBus, useEventListener } from '../events'
 export type { EventMap, EventListener } from '../events'
 
 // Combined UI service for convenience
