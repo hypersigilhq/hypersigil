@@ -74,11 +74,8 @@ Whether you're managing a few AI features or orchestrating complex multi-provide
 Pull and run the latest Hypersigil image from Docker Hub:
 
 ```bash
-# Run on port 8080
-docker run -d --name hypersigil -p 8080:80 -v $(pwd)/hypersigil:/app/data --init hypersigil:latest
+docker run -d --name hypersigil -p 8080:80 -v $(pwd)/hypersigil:/app/data --init codefibers/hypersigil:latest
 ```
-
-**Important**: Make sure you have a `backend/.env` file configured before running. You can use `backend/.env.example` as a template.
 
 ### Building Your Own Image
 
@@ -103,7 +100,7 @@ docker run -d --name hypersigil -p 8080:80 -v $(pwd)/hypersigil:/app/data --init
    This script will:
    - Build the Vue.js frontend for production
    - Compile the TypeScript backend
-   - Create a Docker image tagged as `hypersigil:latest`
+   - Create a Docker image tagged as `codefibers/hypersigil:latest`
    - Provide you with ready-to-use run commands
 
 3. **Run your locally built image**:
