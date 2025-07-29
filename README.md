@@ -12,18 +12,22 @@ Built for both technical and non-technical users, Hypersigil bridges the gap bet
 
 Whether you're managing a few AI features or orchestrating complex multi-provider workflows, Hypersigil provides the infrastructure to develop, test, and maintain AI prompts at scale while ensuring quality, compliance, and cost efficiency.
 
+## Screenshots
 <p align="center">
-<a href="docs/images/prompt-view.png" target="_blank"><img width="250" alt="Prompt view" src="docs/images/min/prompt-view.png" style="border:1px solid black; margin: 10px;"/></a>
-<a href="docs/images/prompt-calibration.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/prompt-calibration.png" style="border:1px solid black; margin: 10px;" /></a>
-<a href="docs/images/execution-list.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/execution-list.png" style="border:1px solid black; margin: 10px;" /></a>
-<a href="docs/images/execution-details.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/execution-details.png" style="border:1px solid black; margin: 10px;" /></a>
-<a href="docs/images/execution-bundles.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/execution-bundles.png" style="border:1px solid black; margin: 10px;" /></a>
-<a href="docs/images/schedule-execution.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/schedule-execution.png" style="border:1px solid black; margin: 10px;" /></a>
-<a href="docs/images/art-crit-prompt.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/art-crit-prompt.png" style="border:1px solid black; margin: 10px;" /></a>
-<a href="docs/images/art-crit-file.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/art-crit-file.png" style="border:1px solid black; margin: 10px;" /></a>
-<a href="docs/images/art-crit-execution.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/art-crit-execution.png" style="border:1px solid black; margin: 10px;" /></a>
-<a href="docs/images/settings.png" target="_blank"><img width="250" alt="Settings" src="docs/images/min/settings.png" style="border:1px solid black; margin: 10px;" /></a>
+<a href="docs/images/prompt-view.png" target="_blank"><img width="200" alt="Prompt view" src="docs/images/min/prompt-view.png" style="border:1px solid black; margin:0px;"/></a>
+<a href="docs/images/prompt-calibration.png" target="_blank"><img width="200" alt="Settings" src="docs/images/min/prompt-calibration.png" style="border:1px solid black; margin: 0px;" /></a>
+<a href="docs/images/execution-list.png" target="_blank"><img width="200" alt="Settings" src="docs/images/min/execution-list.png" style="border:1px solid black; margin: 0px;" /></a>
+<a href="docs/images/execution-details.png" target="_blank"><img width="200" alt="Settings" src="docs/images/min/execution-details.png" style="border:1px solid black; margin: 0px;" /></a>
+<a href="docs/images/execution-bundles.png" target="_blank"><img width="200" alt="Settings" src="docs/images/min/execution-bundles.png" style="border:1px solid black; margin: 0px;" /></a>
+<a href="docs/images/schedule-execution.png" target="_blank"><img width="200" alt="Settings" src="docs/images/min/schedule-execution.png" style="border:1px solid black; margin: 0px;" /></a>
+<a href="docs/images/art-crit-prompt.png" target="_blank"><img width="200" alt="Settings" src="docs/images/min/art-crit-prompt.png" style="border:1px solid black; margin: 0px;" /></a>
+<a href="docs/images/art-crit-file.png" target="_blank"><img width="200" alt="Settings" src="docs/images/min/art-crit-file.png" style="border:1px solid black; margin: 0px;" /></a>
+<a href="docs/images/art-crit-execution.png" target="_blank"><img width="200" alt="Settings" src="docs/images/min/art-crit-execution.png" style="border:1px solid black; margin: 0px;" /></a>
+<a href="docs/images/settings.png" target="_blank"><img width="200" alt="Settings" src="docs/images/min/settings.png" style="border:1px solid black; margin: 0px;" /></a>
 </p>
+
+🚧 The project is under heavy development, more fetures will be added soon. We're taking feature requests and welcome any contributions. 🚧
+
 
 ## Use Cases
 
@@ -31,6 +35,7 @@ Whether you're managing a few AI features or orchestrating complex multi-provide
 - **Non-Technical Collaboration**: Role-based access allowing domain experts to test, comment, and refine prompts without technical knowledge
 - **Multi-Provider AI Gateway**: Test and compare prompts across OpenAI, Anthropic, Ollama (more providers soon) with cost optimization and automatic failover
 - **Complete Prompt Lifecycle**: Systematic development, testing, collaboration, and production monitoring with full audit trails
+- **Hot-swapping**: Use deployments to hot-swap prompts without redeployments
 - **Enterprise Governance**: Compliance-ready with access controls, audit trails, and systematic validation against regulatory scenarios
 
 ## Features
@@ -85,6 +90,12 @@ Whether you're managing a few AI features or orchestrating complex multi-provide
 - **RESTful Architecture**: Clean, well-documented API endpoints
 
 </details>
+
+## Full documentation
+
+hypersigilhq.github.io/hypersigil/introduction/
+
+REST API docs - https://hypersigilhq.github.io/hypersigil/api-reference/
 
 ## Run with Docker
 
@@ -232,3 +243,5 @@ Hypersigil is licensed under Apache 2.0 with Commons Clause. This means:
 The Commons Clause restriction only applies to selling the software itself. You are free to use it internally, modify it, and build upon it for your business needs.
 
 For the complete license terms, see the [LICENSE](LICENSE) file.
+
+Contact: piotr (at) codefibers.pl
