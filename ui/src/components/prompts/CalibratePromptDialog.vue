@@ -134,17 +134,6 @@ const generateAdjustment = async () => {
     }
 }
 
-const copyAdjustmentPrompt = async () => {
-    if (adjustmentResult.value?.adjustmentPrompt) {
-        try {
-            await navigator.clipboard.writeText(adjustmentResult.value.adjustmentPrompt)
-            // You could add a toast notification here if available
-        } catch (err) {
-            console.error('Failed to copy to clipboard:', err)
-        }
-    }
-}
-
 const scheduleAdjustment = () => {
     scheduleDialogOpen.value = true
 }

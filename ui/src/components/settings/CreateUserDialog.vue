@@ -72,7 +72,7 @@
                     <Label>Invitation Link</Label>
                     <div class="flex items-center space-x-2 mt-1">
                         <Input v-if="invitationLink" :model-value="invitationLink" readonly class="font-mono text-sm" />
-                        <CopyToClipboard :text="invitationLink" />
+                        <CopyToClipboard :text="invitationLink" :show-toast="true" />
                     </div>
                     <p class="text-xs text-muted-foreground mt-1">
                         Share this link with the user to complete their registration.

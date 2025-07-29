@@ -91,6 +91,7 @@ import {
 } from '@/components/ui/dialog'
 import { apiKeysApi } from '@/services/api-client'
 import { useUI } from '@/services/ui'
+import { copyToClipboard as copyText } from '@/services/clipboard'
 import type { CreateApiKeyRequest } from '@/services/definitions/api-key'
 import { permissions } from '@/services/definitions/api-key'
 
@@ -172,14 +173,20 @@ const handleSubmit = async () => {
 }
 
 const copyToClipboard = async () => {
-    try {
-        await navigator.clipboard.writeText(createdApiKey.value)
+    const result = await copyText(createdApiKey.value)
+
+    if (result.success) {
         copied.value = true
         setTimeout(() => {
             copied.value = false
         }, 2000)
-    } catch (error) {
-        console.error('Failed to copy to clipboard:', error)
+    } else {
+        console.error('Failed to copy to clipboard:', result.error)
+        toast({
+            title: 'Copy Failed',
+            description: result.error || 'Unable to copy to clipboard',
+            variant: 'warning'
+        })
     }
 }
 
