@@ -129,19 +129,19 @@ app.get('/api/health', (req, res) => {
 docker run -d \
   --name hypersigil \
   -p 80:80 \
-  -v $(pwd)/backend/.env:/app/.env \
-  -v $(pwd)/backend/data:/app/data \
+  -v $(pwd)/hypersigil/.env:/app/.env \
+  -v $(pwd)/hypersigil:/app/data \
   --init \
   hypersigil:latest
 ```
 
 ### Volume Mounts
 
-- **Environment File**: `-v $(pwd)/backend/.env:/app/.env`
+- **Environment File**: `-v $(pwd)/hypersigil/.env:/app/.env`
   - Required for API keys and configuration
   - Changes take effect on container restart
 
-- **Data Directory**: `-v $(pwd)/backend/data:/app/data`
+- **Data Directory**: `-v $(pwd)/hypersigil:/app/data`
   - Persists SQLite database and application data
   - Survives container restarts and updates
 

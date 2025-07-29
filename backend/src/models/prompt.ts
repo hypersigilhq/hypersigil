@@ -66,12 +66,14 @@ export class PromptModel extends Model<Prompt> {
     public override async create(data: Omit<Prompt, 'id' | 'created_at' | 'updated_at' | 'current_version' | 'versions'>): Promise<Prompt> {
         const now = new Date();
         const processedSchema = data.json_schema_response ? addAdditionalPropertiesFalse(data.json_schema_response) : undefined;
+        const processedInputSchema = data.json_schema_input ? addAdditionalPropertiesFalse(data.json_schema_input) : undefined;
 
         const initialVersion: PromptVersion = {
             version: 1,
             name: data.name,
             prompt: data.prompt,
             json_schema_response: processedSchema,
+            json_schema_input: processedInputSchema,
             options: data.options,
             created_at: now
         };
@@ -79,6 +81,7 @@ export class PromptModel extends Model<Prompt> {
         const promptData = {
             ...data,
             json_schema_response: processedSchema,
+            json_schema_input: processedInputSchema,
             current_version: 1,
             versions: [initialVersion]
         };

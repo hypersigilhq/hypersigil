@@ -106,7 +106,7 @@ docker run -d --name hypersigil -p 8080:80 -v $(pwd)/hypersigil:/app/data --init
 3. **Run your locally built image**:
    ```bash
    # Run on port 8080
-   docker run -d --name hypersigil -p 8080:80 -v $(pwd)/backend/.env:/app/.env -v $(pwd)/backend/data:/app/data --init hypersigil:latest
+   docker run -d --name hypersigil -p 8080:80 -v $(pwd)/backend/.env:/app/.env -v $(pwd)/hypersigil:/app/data --init hypersigil:latest
    ```
 
 ### Docker Run Parameters Explained
@@ -114,7 +114,7 @@ docker run -d --name hypersigil -p 8080:80 -v $(pwd)/hypersigil:/app/data --init
 - `-d`: Run container in detached mode (background)
 - `--name hypersigil`: Assign a name to the container for easy management
 - `-p 8080:8080`: Map host port 8080 to container port 80 (change first number for different host port)
-- `-v $(pwd)/backend/data:/app/data`: Mount data directory for persistent storage
+- `-v $(pwd)/hypersigil:/app/data`: Mount data directory for persistent storage
 - `--init`: Use proper init system for signal handling
 </details>
 

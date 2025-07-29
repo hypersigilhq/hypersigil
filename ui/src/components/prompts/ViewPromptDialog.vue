@@ -75,17 +75,6 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="my-2" v-if="currentDisplayVersion.json_schema_response">
-                            <Label>JSON Schema Response
-                                <Switch :model-value="jsonSchemaOutputVisible"
-                                    @update:model-value="(v: boolean) => jsonSchemaOutputVisible = v" />
-                            </Label>
-                            <div v-if="jsonSchemaOutputVisible"
-                                class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
-                                <pre
-                                    class="whitespace-pre-wrap text-sm">{{ JSON.stringify(currentDisplayVersion.json_schema_response || {}, null, 2) }}</pre>
-                            </div>
-                        </div>
                         <div class="my-2" v-if="currentDisplayVersion.json_schema_input">
                             <Label>JSON Schema Input
                                 <Switch :model-value="jsonSchemaInputVisible"
@@ -95,6 +84,17 @@
                                 class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
                                 <pre
                                     class="whitespace-pre-wrap text-sm">{{ JSON.stringify(currentDisplayVersion.json_schema_input || {}, null, 2) }}</pre>
+                            </div>
+                        </div>
+                        <div class="my-2" v-if="currentDisplayVersion.json_schema_response">
+                            <Label>JSON Schema Response
+                                <Switch :model-value="jsonSchemaOutputVisible"
+                                    @update:model-value="(v: boolean) => jsonSchemaOutputVisible = v" />
+                            </Label>
+                            <div v-if="jsonSchemaOutputVisible"
+                                class="mt-1 p-3 bg-muted rounded-md overflow-auto max-h-[70vh]">
+                                <pre
+                                    class="whitespace-pre-wrap text-sm">{{ JSON.stringify(currentDisplayVersion.json_schema_response || {}, null, 2) }}</pre>
                             </div>
                         </div>
                         <div class="flex items-center justify-between my-2">
@@ -199,8 +199,8 @@ const selectedComments = ref<Set<string>>(new Set())
 
 // Calibration dialog state
 const showCalibrateDialog = ref(false)
-const jsonSchemaInputVisible = ref(true)
-const jsonSchemaOutputVisible = ref(true)
+const jsonSchemaInputVisible = ref(false)
+const jsonSchemaOutputVisible = ref(false)
 const optionsVisible = ref(true)
 
 // Computed properties

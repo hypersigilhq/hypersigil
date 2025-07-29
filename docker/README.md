@@ -40,7 +40,7 @@ Create your environment file:
 docker run -d \
   --name hypersigil \
   -p 80:80 \
-  -v $(pwd)/backend/data:/app/data \
+  -v $(pwd)/hypersigil:/app/data \
   --init \
   hypersigil:latest
 
@@ -48,14 +48,14 @@ docker run -d \
 docker run -d \
   --name hypersigil \
   -p 8080:80 \
-  -v $(pwd)/backend/data:/app/data \
+  -v $(pwd)/hypersigil:/app/data \
   --init \
   hypersigil:latest
 ```
 
 ### Volume Mounts
 
-- **Data Directory**: `-v $(pwd)/backend/data:/app/data`
+- **Data Directory**: `-v $(pwd)/hypersigil:/app/data`
   - Persists SQLite database and application data
   - Ensures data survives container restarts
 
@@ -144,7 +144,7 @@ To run the container with more verbose logging:
 docker run -d \
   --name hypersigil-debug \
   -p 8080:80 \
-  -v $(pwd)/backend/data:/app/data \
+  -v $(pwd)/hypersigil:/app/data \
   -e NODE_ENV=development \
   --init \
   hypersigil:latest
@@ -190,7 +190,7 @@ docker run -d \
   --memory=1g \
   --cpus=1.0 \
   -p 80:80 \
-  -v $(pwd)/backend/data:/app/data \
+  -v $(pwd)/hypersigil:/app/data \
   --init \
   hypersigil:latest
 ```
@@ -221,4 +221,4 @@ Since data is mounted as a volume, you can backup the entire data directory:
 
 ```bash
 # Create compressed backup
-tar -czf hypersigil-backup-$(date +%Y%m%d).tar.gz backend/data/
+tar -czf hypersigil-backup-$(date +%Y%m%d).tar.gz hypersigil/

@@ -98,7 +98,7 @@ if [ $? -eq 0 ]; then
     echo "docker run -d \\"
     echo "  --name hypersigil \\"
     echo "  -p 80:80 \\"
-    echo "  -v \$(pwd)/backend/data:/app/data \\"
+    echo "  -v \$(pwd)/hypersigil:/app/data \\"
     echo "  --init \\"
     echo "  hypersigil:latest"
     echo ""
@@ -106,7 +106,7 @@ if [ $? -eq 0 ]; then
     echo "docker run -d \\"
     echo "  --name hypersigil \\"
     echo "  -p 8080:80 \\"
-    echo "  -v \$(pwd)/backend/data:/app/data \\"
+    echo "  -v \$(pwd)/hypersigil:/app/data \\"
     echo "  --init \\"
     echo "  hypersigil:latest"
 else
