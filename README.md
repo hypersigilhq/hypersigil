@@ -12,6 +12,19 @@ Built for both technical and non-technical users, Hypersigil bridges the gap bet
 
 Whether you're managing a few AI features or orchestrating complex multi-provider workflows, Hypersigil provides the infrastructure to develop, test, and maintain AI prompts at scale while ensuring quality, compliance, and cost efficiency.
 
+<p align="center">
+<img width="250" alt="Prompt view" src="docs/images/prompt-view.png" style="border:1px solid black; margin: 10px;"/>
+<img width="250" alt="Settings" src="docs/images/prompt-calibration.png" style="border:1px solid black; margin: 10px;" />
+<img width="250" alt="Settings" src="docs/images/execution-list.png" style="border:1px solid black; margin: 10px;" />
+<img width="250" alt="Settings" src="docs/images/execution-details.png" style="border:1px solid black; margin: 10px;" />
+<img width="250" alt="Settings" src="docs/images/execution-bundles.png" style="border:1px solid black; margin: 10px;" />
+<img width="250" alt="Settings" src="docs/images/schedule-execution.png" style="border:1px solid black; margin: 10px;" />
+<img width="250" alt="Settings" src="docs/images/art-crit-prompt.png" style="border:1px solid black; margin: 10px;" />
+<img width="250" alt="Settings" src="docs/images/art-crit-file.png" style="border:1px solid black; margin: 10px;" />
+<img width="250" alt="Settings" src="docs/images/art-crit-execution.png" style="border:1px solid black; margin: 10px;" />
+<img width="250" alt="Settings" src="docs/images/settings.png" style="border:1px solid black; margin: 10px;" />
+</p>
+
 ## Use Cases
 
 - **Centralized Prompt Management**: Single source of truth for all prompts with API integration, enabling hot-swapping without code deployments
@@ -23,6 +36,14 @@ Whether you're managing a few AI features or orchestrating complex multi-provide
 ## Features
 
 <details>
+
+<summary>Centralized Prompt Management</summary>
+
+- **Single Source of Truth**: All prompts managed outside codebases
+- **Version Control**: Track prompt evolution without Git commits
+- **Template Variables**: Dynamic prompts with Mustache templating
+- **API Integration**: Hot-swapping prompts without code deployments
+
 <summary>Prompt Execution System</summary>
 
 - **Multi-Provider Support**: Execute prompts across Ollama, OpenAI, Anthropic, and other AI providers
@@ -61,9 +82,7 @@ Whether you're managing a few AI features or orchestrating complex multi-provide
 <details>
 <summary>Developer Experience</summary>
 
-- **Type-Safe APIs**: Full TypeScript support with ts-typed-api
 - **RESTful Architecture**: Clean, well-documented API endpoints
-- **Extensible Design**: Plugin architecture for custom providers and features
 
 </details>
 
