@@ -1,7 +1,7 @@
 # Hypersigil
 
 <p align="center">
-<img width="116" height="114" alt="logo" src="https://github.com/user-attachments/assets/929a4eee-e990-4f65-ba0e-aee2384924f7" />
+<img width="116" height="114" alt="logo" src="docs/images/hypersigil-logo.png" />
 </p>
 
 ## What is Hypersigil?
