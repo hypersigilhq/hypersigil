@@ -6,6 +6,11 @@ import { Badge } from '@/components/ui/badge'
 import { parseJsonSchema, type SchemaPath } from './schema-parser'
 import { cn } from '@/lib/utils'
 
+interface CursorPosition {
+    x: number
+    y: number
+}
+
 interface Props {
     schema?: any
     placeholder?: string
@@ -31,10 +36,12 @@ const showSuggestions = ref(false)
 const cursorPosition = ref(0)
 const searchTerm = ref('')
 const selectedSuggestionIndex = ref(0)
+const dropdownPosition = ref<CursorPosition>({ x: 0, y: 0 })
 
 // Template refs
-const textareaRef = ref<HTMLTextAreaElement>()
+const textareaRef = ref()
 const dropdownRef = ref<HTMLDivElement>()
+const mirrorRef = ref<HTMLDivElement>()
 
 // Computed properties
 const allPaths = computed(() => parseJsonSchema(props.schema))
@@ -84,6 +91,51 @@ watch(selectedSuggestionIndex, () => {
 })
 
 // Methods
+const getCursorPosition = (textarea: HTMLTextAreaElement, cursorIndex: number): CursorPosition => {
+    if (!textarea || !textarea.value) return { x: 0, y: 0 }
+
+    // Simple approach: calculate line and character position
+    const textBeforeCursor = textarea.value.substring(0, cursorIndex)
+    const lines = textBeforeCursor.split('\n')
+    const currentLine = lines.length - 1
+    const currentColumn = lines[lines.length - 1].length
+
+    // Get computed styles for measurements
+    const computedStyle = window.getComputedStyle(textarea)
+    const fontSize = parseInt(computedStyle.fontSize) || 14
+    const lineHeight = parseFloat(computedStyle.lineHeight) || fontSize * 1.2
+    const paddingLeft = parseInt(computedStyle.paddingLeft) || 0
+    const paddingTop = parseInt(computedStyle.paddingTop) || 0
+
+    // Estimate character width (rough approximation for monospace)
+    const charWidth = fontSize * 0.6
+
+    // Calculate approximate position
+    let x = paddingLeft + (currentColumn * charWidth)
+    let y = paddingTop + (currentLine * lineHeight) + lineHeight + 5 // 5px offset below line
+
+    // Smart positioning: ensure dropdown doesn't go off-screen
+    const dropdownWidth = 320 // 80 * 4 (w-80 in Tailwind)
+    const dropdownHeight = 240 // max-h-60 in pixels
+
+    // Adjust horizontal position if dropdown would go off-screen
+    if (x + dropdownWidth > textarea.clientWidth) {
+        x = Math.max(0, textarea.clientWidth - dropdownWidth)
+    }
+
+    // Adjust vertical position if dropdown would go below textarea
+    if (y + dropdownHeight > textarea.clientHeight) {
+        // Position above cursor instead
+        y = paddingTop + (currentLine * lineHeight) - dropdownHeight - 5
+        // Ensure it doesn't go above textarea
+        if (y < 0) {
+            y = paddingTop + (currentLine * lineHeight) + lineHeight + 5
+        }
+    }
+
+    return { x, y }
+}
+
 const getTypeColor = (type: string) => {
     switch (type) {
         case 'string':
@@ -102,6 +154,25 @@ const getTypeColor = (type: string) => {
 }
 
 
+const updateDropdownPosition = () => {
+    if (textareaRef.value && showSuggestions.value) {
+        // Get the actual DOM element from the Vue component
+        const textareaElement = textareaRef.value.$el as HTMLTextAreaElement
+        console.log('Textarea component:', textareaRef.value) // Debug log
+        console.log('Textarea DOM element:', textareaElement) // Debug log
+
+        if (textareaElement && textareaElement.selectionStart !== undefined) {
+            const cursorPos = textareaElement.selectionStart || 0
+            console.log('Cursor position:', cursorPos) // Debug log
+            console.log('Textarea value:', textareaElement.value) // Debug log
+
+            const position = getCursorPosition(textareaElement, cursorPos)
+            console.log('Calculated position:', position) // Debug log
+            dropdownPosition.value = position
+        }
+    }
+}
+
 const handleTextChange = (event: Event) => {
     const target = event.target as HTMLTextAreaElement
     const newText = target.value
@@ -119,9 +190,22 @@ const handleTextChange = (event: Event) => {
         const searchText = textBeforeCursor.slice(lastOpenBrace + 2).trim()
         searchTerm.value = searchText
         showSuggestions.value = true
+
+        // Calculate cursor position for dropdown positioning
+        nextTick(() => {
+            updateDropdownPosition()
+        })
     } else {
         showSuggestions.value = false
         searchTerm.value = ''
+    }
+}
+
+const handleCursorMove = () => {
+    if (showSuggestions.value) {
+        nextTick(() => {
+            updateDropdownPosition()
+        })
     }
 }
 
@@ -143,8 +227,13 @@ const insertSuggestion = (suggestion: SchemaPath) => {
         // Set cursor position after insertion
         nextTick(() => {
             if (textareaRef.value) {
-                textareaRef.value.focus()
-                textareaRef.value.setSelectionRange(newCursorPos, newCursorPos)
+                // Access the underlying textarea element
+                const textarea = textareaRef.value as any
+                const element = textarea.$el || textarea
+                if (element && element.focus) {
+                    element.focus()
+                    element.setSelectionRange(newCursorPos, newCursorPos)
+                }
             }
         })
     }
@@ -190,12 +279,20 @@ const handleKeyDown = (event: KeyboardEvent) => {
     <div :class="cn('w-full space-y-4', props.class)">
         <div class="relative">
             <Textarea ref="textareaRef" v-model="text" :placeholder="placeholder" class="min-h-[200px] font-mono"
-                @input="handleTextChange" @keydown="handleKeyDown" />
+                @input="handleTextChange" @keydown="handleKeyDown" @click="handleCursorMove"
+                @keyup="handleCursorMove" />
+
+            <!-- Hidden mirror element for cursor position calculation -->
+            <div ref="mirrorRef"
+                style="position: absolute; visibility: hidden; height: auto; z-index: -1; top: 0; left: 0; pointer-events: none; white-space: pre-wrap; word-wrap: break-word; overflow: hidden;">
+            </div>
 
             <!-- Suggestions Dropdown -->
             <div v-if="showSuggestions && filteredSuggestions.length > 0" ref="dropdownRef"
-                class="absolute z-50 w-80 rounded-md border bg-popover p-0 text-popover-foreground shadow-md"
-                style="top: 100%; left: 0;">
+                class="absolute z-50 w-80 rounded-md border bg-popover p-0 text-popover-foreground shadow-md" :style="{
+                    left: dropdownPosition.x + 'px',
+                    top: dropdownPosition.y + 'px'
+                }">
                 <div class="p-2">
                     <div class="text-sm font-medium text-muted-foreground mb-2">Available Variables</div>
                     <div class="max-h-60 overflow-y-auto">

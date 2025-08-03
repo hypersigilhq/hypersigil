@@ -131,7 +131,7 @@ const demoSchema = {
             <div>
                 <h1 class="text-3xl font-bold">Template Suggestion Component Demo</h1>
                 <p class="text-muted-foreground mt-2">
-                    Type &lcub;&lcub; '&lcub;&lcub;' &rcub;&rcub; in the textarea below to see template suggestions
+                    Type '&lcub;&lcub;' in the textarea below to see template suggestions
                     based on the
                     JSON schema.
                 </p>
@@ -148,7 +148,7 @@ const demoSchema = {
             <div class="mt-6 p-4 bg-muted rounded-lg">
                 <h3 class="text-lg font-semibold mb-2">Instructions:</h3>
                 <ul class="text-sm space-y-1 list-disc list-inside">
-                    <li>Type &lcub;&lcub; '&lcub;&lcub;' &rcub;&rcub; anywhere in the textarea to trigger suggestions
+                    <li>Type '&lcub;&lcub;' anywhere in the textarea to trigger suggestions
                     </li>
                     <li>Start typing to filter suggestions</li>
                     <li>Click on a suggestion to insert it</li>
