@@ -16,6 +16,7 @@ interface Props {
     placeholder?: string
     modelValue?: string
     class?: string
+    showAvailableVars?: boolean
 }
 
 interface Emits {
@@ -112,7 +113,7 @@ const getCursorPosition = (textarea: HTMLTextAreaElement, cursorIndex: number): 
 
     // Calculate approximate position
     let x = paddingLeft + (currentColumn * charWidth)
-    let y = paddingTop + (currentLine * lineHeight) + lineHeight + 5 // 5px offset below line
+    let y = paddingTop + (currentLine * lineHeight) + lineHeight + 40
 
     // Smart positioning: ensure dropdown doesn't go off-screen
     const dropdownWidth = 320 // 80 * 4 (w-80 in Tailwind)
@@ -276,9 +277,9 @@ const handleKeyDown = (event: KeyboardEvent) => {
 </script>
 
 <template>
-    <div :class="cn('w-full space-y-4', props.class)">
-        <div class="relative">
-            <Textarea ref="textareaRef" v-model="text" :placeholder="placeholder" class="min-h-[200px] font-mono"
+    <div :class="cn('w-full h-full flex flex-col gap-4', props.class)">
+        <div class="relative flex-1 flex flex-col">
+            <Textarea ref="textareaRef" v-model="text" :placeholder="placeholder" class="h-full font-mono resize-none"
                 @input="handleTextChange" @keydown="handleKeyDown" @click="handleCursorMove"
                 @keyup="handleCursorMove" />
 
@@ -319,7 +320,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
         </div>
 
         <!-- Preview of available variables -->
-        <Card class="p-4">
+        <Card class="p-4" v-if="showAvailableVars">
             <div class="space-y-3">
                 <div>
                     <h3 class="text-sm font-medium">Available Variables</h3>

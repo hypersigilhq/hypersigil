@@ -163,8 +163,11 @@
 
                             <div class="flex-1 flex flex-col mt-2">
                                 <Label for="prompt">Prompt</Label>
-                                <Textarea id="prompt" v-model="formData.prompt" placeholder="Enter your prompt text"
-                                    class="flex-1 min-h-[300px] resize-none" required />
+                                <div class="flex-1 min-h-[300px] resize-none">
+                                    <TemplateSuggestion id="prompt" v-model="formData.prompt"
+                                        :schema="formData.json_schema_input" placeholder="Enter your prompt text"
+                                        class="" required />
+                                </div>
                             </div>
                         </div>
 
@@ -276,6 +279,7 @@ import DropdownMenu from '../ui/dropdown-menu/DropdownMenu.vue'
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { useUI } from '@/services/ui'
 import Switch from '../ui/switch/Switch.vue'
+import TemplateSuggestion from '../ui/template-suggestion/TemplateSuggestion.vue'
 
 const router = useRouter()
 const { toast, confirm } = useUI()
