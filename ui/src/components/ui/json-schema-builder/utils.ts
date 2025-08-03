@@ -16,6 +16,7 @@ export function createNode(
         type,
         required: false,
         expanded: true,
+        showDetails: false,
         level,
         parentId,
         children: type === 'object' ? [] : undefined,
@@ -240,6 +241,7 @@ function convertSchemaPropertyToNode(
         type: property.type as JsonSchemaType,
         required,
         expanded: true,
+        showDetails: false,
         level,
         parentId,
         description: property.description

@@ -31,6 +31,7 @@ export interface SchemaBuilderNode {
     required: boolean
     description?: string
     expanded: boolean
+    showDetails: boolean
     level: number
     parentId?: string
     children?: SchemaBuilderNode[]

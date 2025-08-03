@@ -17,7 +17,9 @@ import {
     Hash,
     ToggleLeft,
     Braces,
-    Brackets
+    Brackets,
+    Eye,
+    EyeOff
 } from 'lucide-vue-next'
 
 interface Props {
@@ -88,6 +90,7 @@ function handleTypeChange(newType: JsonSchemaType) {
             type: 'string',
             required: false,
             expanded: true,
+            showDetails: false,
             level: props.node.level + 1,
             parentId: props.node.id
         }
@@ -168,6 +171,14 @@ function handleDragEnd() {
 
             <!-- Actions -->
             <div class="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                <!-- Details Toggle Button -->
+                <Button variant="ghost" size="icon" class="w-8 h-8"
+                    @click="updateNode({ showDetails: !node.showDetails })"
+                    :title="node.showDetails ? 'Hide Details' : 'Show Details'">
+                    <Eye v-if="!node.showDetails" class="w-4 h-4" />
+                    <EyeOff v-else class="w-4 h-4" />
+                </Button>
+
                 <!-- Add Child Button (for objects and array items that are objects) -->
                 <Button v-if="node.type === 'object' || node.name === 'items'" variant="ghost" size="icon"
                     class="w-8 h-8" @click="addChild()">
@@ -183,7 +194,7 @@ function handleDragEnd() {
         </div>
 
         <!-- Advanced Properties -->
-        <div v-if="node.expanded" class="ml-8 mt-2 space-y-2">
+        <div v-if="node.expanded && node.showDetails" class="ml-8 mt-2 space-y-2">
             <!-- Description -->
             <div class="flex items-start gap-2">
                 <label class="text-sm text-gray-600 min-w-20 mt-2">Description:</label>

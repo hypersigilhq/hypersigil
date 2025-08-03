@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Download, Upload, Eye, EyeOff } from 'lucide-vue-next'
 
 interface Props {
@@ -36,7 +37,6 @@ const emit = defineEmits<Emits>()
 // State
 const nodes = ref<SchemaBuilderNode[]>([])
 const draggedNode = ref<SchemaBuilderNode | null>(null)
-const showJsonOutput = ref(true)
 
 // Computed
 const jsonSchema = computed(() => {
@@ -195,78 +195,111 @@ function expandAll() {
     }
     expand(nodes.value)
 }
+
+function showAllDetails() {
+    function showDetails(nodeList: SchemaBuilderNode[]) {
+        for (const node of nodeList) {
+            updateNode(node.id, { showDetails: true })
+            if (node.children) showDetails(node.children)
+            if (node.items) showDetails([node.items])
+        }
+    }
+    showDetails(nodes.value)
+}
+
+function hideAllDetails() {
+    function hideDetails(nodeList: SchemaBuilderNode[]) {
+        for (const node of nodeList) {
+            updateNode(node.id, { showDetails: false })
+            if (node.children) hideDetails(node.children)
+            if (node.items) hideDetails([node.items])
+        }
+    }
+    hideDetails(nodes.value)
+}
 </script>
 
 <template>
     <div class="json-schema-builder w-full">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Schema Builder Panel -->
-            <Card class="h-fit">
-                <CardHeader class="pb-4">
-                    <div class="flex items-center justify-between">
-                        <CardTitle class="text-lg">Schema Builder</CardTitle>
-                        <div class="flex items-center gap-2">
-                            <Badge variant="secondary">{{ nodeCount }} properties</Badge>
-                            <div class="flex items-center gap-1">
-                                <Button variant="ghost" size="sm" @click="collapseAll" title="Collapse All">
-                                    <EyeOff class="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="sm" @click="expandAll" title="Expand All">
-                                    <Eye class="w-4 h-4" />
-                                </Button>
+        <Tabs default-value="builder" class="w-full">
+            <TabsList class="grid w-full grid-cols-2">
+                <TabsTrigger value="builder">Schema Builder</TabsTrigger>
+                <TabsTrigger value="output">JSON Output</TabsTrigger>
+            </TabsList>
+
+            <!-- Schema Builder Tab -->
+            <TabsContent value="builder" class="mt-6">
+                <Card>
+                    <CardHeader class="pb-4">
+                        <div class="flex items-center justify-between">
+                            <CardTitle class="text-lg">Schema Builder</CardTitle>
+                            <div class="flex items-center gap-2">
+                                <Badge variant="secondary">{{ nodeCount }} properties</Badge>
+                                <div class="flex items-center gap-1">
+                                    <Button variant="ghost" size="sm" @click="collapseAll" title="Collapse All">
+                                        <EyeOff class="w-4 h-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="sm" @click="expandAll" title="Expand All">
+                                        <Eye class="w-4 h-4" />
+                                    </Button>
+                                    <Separator orientation="vertical" class="h-4" />
+                                    <Button variant="ghost" size="sm" @click="hideAllDetails" title="Hide All Details">
+                                        <EyeOff class="w-4 h-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="sm" @click="showAllDetails" title="Show All Details">
+                                        <Eye class="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="flex items-center gap-2">
-                        <Button size="sm" @click="addRootProperty('string')" :disabled="readonly">
-                            <Plus class="w-4 h-4 mr-2" />
-                            Add Property
-                        </Button>
+                        <div class="flex items-center gap-2">
+                            <Button size="sm" @click="addRootProperty('string')" :disabled="readonly">
+                                <Plus class="w-4 h-4 mr-2" />
+                                Add Property
+                            </Button>
 
-                        <Separator orientation="vertical" class="h-6" />
+                            <Separator orientation="vertical" class="h-6" />
 
-                        <Button variant="outline" size="sm" @click="importSchema" :disabled="readonly">
-                            <Upload class="w-4 h-4 mr-2" />
-                            Import
-                        </Button>
+                            <Button variant="outline" size="sm" @click="importSchema" :disabled="readonly">
+                                <Upload class="w-4 h-4 mr-2" />
+                                Import
+                            </Button>
 
-                        <Button variant="outline" size="sm" @click="exportSchema">
-                            <Download class="w-4 h-4 mr-2" />
-                            Export
-                        </Button>
-                    </div>
-                </CardHeader>
+                            <Button variant="outline" size="sm" @click="exportSchema">
+                                <Download class="w-4 h-4 mr-2" />
+                                Export
+                            </Button>
+                        </div>
+                    </CardHeader>
 
-                <CardContent class="pt-0">
-                    <div class="space-y-1 max-h-96 overflow-y-auto" @dragover="handleDragOver">
-                        <template v-for="node in flatNodes" :key="node.id">
-                            <SchemaNode :node="node" :can-delete="flatNodes.length > 1"
-                                :is-dragging="draggedNode?.id === node.id" @update="updateNode" @delete="deleteNode"
-                                @add-child="addChildProperty" @toggle-expanded="toggleExpanded"
-                                @drag-start="handleDragStart" @drag-end="handleDragEnd" />
-                        </template>
-                    </div>
-                </CardContent>
-            </Card>
+                    <CardContent class="pt-0">
+                        <div class="space-y-1 max-h-96 overflow-y-auto" @dragover="handleDragOver">
+                            <template v-for="node in flatNodes" :key="node.id">
+                                <SchemaNode :node="node" :can-delete="flatNodes.length > 1"
+                                    :is-dragging="draggedNode?.id === node.id" @update="updateNode" @delete="deleteNode"
+                                    @add-child="addChildProperty" @toggle-expanded="toggleExpanded"
+                                    @drag-start="handleDragStart" @drag-end="handleDragEnd" />
+                            </template>
+                        </div>
+                    </CardContent>
+                </Card>
+            </TabsContent>
 
-            <!-- JSON Output Panel -->
-            <Card class="h-fit">
-                <CardHeader class="pb-4">
-                    <div class="flex items-center justify-between">
+            <!-- JSON Output Tab -->
+            <TabsContent value="output" class="mt-6">
+                <Card>
+                    <CardHeader class="pb-4">
                         <CardTitle class="text-lg">JSON Schema Output</CardTitle>
-                        <Button variant="ghost" size="sm" @click="showJsonOutput = !showJsonOutput">
-                            <component :is="showJsonOutput ? EyeOff : Eye" class="w-4 h-4" />
-                        </Button>
-                    </div>
-                </CardHeader>
+                    </CardHeader>
 
-                <CardContent v-if="showJsonOutput" class="pt-0">
-                    <pre class="bg-gray-50 p-4 rounded-md text-sm overflow-x-auto max-h-96 overflow-y-auto border">{{
-                        JSON.stringify(jsonSchema, null, 2) }}</pre>
-                </CardContent>
-            </Card>
-        </div>
+                    <CardContent class="pt-0">
+                        <pre class="bg-gray-50 p-4 rounded-md text-sm overflow-x-auto max-h-96 overflow-y-auto border">{{
+                            JSON.stringify(jsonSchema, null, 2) }}</pre>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
     </div>
 </template>
 
