@@ -1,0 +1,236 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import type { SchemaBuilderNode, JsonSchemaType } from './types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
+import {
+    ChevronRight,
+    ChevronDown,
+    Plus,
+    Trash2,
+    GripVertical,
+    Type,
+    Hash,
+    ToggleLeft,
+    Braces,
+    Brackets
+} from 'lucide-vue-next'
+
+interface Props {
+    node: SchemaBuilderNode
+    canDelete?: boolean
+    isDragging?: boolean
+}
+
+interface Emits {
+    (e: 'update', id: string, updates: Partial<SchemaBuilderNode>): void
+    (e: 'delete', id: string): void
+    (e: 'add-child', parentId: string, type: JsonSchemaType): void
+    (e: 'toggle-expanded', id: string): void
+    (e: 'drag-start', node: SchemaBuilderNode): void
+    (e: 'drag-end'): void
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    canDelete: true,
+    isDragging: false
+})
+
+const emit = defineEmits<Emits>()
+
+const showAdvanced = ref(false)
+
+const typeOptions: { value: JsonSchemaType; label: string; icon: any }[] = [
+    { value: 'string', label: 'String', icon: Type },
+    { value: 'number', label: 'Number', icon: Hash },
+    { value: 'boolean', label: 'Boolean', icon: ToggleLeft },
+    { value: 'object', label: 'Object', icon: Braces },
+    { value: 'array', label: 'Array', icon: Brackets }
+]
+
+const typeIcon = computed(() => {
+    return typeOptions.find(opt => opt.value === props.node.type)?.icon || Type
+})
+
+const indentStyle = computed(() => ({
+    paddingLeft: `${props.node.level * 24}px`
+}))
+
+const canExpand = computed(() => {
+    return props.node.type === 'object' || props.node.type === 'array'
+})
+
+const hasChildren = computed(() => {
+    return (props.node.children && props.node.children.length > 0) ||
+        (props.node.type === 'array' && props.node.items)
+})
+
+function updateNode(updates: Partial<SchemaBuilderNode>) {
+    emit('update', props.node.id, updates)
+}
+
+function handleTypeChange(newType: JsonSchemaType) {
+    const updates: Partial<SchemaBuilderNode> = { type: newType }
+
+    // Reset type-specific properties
+    if (newType === 'object') {
+        updates.children = []
+        updates.items = undefined
+    } else if (newType === 'array') {
+        updates.children = undefined
+        updates.items = {
+            id: Math.random().toString(36).substr(2, 9),
+            name: 'items',
+            type: 'string',
+            required: false,
+            expanded: true,
+            level: props.node.level + 1,
+            parentId: props.node.id
+        }
+    } else {
+        updates.children = undefined
+        updates.items = undefined
+    }
+
+    updateNode(updates)
+}
+
+function addChild(type: JsonSchemaType = 'string') {
+    emit('add-child', props.node.id, type)
+}
+
+function toggleExpanded() {
+    emit('toggle-expanded', props.node.id)
+}
+
+function handleDragStart(event: DragEvent) {
+    if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move'
+        event.dataTransfer.setData('text/plain', props.node.id)
+    }
+    emit('drag-start', props.node)
+}
+
+function handleDragEnd() {
+    emit('drag-end')
+}
+</script>
+
+<template>
+    <div :class="cn(
+        'group border-l-2 border-transparent hover:border-blue-200 transition-colors',
+        isDragging && 'opacity-50'
+    )" :style="indentStyle" draggable="true" @dragstart="handleDragStart" @dragend="handleDragEnd">
+        <div class="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 rounded-md">
+            <!-- Drag Handle -->
+            <GripVertical
+                class="w-4 h-4 text-gray-400 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <!-- Expand/Collapse Button -->
+            <Button v-if="canExpand" variant="ghost" size="icon" class="w-6 h-6 p-0" @click="toggleExpanded">
+                <ChevronRight v-if="!node.expanded" class="w-4 h-4" />
+                <ChevronDown v-else class="w-4 h-4" />
+            </Button>
+            <div v-else class="w-6" />
+
+            <!-- Type Icon -->
+            <component :is="typeIcon" class="w-4 h-4 text-gray-600" />
+
+            <!-- Property Name -->
+            <Input :model-value="node.name" @update:model-value="(value) => updateNode({ name: String(value) })"
+                placeholder="Property name" class="h-8 min-w-32 max-w-48" />
+
+            <!-- Type Selector -->
+            <Select :model-value="node.type" @update:model-value="(value) => handleTypeChange(value as JsonSchemaType)">
+                <SelectTrigger class="w-32 h-8">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem v-for="option in typeOptions" :key="option.value" :value="option.value">
+                        <div class="flex items-center gap-2">
+                            <component :is="option.icon" class="w-4 h-4" />
+                            {{ option.label }}
+                        </div>
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+
+            <!-- Required Checkbox -->
+            <div class="flex items-center gap-2">
+                <Checkbox :model-value="node.required"
+                    @update:model-value="(checked: boolean | 'indeterminate') => updateNode({ required: checked === true })" />
+                <label class="text-sm text-gray-600">Required</label>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                <!-- Add Child Button (for objects) -->
+                <Button v-if="node.type === 'object'" variant="ghost" size="icon" class="w-8 h-8" @click="addChild()">
+                    <Plus class="w-4 h-4" />
+                </Button>
+
+                <!-- Delete Button -->
+                <Button v-if="canDelete" variant="ghost" size="icon" class="w-8 h-8 text-red-600 hover:text-red-700"
+                    @click="emit('delete', node.id)">
+                    <Trash2 class="w-4 h-4" />
+                </Button>
+            </div>
+        </div>
+
+        <!-- Advanced Properties -->
+        <div v-if="node.expanded" class="ml-8 mt-2 space-y-2">
+            <!-- Description -->
+            <div class="flex items-start gap-2">
+                <label class="text-sm text-gray-600 min-w-20 mt-2">Description:</label>
+                <Textarea :model-value="node.description || ''"
+                    @update:model-value="(value) => updateNode({ description: String(value) })"
+                    placeholder="Property description" class="min-h-16 resize-none" />
+            </div>
+
+            <!-- Type-specific properties -->
+            <template v-if="node.type === 'string'">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600 min-w-20">Min Length:</label>
+                        <Input type="number" :model-value="node.minLength"
+                            @update:model-value="(value) => updateNode({ minLength: value ? Number(value) : undefined })"
+                            class="h-8" />
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600 min-w-20">Max Length:</label>
+                        <Input type="number" :model-value="node.maxLength"
+                            @update:model-value="(value) => updateNode({ maxLength: value ? Number(value) : undefined })"
+                            class="h-8" />
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-gray-600 min-w-20">Pattern:</label>
+                    <Input :model-value="node.pattern || ''"
+                        @update:model-value="(value) => updateNode({ pattern: String(value) })"
+                        placeholder="Regular expression pattern" class="h-8" />
+                </div>
+            </template>
+
+            <template v-if="node.type === 'number'">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600 min-w-20">Minimum:</label>
+                        <Input type="number" :model-value="node.minimum"
+                            @update:model-value="(value) => updateNode({ minimum: value ? Number(value) : undefined })"
+                            class="h-8" />
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600 min-w-20">Maximum:</label>
+                        <Input type="number" :model-value="node.maximum"
+                            @update:model-value="(value) => updateNode({ maximum: value ? Number(value) : undefined })"
+                            class="h-8" />
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</template>
