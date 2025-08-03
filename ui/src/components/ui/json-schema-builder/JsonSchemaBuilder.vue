@@ -86,19 +86,36 @@ function addRootProperty(type: JsonSchemaType = 'string') {
 
 function addChildProperty(parentId: string, type: JsonSchemaType = 'string') {
     const parentNode = findNodeInTree(nodes.value, parentId)
-    if (!parentNode || parentNode.type !== 'object') return
+    if (!parentNode) return
 
-    if (!parentNode.children) {
-        parentNode.children = []
+    // Handle adding properties to objects
+    if (parentNode.type === 'object') {
+        if (!parentNode.children) {
+            parentNode.children = []
+        }
+
+        const newNode = createNode(
+            `property${Date.now()}`,
+            type,
+            parentNode.level + 1,
+            parentId
+        )
+        parentNode.children.push(newNode)
     }
+    // Handle adding properties to array items that are objects
+    else if (parentNode.name === 'items') {
+        if (!parentNode.children) {
+            parentNode.children = []
+        }
 
-    const newNode = createNode(
-        `property${Date.now()}`,
-        type,
-        parentNode.level + 1,
-        parentId
-    )
-    parentNode.children.push(newNode)
+        const newNode = createNode(
+            `property${Date.now()}`,
+            type,
+            parentNode.level + 1,
+            parentId
+        )
+        parentNode.children.push(newNode)
+    }
 }
 
 function updateNode(id: string, updates: Partial<SchemaBuilderNode>) {

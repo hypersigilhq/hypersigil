@@ -117,8 +117,14 @@ export function findNodeById(nodes: SchemaBuilderNode[], id: string): SchemaBuil
             const found = findNodeById(node.children, id)
             if (found) return found
         }
-        if (node.items && node.items.id === id) {
-            return node.items
+        if (node.items) {
+            if (node.items.id === id) {
+                return node.items
+            }
+            if (node.items.children) {
+                const found = findNodeById(node.items.children, id)
+                if (found) return found
+            }
         }
     }
     return null
@@ -131,6 +137,9 @@ export function removeNodeById(nodes: SchemaBuilderNode[], id: string): SchemaBu
         }
         if (node.children) {
             node.children = removeNodeById(node.children, id)
+        }
+        if (node.items && node.items.children) {
+            node.items.children = removeNodeById(node.items.children, id)
         }
         return true
     })
@@ -158,9 +167,12 @@ export function updateNodeById(
         if (node.items && node.items.id === id) {
             updatedNode.items = { ...node.items, ...updates }
         } else if (node.items) {
-            const updatedItems = updateNodeById([node.items], id, updates)
-            if (updatedItems[0] !== node.items) {
-                updatedNode.items = updatedItems[0]
+            // Check if the update is for a child of the array items
+            if (node.items.children) {
+                const updatedItemsChildren = updateNodeById(node.items.children, id, updates)
+                if (updatedItemsChildren !== node.items.children) {
+                    updatedNode.items = { ...node.items, children: updatedItemsChildren }
+                }
             }
         }
 
@@ -179,6 +191,10 @@ export function flattenNodes(nodes: SchemaBuilderNode[]): SchemaBuilderNode[] {
             }
             if (node.expanded && node.items) {
                 result.push(node.items)
+                // If the array item is an object with children, traverse them too
+                if (node.items.expanded && node.items.children) {
+                    traverse(node.items.children)
+                }
             }
         }
     }
