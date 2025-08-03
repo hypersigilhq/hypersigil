@@ -87,3 +87,16 @@
 - [done] 28-07-28 21:57 Add deployment options (temperature, topP, topK) to deployment model and API definitions with execution integration
 - [done] 28-07-28 22:12 Build deployment CRUD interface with table view, dialog forms, and full integration with existing UI patterns
 - [done] 29-07-25 18:34 Implement clipboard service with HTTP/HTTPS fallback support for CopyToClipboard component functionality across all deployment environments
+
+
+
+- [todo] in prompt selector preselect latest version
+- [todo] add GET /deployment/run/:id with less data than GET /execution
+- [todo] webhooks for finished Executions (define in the settings webhook targets, in the deployment pick for which targets to deliver the wbehooks)
+- [todo] adding comments to prompts
+- [todo] /stats/all doesnt work when ollama is not configured
+- [todo] empty userInput raises error, for example when sending a file for OC
+- [todo] deployment GET /info so that it returns info about promptId. (then I can run GET {promptId} download input/output schema and generate typescript types)
+- [todo] add more tracing options so apart from traceId add a possibility to send metadata object along with the execution/deployment. Up to 1kb of data serialized
+- [todo] add edit button in view prompt dialog
+- [todo] in execution view details add a button/toggle to show compiled prompt

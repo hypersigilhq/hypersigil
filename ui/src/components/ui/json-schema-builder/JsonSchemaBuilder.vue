@@ -8,7 +8,8 @@ import {
     updateNodeById,
     removeNodeById,
     flattenNodes,
-    generateId
+    generateId,
+    findNodeById
 } from './utils'
 import SchemaNode from './SchemaNode.vue'
 import { Button } from '@/components/ui/button'
@@ -88,22 +89,8 @@ function addChildProperty(parentId: string, type: JsonSchemaType = 'string') {
     const parentNode = findNodeInTree(nodes.value, parentId)
     if (!parentNode) return
 
-    // Handle adding properties to objects
+    // Handle adding properties to any object (including nested array items)
     if (parentNode.type === 'object') {
-        if (!parentNode.children) {
-            parentNode.children = []
-        }
-
-        const newNode = createNode(
-            `property${Date.now()}`,
-            type,
-            parentNode.level + 1,
-            parentId
-        )
-        parentNode.children.push(newNode)
-    }
-    // Handle adding properties to array items that are objects
-    else if (parentNode.name === 'items') {
         if (!parentNode.children) {
             parentNode.children = []
         }
@@ -131,17 +118,8 @@ function toggleExpanded(id: string) {
 }
 
 function findNodeInTree(nodeList: SchemaBuilderNode[], id: string): SchemaBuilderNode | null {
-    for (const node of nodeList) {
-        if (node.id === id) return node
-        if (node.children) {
-            const found = findNodeInTree(node.children, id)
-            if (found) return found
-        }
-        if (node.items && node.items.id === id) {
-            return node.items
-        }
-    }
-    return null
+    // Use the improved utility function that handles nested arrays
+    return findNodeById(nodeList, id)
 }
 
 function handleDragStart(node: SchemaBuilderNode) {

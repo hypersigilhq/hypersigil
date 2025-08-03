@@ -12,6 +12,33 @@
             </Badge>
         </div>
 
+        <!-- Template Suggestion Component Demo -->
+        <Card>
+            <CardHeader>
+                <CardTitle class="flex items-center gap-2">
+                    <FileText class="h-5 w-5" />
+                    Template Suggestion Component
+                </CardTitle>
+                <CardDescription>
+                    Test the template suggestion component with JSON schema-based autocomplete
+                </CardDescription>
+            </CardHeader>
+            <CardContent class="space-y-6">
+                <TemplateSuggestionDemo />
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle class="flex items-center gap-2">
+                    <FileText class="h-5 w-5" />
+                    JSON Schema Builder Component
+                </CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-6">
+                <JsonSchemaBuilderDemo />
+            </CardContent>
+        </Card>
+
         <div class="grid gap-8 md:grid-cols-2">
             <!-- PromptSelector Section -->
             <Card>
@@ -128,6 +155,8 @@ import PromptSelector from '@/components/prompts/PromptSelector.vue'
 import ModelSelector from '@/components/ui/model-selector/ModelSelector.vue'
 import { useUI } from '@/services/ui'
 import Separator from '@/components/ui/separator/Separator.vue'
+import TemplateSuggestionDemo from '@/components/ui/template-suggestion/TemplateSuggestionDemo.vue'
+import JsonSchemaBuilderDemo from '@/components/ui/json-schema-builder/JsonSchemaBuilderDemo.vue'
 
 const { success } = useUI()
 

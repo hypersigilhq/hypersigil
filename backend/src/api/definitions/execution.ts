@@ -98,7 +98,7 @@ export const ExecutionStatsResponseSchema = z.object({
     running: z.number(),
     completed: z.number(),
     failed: z.number(),
-    byProvider: z.record(z.enum(AIProviderNamesDefinition), z.number())
+    byProvider: z.record(z.enum(AIProviderNamesDefinition), z.number().or(z.undefined()))
 });
 
 export type ExecutionStatsResponse = z.infer<typeof ExecutionStatsResponseSchema>;

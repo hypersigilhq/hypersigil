@@ -140,7 +140,7 @@
 
     <!-- Preview Dialog -->
     <Dialog v-model:open="showPreviewDialog">
-        <DialogContent class="max-w-4xl max-h-[80vh] overflow-hidden">
+        <DialogContent class="max-w-6xl max-h-[80vh] overflow-hidden">
             <DialogHeader>
                 <DialogTitle>Compiled Prompt Preview</DialogTitle>
                 <DialogDescription>
@@ -156,7 +156,7 @@
                 <div v-if="previewResult" class="space-y-4">
                     <div>
                         <Label class="text-sm font-medium">Compiled Prompt:</Label>
-                        <div class="mt-2 p-4 bg-gray-50 border rounded-md">
+                        <div class="mt-2 p-4 bg-gray-50 border rounded-md max-h-96 overflow-y-auto">
                             <pre class="whitespace-pre-wrap text-sm">{{ previewResult }}</pre>
                         </div>
                     </div>

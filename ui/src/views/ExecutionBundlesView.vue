@@ -105,7 +105,7 @@
                                     ? 'ring-2 ring-primary/50'
                                     : ''
                             ]">
-                            <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center mb-2 gap-1">
                                 <Badge :variant="getStatusVariant(execution.status)" class="text-xs">
                                     {{ execution.status }}
                                 </Badge>
@@ -113,6 +113,7 @@
                                     :variant="getResultValidVariant(execution.result_valid)" class="text-xs">
                                     {{ execution.result_valid ? 'valid' : 'invalid' }}
                                 </Badge>
+                                <Star :color="'gold'" :fill="'gold'" v-if="execution.starred" />
                             </div>
 
                             <div class="text-xs text-muted-foreground mb-1">
@@ -169,6 +170,7 @@ import type { ExecutionResponse } from '@/services/definitions/execution'
 import router from '@/router'
 import ExecutionDetailsView from '@/components/executions/ExecutionDetailsView.vue'
 import { useSettings } from '@/composables/useSettings'
+import { Star } from 'lucide-vue-next'
 
 // State
 const bundles = ref<ExecutionBundleResponse[]>([])

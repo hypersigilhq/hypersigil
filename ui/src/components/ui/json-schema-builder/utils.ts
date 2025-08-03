@@ -121,10 +121,9 @@ export function findNodeById(nodes: SchemaBuilderNode[], id: string): SchemaBuil
             if (node.items.id === id) {
                 return node.items
             }
-            if (node.items.children) {
-                const found = findNodeById(node.items.children, id)
-                if (found) return found
-            }
+            // Recursively search in array items (handles nested arrays)
+            const found = findNodeById([node.items], id)
+            if (found && found.id !== node.items.id) return found
         }
     }
     return null
@@ -138,8 +137,16 @@ export function removeNodeById(nodes: SchemaBuilderNode[], id: string): SchemaBu
         if (node.children) {
             node.children = removeNodeById(node.children, id)
         }
-        if (node.items && node.items.children) {
-            node.items.children = removeNodeById(node.items.children, id)
+        if (node.items) {
+            // Recursively remove from array items (handles nested arrays)
+            const updatedItems = removeNodeById([node.items], id)
+            if (updatedItems.length === 0) {
+                // If the array item itself was removed, this shouldn't happen in normal usage
+                // but we handle it for completeness
+                node.items = undefined
+            } else if (updatedItems[0] !== node.items) {
+                node.items = updatedItems[0]
+            }
         }
         return true
     })
@@ -164,14 +171,14 @@ export function updateNodeById(
             }
         }
 
-        if (node.items && node.items.id === id) {
-            updatedNode.items = { ...node.items, ...updates }
-        } else if (node.items) {
-            // Check if the update is for a child of the array items
-            if (node.items.children) {
-                const updatedItemsChildren = updateNodeById(node.items.children, id, updates)
-                if (updatedItemsChildren !== node.items.children) {
-                    updatedNode.items = { ...node.items, children: updatedItemsChildren }
+        if (node.items) {
+            if (node.items.id === id) {
+                updatedNode.items = { ...node.items, ...updates }
+            } else {
+                // Recursively update array items (handles nested arrays)
+                const updatedItems = updateNodeById([node.items], id, updates)
+                if (updatedItems[0] !== node.items) {
+                    updatedNode.items = updatedItems[0]
                 }
             }
         }
@@ -190,11 +197,8 @@ export function flattenNodes(nodes: SchemaBuilderNode[]): SchemaBuilderNode[] {
                 traverse(node.children)
             }
             if (node.expanded && node.items) {
-                result.push(node.items)
-                // If the array item is an object with children, traverse them too
-                if (node.items.expanded && node.items.children) {
-                    traverse(node.items.children)
-                }
+                // Recursively traverse array items (handles nested arrays)
+                traverse([node.items])
             }
         }
     }
