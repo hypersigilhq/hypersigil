@@ -187,8 +187,7 @@ function handleDragEnd() {
                 </Button>
 
                 <!-- Add Child Button (for objects and array items that are objects) -->
-                <Button v-if="node.type === 'object' || node.name === 'items'" variant="ghost" size="icon"
-                    class="w-8 h-8" @click="addChild()">
+                <Button v-if="node.type === 'object'" variant="ghost" size="icon" class="w-8 h-8" @click="addChild()">
                     <Plus class="w-4 h-4" />
                 </Button>
 
