@@ -266,12 +266,21 @@ const savePrompt = async () => {
     saving.value = true
 
     try {
+        // Clear schema objects if they have no properties
+        const inputSchemaToSave = inputSchema.value.properties && Object.keys(inputSchema.value.properties).length > 0
+            ? inputSchema.value
+            : undefined
+
+        const outputSchemaToSave = outputSchema.value.properties && Object.keys(outputSchema.value.properties).length > 0
+            ? outputSchema.value
+            : undefined
+
         const promptData: CreatePromptRequest = {
             name: formData.name,
             prompt: formData.prompt,
             options: formData.options,
-            json_schema_input: inputSchema.value,
-            json_schema_response: outputSchema.value
+            json_schema_input: inputSchemaToSave,
+            json_schema_response: outputSchemaToSave
         }
 
         if (props.editingPrompt) {
