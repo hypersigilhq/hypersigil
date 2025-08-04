@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
 import { Textarea } from '@/components/ui/textarea'
-import { Card } from '@/components/ui/card'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { parseJsonSchema, type SchemaPath } from './schema-parser'
+import {
+    getCurrentContext,
+    generateContextualPaths,
+    generateGlobalPaths,
+    cleanSearchTerm,
+    isArrayPath,
+    generateSectionSyntax,
+    type ContextualPath
+} from './mustache-parser'
 import { cn } from '@/lib/utils'
 
 interface CursorPosition {
@@ -38,6 +47,7 @@ const cursorPosition = ref(0)
 const searchTerm = ref('')
 const selectedSuggestionIndex = ref(0)
 const dropdownPosition = ref<CursorPosition>({ x: 0, y: 0 })
+const currentContext = ref<string[]>([])
 
 // Template refs
 const textareaRef = ref()
@@ -47,13 +57,27 @@ const mirrorRef = ref<HTMLDivElement>()
 // Computed properties
 const allPaths = computed(() => parseJsonSchema(props.schema))
 
-const filteredSuggestions = computed(() => {
-    if (!searchTerm.value) return allPaths.value
+// Generate contextual paths based on current Mustache context
+const contextualPaths = computed(() => {
+    if (!currentContext.value.length) return []
+    return generateContextualPaths(props.schema, currentContext.value)
+})
 
-    return allPaths.value.filter(
+// Generate global paths for fallback
+const globalPaths = computed(() => generateGlobalPaths(props.schema))
+
+const filteredSuggestions = computed(() => {
+    // Prioritize contextual paths if available, otherwise use global paths
+    const basePaths = contextualPaths.value.length > 0 ? contextualPaths.value : globalPaths.value
+
+    if (!searchTerm.value) return basePaths
+
+    const cleanedSearchTerm = cleanSearchTerm(searchTerm.value)
+
+    return basePaths.filter(
         (path) =>
-            path.path.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-            path.description?.toLowerCase().includes(searchTerm.value.toLowerCase())
+            path.path.toLowerCase().includes(cleanedSearchTerm.toLowerCase()) ||
+            path.description?.toLowerCase().includes(cleanedSearchTerm.toLowerCase())
     )
 })
 
@@ -182,6 +206,9 @@ const handleTextChange = (event: Event) => {
     text.value = newText
     cursorPosition.value = cursorPos
 
+    // Update current context based on cursor position
+    currentContext.value = getCurrentContext(newText, cursorPos)
+
     // Check if we should show suggestions
     const textBeforeCursor = newText.slice(0, cursorPos)
     const lastOpenBrace = textBeforeCursor.lastIndexOf('{{')
@@ -189,7 +216,7 @@ const handleTextChange = (event: Event) => {
 
     if (lastOpenBrace > lastCloseBrace && lastOpenBrace !== -1) {
         const searchText = textBeforeCursor.slice(lastOpenBrace + 2).trim()
-        searchTerm.value = searchText
+        searchTerm.value = cleanSearchTerm(searchText)
         showSuggestions.value = true
 
         // Calculate cursor position for dropdown positioning
@@ -210,7 +237,7 @@ const handleCursorMove = () => {
     }
 }
 
-const insertSuggestion = (suggestion: SchemaPath) => {
+const insertSuggestion = (suggestion: ContextualPath | SchemaPath) => {
     if (!textareaRef.value) return
 
     const textBeforeCursor = text.value.slice(0, cursorPosition.value)
@@ -219,24 +246,47 @@ const insertSuggestion = (suggestion: SchemaPath) => {
 
     if (lastOpenBrace !== -1) {
         const beforeBrace = text.value.slice(0, lastOpenBrace)
-        const newText = `${beforeBrace}{{${suggestion.path}}}${textAfterCursor}`
-        const newCursorPos = lastOpenBrace + suggestion.path.length + 4
 
-        text.value = newText
-        showSuggestions.value = false
+        // Check if this is an array path that should generate a section
+        const contextualSuggestion = suggestion as ContextualPath
+        if (isArrayPath(contextualSuggestion)) {
+            // Insert section syntax for arrays
+            const sectionSyntax = generateSectionSyntax(suggestion.path)
+            const newText = `${beforeBrace}{{${sectionSyntax}}}${textAfterCursor}`
+            const newCursorPos = lastOpenBrace + sectionSyntax.length - suggestion.path.length - 3 // Position cursor inside section
 
-        // Set cursor position after insertion
-        nextTick(() => {
-            if (textareaRef.value) {
-                // Access the underlying textarea element
-                const textarea = textareaRef.value as any
-                const element = textarea.$el || textarea
-                if (element && element.focus) {
-                    element.focus()
-                    element.setSelectionRange(newCursorPos, newCursorPos)
+            text.value = newText
+            showSuggestions.value = false
+
+            nextTick(() => {
+                if (textareaRef.value) {
+                    const textarea = textareaRef.value as any
+                    const element = textarea.$el || textarea
+                    if (element && element.focus) {
+                        element.focus()
+                        element.setSelectionRange(newCursorPos, newCursorPos)
+                    }
                 }
-            }
-        })
+            })
+        } else {
+            // Regular variable insertion
+            const newText = `${beforeBrace}{{${suggestion.path}}}${textAfterCursor}`
+            const newCursorPos = lastOpenBrace + suggestion.path.length + 4
+
+            text.value = newText
+            showSuggestions.value = false
+
+            nextTick(() => {
+                if (textareaRef.value) {
+                    const textarea = textareaRef.value as any
+                    const element = textarea.$el || textarea
+                    if (element && element.focus) {
+                        element.focus()
+                        element.setSelectionRange(newCursorPos, newCursorPos)
+                    }
+                }
+            })
+        }
     }
 }
 
@@ -295,7 +345,15 @@ const handleKeyDown = (event: KeyboardEvent) => {
                     top: dropdownPosition.y + 'px'
                 }">
                 <div class="p-2">
-                    <div class="text-sm font-medium text-muted-foreground mb-2">Available Variables</div>
+                    <!-- Context indicator -->
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-sm font-medium text-muted-foreground">Available Variables</div>
+                        <div v-if="currentContext.length > 0"
+                            class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                            Context: {{ currentContext.join('.') }}
+                        </div>
+                    </div>
+
                     <div class="max-h-60 overflow-y-auto">
                         <div v-for="(suggestion, index) in filteredSuggestions" :key="`${suggestion.path}-${index}`"
                             :data-suggestion-index="index" :class="cn(
@@ -310,9 +368,22 @@ const handleKeyDown = (event: KeyboardEvent) => {
                                     {{ suggestion.description }}
                                 </div>
                             </div>
-                            <Badge variant="secondary" :class="cn('text-xs', getTypeColor(suggestion.type))">
-                                {{ suggestion.type }}
-                            </Badge>
+                            <div class="flex items-center gap-1">
+                                <!-- Contextual badge -->
+                                <Badge v-if="(suggestion as ContextualPath).isContextual" variant="outline"
+                                    class="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                    ctx
+                                </Badge>
+                                <!-- Loop badge for arrays -->
+                                <Badge v-if="isArrayPath(suggestion as ContextualPath)" variant="outline"
+                                    class="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                    loop
+                                </Badge>
+                                <!-- Type badge -->
+                                <Badge variant="secondary" :class="cn('text-xs', getTypeColor(suggestion.type))">
+                                    {{ suggestion.type }}
+                                </Badge>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -321,21 +392,90 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
         <!-- Preview of available variables -->
         <Card class="p-4" v-if="showAvailableVars">
-            <div class="space-y-3">
-                <div>
-                    <h3 class="text-sm font-medium">Available Variables</h3>
-                    <p class="text-xs text-muted-foreground">All variables available from your schema</p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                    <div v-for="(path, index) in allPaths.slice(0, 12)" :key="`${path.path}-${index}`"
-                        class="flex items-center gap-2 p-2 rounded border bg-muted/50">
-                        <code class="text-sm flex-1 truncate">{{ `&lcub;&lcub;${path.path}&rcub;&rcub;` }}</code>
-                        <Badge variant="secondary" :class="cn('text-xs', getTypeColor(path.type))">
-                            {{ path.type }}
+            <div class="space-y-4">
+                <!-- Current Context Display -->
+                <div v-if="currentContext.length > 0" class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex items-center gap-2 mb-1">
+                        <Badge variant="outline" class="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                            Current Context
                         </Badge>
                     </div>
-                    <div v-if="allPaths.length > 12" class="text-sm text-muted-foreground p-2">
-                        +{{ allPaths.length - 12 }} more variables...
+                    <div class="text-sm font-mono text-blue-800">
+                        {{ currentContext.join(' → ') }}
+                    </div>
+                    <div class="text-xs text-blue-600 mt-1">
+                        You're inside {{ currentContext.length === 1 ? 'a' : 'nested' }}
+                        {{ currentContext.length === 1 ? 'section' : 'sections' }}.
+                        Variables shown are contextual to this scope.
+                    </div>
+                </div>
+
+                <!-- Mustache Syntax Guide -->
+                <div class="p-3 bg-gray-50 rounded-lg border">
+                    <h4 class="text-sm font-medium mb-2">Mustache Syntax Guide</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div class="space-y-1">
+                            <div><code class="bg-white px-1 rounded">`&lcub;&lcub;variable&rcub;$rcub;`</code> -
+                                Variable</div>
+                            <div><code
+                                    class="bg-white px-1 rounded">`&lcub;&lcub;#array&rcub;$rcub;...&lcub;&lcub;/array&rcub;$rcub;`</code>
+                                - Loop</div>
+                        </div>
+                        <div class="space-y-1">
+                            <div><code
+                                    class="bg-white px-1 rounded">`&lcub;&lcub;^empty&rcub;$rcub;...&lcub;&lcub;/empty&rcub;$rcub;`</code>
+                                - If empty
+                            </div>
+                            <div><code
+                                    class="bg-white px-1 rounded">`&lcub;&lcub;#obj.prop&rcub;$rcub;...&lcub;&lcub;/obj.prop&rcub;$rcub;`</code>
+                                - Nested
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Variables -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-medium">Available Variables</h3>
+                        <div class="flex items-center gap-1">
+                            <Badge variant="outline" class="text-xs bg-blue-50 text-blue-700 border-blue-200">ctx
+                            </Badge>
+                            <span class="text-xs text-muted-foreground">contextual</span>
+                            <Badge variant="outline"
+                                class="text-xs bg-orange-50 text-orange-700 border-orange-200 ml-2">loop</Badge>
+                            <span class="text-xs text-muted-foreground">array</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-muted-foreground mb-3">
+                        {{ currentContext.length > 0
+                            ? 'Showing contextual variables for your current scope'
+                            : 'All variables available from your schema' }}
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        <div v-for="(path, index) in (contextualPaths.length > 0 ? contextualPaths : globalPaths).slice(0, 12)"
+                            :key="`${path.path}-${index}`"
+                            class="flex items-center gap-2 p-2 rounded border bg-muted/50">
+                            <code class="text-sm flex-1 truncate">{{ `&lcub;&lcub;${path.path}&rcub;$rcub;` }}</code>
+                            <div class="flex items-center gap-1">
+                                <Badge v-if="(path as ContextualPath).isContextual" variant="outline"
+                                    class="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                    ctx
+                                </Badge>
+                                <Badge v-if="isArrayPath(path as ContextualPath)" variant="outline"
+                                    class="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                    loop
+                                </Badge>
+                                <Badge variant="secondary" :class="cn('text-xs', getTypeColor(path.type))">
+                                    {{ path.type }}
+                                </Badge>
+                            </div>
+                        </div>
+                        <div v-if="(contextualPaths.length > 0 ? contextualPaths : globalPaths).length > 12"
+                            class="text-sm text-muted-foreground p-2">
+                            +{{ (contextualPaths.length > 0 ? contextualPaths : globalPaths).length - 12 }} more
+                            variables...
+                        </div>
                     </div>
                 </div>
             </div>
