@@ -11,7 +11,7 @@
                 </DialogDescription>
             </DialogHeader>
 
-            <form @submit.prevent="savePrompt" class="flex flex-col h-full">
+            <div class="flex flex-col h-full">
                 <div class="grid grid-cols-2 gap-6 flex-1">
                     <!-- Left Column -->
                     <div class="flex flex-col">
@@ -23,9 +23,8 @@
                         <div class="flex-1 flex flex-col mt-2">
                             <Label for="prompt">Prompt</Label>
                             <div class="flex-1 min-h-[300px] resize-none">
-                                <TemplateSuggestion id="prompt" v-model="formData.prompt"
-                                    :schema="formData.json_schema_input" placeholder="Enter your prompt text" class=""
-                                    required />
+                                <TemplateSuggestion id="prompt" v-model="formData.prompt" :schema="inputSchema"
+                                    placeholder="Enter your prompt text" class="" required />
                             </div>
                         </div>
                     </div>
@@ -42,31 +41,21 @@
                             <TabsContent value="input-schema" class="flex-1 flex flex-col">
                                 <Label for="input-schema">JSON Schema Input</Label>
                                 <p class="text-sm text-muted-foreground mt-1">
-                                    Enter a valid JSON schema that defines the expected input structure.
-                                    Use <a href="https://transform.tools/json-to-json-schema" target="_blank">JSON to
-                                        JSON
-                                        Schema</a> or
-                                    <a href="https://bjdash.github.io/JSON-Schema-Builder/" target="_blank">JSON Schema
-                                        Builder</a>
+                                    Define the expected input structure using the visual schema builder below.
                                 </p>
-                                <Textarea id="input-schema" v-model="schemaInputText"
-                                    placeholder='{"type": "object", "properties": {...}}'
-                                    class="flex-1 min-h-[400px] resize-none font-mono text-sm" />
+                                <div class="flex-1 min-h-[400px]">
+                                    <JsonSchemaBuilder v-model="inputSchema" />
+                                </div>
                             </TabsContent>
 
                             <TabsContent value="output-schema" class="flex-1 flex flex-col">
                                 <Label for="output-schema">JSON Schema Response</Label>
                                 <p class="text-sm text-muted-foreground mt-1">
-                                    Enter a valid JSON schema that defines the expected response structure.
-                                    Use <a href="https://transform.tools/json-to-json-schema" target="_blank">JSON to
-                                        JSON
-                                        Schema</a> or
-                                    <a href="https://bjdash.github.io/JSON-Schema-Builder/" target="_blank">JSON Schema
-                                        Builder</a>
+                                    Define the expected response structure using the visual schema builder below.
                                 </p>
-                                <Textarea id="output-schema" v-model="schemaOutputText"
-                                    placeholder='{"type": "object", "properties": {...}}'
-                                    class="flex-1 min-h-[400px] resize-none font-mono text-sm" />
+                                <div class="flex-1 min-h-[400px]">
+                                    <JsonSchemaBuilder v-model="outputSchema" />
+                                </div>
                             </TabsContent>
 
                             <TabsContent value="options" class="flex-1 flex flex-col">
@@ -96,11 +85,11 @@
                     <Button type="button" variant="outline" @click="closeDialog">
                         Cancel
                     </Button>
-                    <Button type="submit" :disabled="saving">
+                    <Button type="submit" @click="savePrompt" :disabled="saving">
                         {{ saving ? 'Saving...' : (editingPrompt ? 'Update' : 'Create') }}
                     </Button>
                 </DialogFooter>
-            </form>
+            </div>
         </DialogContent>
     </Dialog>
 </template>
@@ -109,7 +98,6 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import {
     Dialog,
@@ -127,8 +115,10 @@ import {
 } from '@/components/ui/tabs'
 import Switch from '@/components/ui/switch/Switch.vue'
 import TemplateSuggestion from '@/components/ui/template-suggestion/TemplateSuggestion.vue'
+import JsonSchemaBuilder from '@/components/ui/json-schema-builder/JsonSchemaBuilder.vue'
 import { promptsApi } from '@/services/api-client'
 import type { PromptResponse, CreatePromptRequest } from '@/services/definitions/prompt'
+import type { JsonSchema } from '@/components/ui/json-schema-builder/types'
 import { useUI } from '@/services/ui'
 
 interface Props {
@@ -178,21 +168,22 @@ const formData = reactive<CreatePromptRequest>({
     options: { ...defaultOptions }
 })
 
-const schemaOutputText = ref('')
-const schemaInputText = ref('')
+// Schema objects for JsonSchemaBuilder
+const inputSchema = ref<JsonSchema>({ type: 'object', properties: {}, required: [] })
+const outputSchema = ref<JsonSchema>({ type: 'object', properties: {}, required: [] })
 
 // Original data for comparison
 const originalData = ref<{
     name: string
     prompt: string
-    schemaInputText: string
-    schemaOutputText: string
+    inputSchema: string
+    outputSchema: string
     acceptFileUpload: boolean
 }>({
     name: '',
     prompt: '',
-    schemaInputText: '',
-    schemaOutputText: '',
+    inputSchema: '',
+    outputSchema: '',
     acceptFileUpload: false
 })
 
@@ -203,8 +194,8 @@ const resetForm = () => {
     formData.json_schema_response = {}
     formData.json_schema_input = {}
     formData.options = { ...defaultOptions }
-    schemaOutputText.value = ''
-    schemaInputText.value = ''
+    inputSchema.value = { type: 'object', properties: {}, required: [] }
+    outputSchema.value = { type: 'object', properties: {}, required: [] }
 }
 
 const populateForm = (prompt: PromptResponse, isClone = false) => {
@@ -213,16 +204,27 @@ const populateForm = (prompt: PromptResponse, isClone = false) => {
     formData.json_schema_response = prompt.json_schema_response
     formData.json_schema_input = prompt.json_schema_input
     formData.options = prompt.options || { ...defaultOptions }
-    schemaOutputText.value = JSON.stringify(prompt.json_schema_response, null, 2)
-    schemaInputText.value = JSON.stringify(prompt.json_schema_input, null, 2)
+
+    // Convert existing schemas to JsonSchema format for the builder
+    if (prompt.json_schema_input && Object.keys(prompt.json_schema_input).length > 0) {
+        inputSchema.value = prompt.json_schema_input as unknown as JsonSchema
+    } else {
+        inputSchema.value = { type: 'object', properties: {}, required: [] }
+    }
+
+    if (prompt.json_schema_response && Object.keys(prompt.json_schema_response).length > 0) {
+        outputSchema.value = prompt.json_schema_response as unknown as JsonSchema
+    } else {
+        outputSchema.value = { type: 'object', properties: {}, required: [] }
+    }
 }
 
 const storeOriginalData = () => {
     originalData.value = {
         name: formData.name,
         prompt: formData.prompt,
-        schemaInputText: schemaInputText.value,
-        schemaOutputText: schemaOutputText.value,
+        inputSchema: JSON.stringify(inputSchema.value),
+        outputSchema: JSON.stringify(outputSchema.value),
         acceptFileUpload: formData.options?.acceptFileUpload || false
     }
 }
@@ -231,8 +233,8 @@ const hasUnsavedChanges = (): boolean => {
     return (
         originalData.value.name !== formData.name ||
         originalData.value.prompt !== formData.prompt ||
-        originalData.value.schemaInputText !== schemaInputText.value ||
-        originalData.value.schemaOutputText !== schemaOutputText.value ||
+        originalData.value.inputSchema !== JSON.stringify(inputSchema.value) ||
+        originalData.value.outputSchema !== JSON.stringify(outputSchema.value) ||
         originalData.value.acceptFileUpload !== (formData.options?.acceptFileUpload || false)
     )
 }
@@ -263,25 +265,9 @@ const savePrompt = async () => {
         const promptData: CreatePromptRequest = {
             name: formData.name,
             prompt: formData.prompt,
-            options: formData.options
-        }
-
-        try {
-            if (schemaOutputText.value) {
-                const parsedSchema: Record<string, any> = JSON.parse(schemaOutputText.value)
-                promptData.json_schema_response = parsedSchema
-            }
-        } catch {
-            throw new Error('Invalid JSON schema response format')
-        }
-
-        try {
-            if (schemaInputText.value) {
-                const parsedSchema: Record<string, any> = JSON.parse(schemaInputText.value)
-                promptData.json_schema_input = parsedSchema
-            }
-        } catch {
-            throw new Error('Invalid JSON schema input format')
+            options: formData.options,
+            json_schema_input: inputSchema.value,
+            json_schema_response: outputSchema.value
         }
 
         if (props.editingPrompt) {
@@ -321,6 +307,15 @@ watch(() => props.open, (newValue) => {
         storeOriginalData()
     }
 })
+
+// Keep formData in sync with schema objects
+watch(inputSchema, (newValue) => {
+    formData.json_schema_input = newValue
+}, { deep: true })
+
+watch(outputSchema, (newValue) => {
+    formData.json_schema_response = newValue
+}, { deep: true })
 </script>
 
 <style scoped>
