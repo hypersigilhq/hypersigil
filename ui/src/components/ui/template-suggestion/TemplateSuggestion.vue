@@ -212,16 +212,11 @@ const updateDropdownPosition = () => {
     if (textareaRef.value && showSuggestions.value) {
         // Get the actual DOM element from the Vue component
         const textareaElement = textareaRef.value.$el as HTMLTextAreaElement
-        console.log('Textarea component:', textareaRef.value) // Debug log
-        console.log('Textarea DOM element:', textareaElement) // Debug log
 
         if (textareaElement && textareaElement.selectionStart !== undefined) {
             const cursorPos = textareaElement.selectionStart || 0
-            console.log('Cursor position:', cursorPos) // Debug log
-            console.log('Textarea value:', textareaElement.value) // Debug log
 
             const position = getCursorPosition(textareaElement, cursorPos)
-            console.log('Calculated position:', position) // Debug log
             dropdownPosition.value = position
         }
     }
@@ -523,7 +518,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
                     <div v-if="contextualPaths.length > 0" class="mb-4">
                         <div class="flex items-center gap-2 mb-2">
                             <h4 class="text-sm font-medium text-blue-700">Current Context ({{ currentContext.join('.')
-                                }})</h4>
+                            }})</h4>
                             <Badge variant="outline" class="text-xs bg-blue-50 text-blue-700 border-blue-200">
                                 {{ contextualPaths.length }} variables
                             </Badge>

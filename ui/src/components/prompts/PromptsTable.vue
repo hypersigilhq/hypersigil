@@ -140,94 +140,8 @@
         </div>
 
         <!-- Create/Edit Dialog -->
-        <Dialog v-model:open="showDialog">
-            <DialogContent class="max-w-4xl w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>
-                        {{ editingPrompt ? 'Edit Prompt' : (cloningPrompt ? 'Clone Prompt' : 'Create New Prompt') }}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {{ editingPrompt ? 'Update the prompt details below.' : (cloningPrompt ? `Modify the cloned
-                        prompt details below.` : 'Fill in the details to create a new prompt.') }}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <form @submit.prevent="savePrompt" class="flex flex-col h-full">
-                    <div class="grid grid-cols-2 gap-6 flex-1">
-                        <!-- Left Column -->
-                        <div class="flex flex-col">
-                            <div>
-                                <Label for="name">Name</Label>
-                                <Input id="name" v-model="formData.name" placeholder="Enter prompt name" required />
-                            </div>
-
-                            <div class="flex-1 flex flex-col mt-2">
-                                <Label for="prompt">Prompt</Label>
-                                <div class="flex-1 min-h-[300px] resize-none">
-                                    <TemplateSuggestion id="prompt" v-model="formData.prompt"
-                                        :schema="formData.json_schema_input" placeholder="Enter your prompt text"
-                                        class="" required />
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Right Column -->
-                        <div class="flex flex-col">
-                            <div class="flex-1 flex flex-col">
-                                <div class="flex items-center justify-between">
-                                    <Label for="acceptFileUpload">Accept file upload</Label>
-                                    <Switch id="acceptFileUpload"
-                                        :model-value="formData.options?.acceptFileUpload || false" @update:model-value="(v: boolean) => {
-                                            formData.options!.acceptFileUpload = v;
-                                        }" />
-                                </div>
-                                <p class="text-sm text-muted-foreground mt-1">
-                                    Enable file upload support for this prompt. When enabled, users can upload files as
-                                    part of their input.
-                                </p>
-                            </div>
-                            <div class="flex-1 flex flex-col">
-                                <Label for="schema">JSON Schema Input</Label>
-                                <p class="text-sm text-muted-foreground mt-1">
-                                    Enter a valid JSON schema that defines the expected input structure.
-                                    Use <a href="https://transform.tools/json-to-json-schema" target="_blank">JSON to
-                                        JSON
-                                        Schema</a> or
-                                    <a href="https://bjdash.github.io/JSON-Schema-Builder/" target="_blank">JSON Schema
-                                        Builder</a>
-                                </p>
-                                <Textarea id="schema" v-model="schemaInputText"
-                                    placeholder='{"type": "object", "properties": {...}}'
-                                    class="flex-1 min-h-[300px] resize-none font-mono text-sm" />
-                            </div>
-                            <div class="flex-1 flex flex-col mt-3">
-                                <Label for="schema">JSON Schema Response</Label>
-                                <p class="text-sm text-muted-foreground mt-1">
-                                    Enter a valid JSON schema that defines the expected response structure.
-                                    Use <a href="https://transform.tools/json-to-json-schema" target="_blank">JSON to
-                                        JSON
-                                        Schema</a> or
-                                    <a href="https://bjdash.github.io/JSON-Schema-Builder/" target="_blank">JSON Schema
-                                        Builder</a>
-                                </p>
-                                <Textarea id="schema" v-model="schemaOutputText"
-                                    placeholder='{"type": "object", "properties": {...}}'
-                                    class="flex-1 min-h-[300px] resize-none font-mono text-sm" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <DialogFooter class="mt-6">
-                        <Button type="button" variant="outline" @click="closeDialog">
-                            Cancel
-                        </Button>
-                        <Button type="submit" :disabled="saving">
-                            {{ saving ? 'Saving...' : (editingPrompt ? 'Update' : 'Create') }}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+        <PromptDialog v-model:open="showDialog" :editing-prompt="editingPrompt" :cloning-prompt="cloningPrompt"
+            @success="onPromptDialogSuccess" @error="onPromptDialogError" />
 
         <ViewPromptDialog :open="showViewDialog" :prompt="viewingPrompt" @close="showViewDialog = false" />
 
@@ -238,14 +152,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { debounce } from 'lodash-es'
 import { Plus, Eye, Edit, Trash2, Play, Package, Copy, Search, MoreHorizontal } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
 import {
     Table,
     TableBody,
@@ -254,14 +166,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
 import {
     Select,
     SelectContent,
@@ -275,11 +179,10 @@ import type { PromptResponse, CreatePromptRequest } from '../../services/definit
 import ScheduleExecutionDialog from '@/components/executions/ScheduleExecutionDialog.vue'
 import { useRouter } from 'vue-router'
 import ViewPromptDialog from './ViewPromptDialog.vue'
+import PromptDialog from './PromptDialog.vue'
 import DropdownMenu from '../ui/dropdown-menu/DropdownMenu.vue'
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { useUI } from '@/services/ui'
-import Switch from '../ui/switch/Switch.vue'
-import TemplateSuggestion from '../ui/template-suggestion/TemplateSuggestion.vue'
 
 const router = useRouter()
 const { toast, confirm } = useUI()
@@ -311,21 +214,6 @@ const editingPrompt = ref<PromptResponse | null>(null)
 const cloningPrompt = ref<PromptResponse | null>(null)
 const viewingPrompt = ref<PromptResponse | null>(null)
 const schedulingPrompt = ref<PromptResponse | null>(null)
-const saving = ref(false)
-
-let defaultOptions: CreatePromptRequest['options'] = { acceptFileUpload: false }
-
-// Form data
-const formData = reactive<CreatePromptRequest>({
-    name: '',
-    prompt: '',
-    json_schema_response: {},
-    json_schema_input: {},
-    options: { ...defaultOptions }
-})
-
-const schemaOutputText = ref('')
-const schemaInputText = ref('')
 
 // Debounced search
 const debouncedSearch = debounce(() => {
@@ -375,39 +263,18 @@ const goToPage = (page: number) => {
 const openCreateDialog = () => {
     editingPrompt.value = null
     cloningPrompt.value = null
-    formData.name = ''
-    formData.prompt = ''
-    formData.json_schema_response = {}
-    formData.json_schema_input = {}
-    formData.options = { ...defaultOptions }
-    schemaOutputText.value = ''
-    schemaInputText.value = ''
     showDialog.value = true
 }
 
 const editPrompt = (prompt: PromptResponse) => {
     editingPrompt.value = prompt
     cloningPrompt.value = null
-    formData.name = prompt.name
-    formData.prompt = prompt.prompt
-    formData.json_schema_response = prompt.json_schema_response
-    formData.json_schema_input = prompt.json_schema_input
-    formData.options = prompt.options || { ...defaultOptions }
-    schemaOutputText.value = JSON.stringify(prompt.json_schema_response, null, 2)
-    schemaInputText.value = JSON.stringify(prompt.json_schema_input, null, 2)
     showDialog.value = true
 }
 
 const clonePrompt = (prompt: PromptResponse) => {
     editingPrompt.value = null
     cloningPrompt.value = prompt
-    formData.name = `Copy: ${prompt.name}`
-    formData.prompt = prompt.prompt
-    formData.json_schema_response = prompt.json_schema_response
-    formData.json_schema_input = prompt.json_schema_input
-    formData.options = prompt.options || { ...defaultOptions }
-    schemaOutputText.value = JSON.stringify(prompt.json_schema_response, null, 2)
-    schemaInputText.value = JSON.stringify(prompt.json_schema_input, null, 2)
     showDialog.value = true
 }
 
@@ -416,60 +283,18 @@ const viewPrompt = (prompt: PromptResponse) => {
     showViewDialog.value = true
 }
 
-const closeDialog = () => {
-    showDialog.value = false
-    editingPrompt.value = null
-    cloningPrompt.value = null
+// PromptDialog event handlers
+const onPromptDialogSuccess = () => {
+    loadPrompts()
 }
 
-// Save prompt
-const savePrompt = async () => {
-    saving.value = true
-
-    try {
-
-        const promptData: CreatePromptRequest = {
-            name: formData.name,
-            prompt: formData.prompt,
-            options: formData.options
-        }
-        try {
-            if (schemaOutputText.value) {
-                let parsedSchema: Record<string, any>
-                parsedSchema = JSON.parse(schemaOutputText.value)
-                promptData.json_schema_response = parsedSchema
-            }
-        } catch {
-            throw new Error('Invalid JSON schema response format')
-        }
-        try {
-            if (schemaInputText.value) {
-                let parsedSchema: Record<string, any>
-                parsedSchema = JSON.parse(schemaInputText.value)
-                promptData.json_schema_input = parsedSchema
-            }
-        } catch {
-            throw new Error('Invalid JSON schema input format')
-        }
-
-        if (editingPrompt.value) {
-            await promptsApi.update(editingPrompt.value.id, promptData)
-        } else {
-            await promptsApi.create(promptData)
-        }
-
-        toast({
-            title: 'Success',
-            variant: 'success',
-            description: `Prompt ${editingPrompt.value ? `updated` : `created`} successfully`
-        })
-        closeDialog()
-        loadPrompts()
-    } catch (err) {
-        error.value = err instanceof Error ? err.message : 'Failed to save prompt'
-    } finally {
-        saving.value = false
-    }
+const onPromptDialogError = (errorMessage: string) => {
+    error.value = errorMessage
+    toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'error'
+    })
 }
 
 // Schedule execution
