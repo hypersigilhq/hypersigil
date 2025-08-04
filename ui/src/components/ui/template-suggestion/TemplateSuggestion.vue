@@ -67,17 +67,46 @@ const contextualPaths = computed(() => {
 const globalPaths = computed(() => generateGlobalPaths(props.schema))
 
 const filteredSuggestions = computed(() => {
-    // Prioritize contextual paths if available, otherwise use global paths
-    const basePaths = contextualPaths.value.length > 0 ? contextualPaths.value : globalPaths.value
-
-    if (!searchTerm.value) return basePaths
-
     const cleanedSearchTerm = cleanSearchTerm(searchTerm.value)
 
-    return basePaths.filter(
-        (path) =>
-            path.path.toLowerCase().includes(cleanedSearchTerm.toLowerCase()) ||
-            path.description?.toLowerCase().includes(cleanedSearchTerm.toLowerCase())
+    // Get contextual and global paths separately
+    const contextual = contextualPaths.value.filter(path =>
+        !searchTerm.value ||
+        path.path.toLowerCase().includes(cleanedSearchTerm.toLowerCase()) ||
+        path.description?.toLowerCase().includes(cleanedSearchTerm.toLowerCase())
+    )
+
+    const global = globalPaths.value.filter(path =>
+        !searchTerm.value ||
+        path.path.toLowerCase().includes(cleanedSearchTerm.toLowerCase()) ||
+        path.description?.toLowerCase().includes(cleanedSearchTerm.toLowerCase())
+    )
+
+    // If we have contextual paths, show them first, then global paths
+    if (contextual.length > 0) {
+        return [...contextual, ...global]
+    }
+
+    // Otherwise just show global paths
+    return global
+})
+
+// Separate contextual and global suggestions for display
+const contextualSuggestions = computed(() => {
+    const cleanedSearchTerm = cleanSearchTerm(searchTerm.value)
+    return contextualPaths.value.filter(path =>
+        !searchTerm.value ||
+        path.path.toLowerCase().includes(cleanedSearchTerm.toLowerCase()) ||
+        path.description?.toLowerCase().includes(cleanedSearchTerm.toLowerCase())
+    )
+})
+
+const globalSuggestions = computed(() => {
+    const cleanedSearchTerm = cleanSearchTerm(searchTerm.value)
+    return globalPaths.value.filter(path =>
+        !searchTerm.value ||
+        path.path.toLowerCase().includes(cleanedSearchTerm.toLowerCase()) ||
+        path.description?.toLowerCase().includes(cleanedSearchTerm.toLowerCase())
     )
 })
 
@@ -355,34 +384,76 @@ const handleKeyDown = (event: KeyboardEvent) => {
                     </div>
 
                     <div class="max-h-60 overflow-y-auto">
-                        <div v-for="(suggestion, index) in filteredSuggestions" :key="`${suggestion.path}-${index}`"
-                            :data-suggestion-index="index" :class="cn(
-                                'flex items-center justify-between gap-2 cursor-pointer rounded-sm px-2 py-1.5 text-sm',
-                                index === selectedSuggestionIndex
-                                    ? 'bg-accent text-accent-foreground'
-                                    : 'hover:bg-accent hover:text-accent-foreground'
-                            )" @click="insertSuggestion(suggestion)">
-                            <div class="flex-1 min-w-0">
-                                <div class="font-mono text-sm truncate">{{ suggestion.path }}</div>
-                                <div v-if="suggestion.description" class="text-xs text-muted-foreground truncate">
-                                    {{ suggestion.description }}
+                        <!-- Contextual suggestions (current context) -->
+                        <div v-if="contextualSuggestions.length > 0">
+                            <div class="text-xs font-medium text-blue-700 mb-1 px-1">
+                                Current Context ({{ currentContext.join('.') }})
+                            </div>
+                            <div v-for="(suggestion, index) in contextualSuggestions"
+                                :key="`ctx-${suggestion.path}-${index}`" :data-suggestion-index="index" :class="cn(
+                                    'flex items-center justify-between gap-2 cursor-pointer rounded-sm px-2 py-1.5 text-sm',
+                                    index === selectedSuggestionIndex
+                                        ? 'bg-accent text-accent-foreground'
+                                        : 'hover:bg-accent hover:text-accent-foreground'
+                                )" @click="insertSuggestion(suggestion)">
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-mono text-sm truncate">{{ suggestion.path }}</div>
+                                    <div v-if="suggestion.description" class="text-xs text-muted-foreground truncate">
+                                        {{ suggestion.description }}
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <!-- Contextual badge -->
+                                    <Badge variant="outline" class="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                        ctx
+                                    </Badge>
+                                    <!-- Loop badge for arrays -->
+                                    <Badge v-if="isArrayPath(suggestion)" variant="outline"
+                                        class="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                        loop
+                                    </Badge>
+                                    <!-- Type badge -->
+                                    <Badge variant="secondary" :class="cn('text-xs', getTypeColor(suggestion.type))">
+                                        {{ suggestion.type }}
+                                    </Badge>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-1">
-                                <!-- Contextual badge -->
-                                <Badge v-if="(suggestion as ContextualPath).isContextual" variant="outline"
-                                    class="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                    ctx
-                                </Badge>
-                                <!-- Loop badge for arrays -->
-                                <Badge v-if="isArrayPath(suggestion as ContextualPath)" variant="outline"
-                                    class="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                                    loop
-                                </Badge>
-                                <!-- Type badge -->
-                                <Badge variant="secondary" :class="cn('text-xs', getTypeColor(suggestion.type))">
-                                    {{ suggestion.type }}
-                                </Badge>
+                        </div>
+
+                        <!-- Separator -->
+                        <div v-if="contextualSuggestions.length > 0 && globalSuggestions.length > 0"
+                            class="border-t border-gray-200 my-2"></div>
+
+                        <!-- Global suggestions (root level) -->
+                        <div v-if="globalSuggestions.length > 0">
+                            <div class="text-xs font-medium text-gray-600 mb-1 px-1">
+                                Root Level Variables
+                            </div>
+                            <div v-for="(suggestion, index) in globalSuggestions"
+                                :key="`global-${suggestion.path}-${index}`"
+                                :data-suggestion-index="contextualSuggestions.length + index" :class="cn(
+                                    'flex items-center justify-between gap-2 cursor-pointer rounded-sm px-2 py-1.5 text-sm',
+                                    (contextualSuggestions.length + index) === selectedSuggestionIndex
+                                        ? 'bg-accent text-accent-foreground'
+                                        : 'hover:bg-accent hover:text-accent-foreground'
+                                )" @click="insertSuggestion(suggestion)">
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-mono text-sm truncate">{{ suggestion.path }}</div>
+                                    <div v-if="suggestion.description" class="text-xs text-muted-foreground truncate">
+                                        {{ suggestion.description }}
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <!-- Loop badge for arrays -->
+                                    <Badge v-if="isArrayPath(suggestion)" variant="outline"
+                                        class="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                        loop
+                                    </Badge>
+                                    <!-- Type badge -->
+                                    <Badge variant="secondary" :class="cn('text-xs', getTypeColor(suggestion.type))">
+                                        {{ suggestion.type }}
+                                    </Badge>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -415,19 +486,19 @@ const handleKeyDown = (event: KeyboardEvent) => {
                     <h4 class="text-sm font-medium mb-2">Mustache Syntax Guide</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                         <div class="space-y-1">
-                            <div><code class="bg-white px-1 rounded">`&lcub;&lcub;variable&rcub;$rcub;`</code> -
+                            <div><code class="bg-white px-1 rounded">`&lcub;&lcub;variable&rcub;&rcub;`</code> -
                                 Variable</div>
                             <div><code
-                                    class="bg-white px-1 rounded">`&lcub;&lcub;#array&rcub;$rcub;...&lcub;&lcub;/array&rcub;$rcub;`</code>
+                                    class="bg-white px-1 rounded">`&lcub;&lcub;#array&rcub;&rcub;...&lcub;&lcub;/array&rcub;&rcub;`</code>
                                 - Loop</div>
                         </div>
                         <div class="space-y-1">
                             <div><code
-                                    class="bg-white px-1 rounded">`&lcub;&lcub;^empty&rcub;$rcub;...&lcub;&lcub;/empty&rcub;$rcub;`</code>
+                                    class="bg-white px-1 rounded">`&lcub;&lcub;^empty&rcub;&rcub;...&lcub;&lcub;/empty&rcub;&rcub;`</code>
                                 - If empty
                             </div>
                             <div><code
-                                    class="bg-white px-1 rounded">`&lcub;&lcub;#obj.prop&rcub;$rcub;...&lcub;&lcub;/obj.prop&rcub;$rcub;`</code>
+                                    class="bg-white px-1 rounded">`&lcub;&lcub;#obj.prop&rcub;&rcub;...&lcub;&lcub;/obj.prop&rcub;&rcub;`</code>
                                 - Nested
                             </div>
                         </div>
@@ -447,35 +518,78 @@ const handleKeyDown = (event: KeyboardEvent) => {
                             <span class="text-xs text-muted-foreground">array</span>
                         </div>
                     </div>
-                    <p class="text-xs text-muted-foreground mb-3">
-                        {{ currentContext.length > 0
-                            ? 'Showing contextual variables for your current scope'
-                            : 'All variables available from your schema' }}
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                        <div v-for="(path, index) in (contextualPaths.length > 0 ? contextualPaths : globalPaths).slice(0, 12)"
-                            :key="`${path.path}-${index}`"
-                            class="flex items-center gap-2 p-2 rounded border bg-muted/50">
-                            <code class="text-sm flex-1 truncate">{{ `&lcub;&lcub;${path.path}&rcub;$rcub;` }}</code>
-                            <div class="flex items-center gap-1">
-                                <Badge v-if="(path as ContextualPath).isContextual" variant="outline"
-                                    class="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                    ctx
-                                </Badge>
-                                <Badge v-if="isArrayPath(path as ContextualPath)" variant="outline"
-                                    class="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                                    loop
-                                </Badge>
-                                <Badge variant="secondary" :class="cn('text-xs', getTypeColor(path.type))">
-                                    {{ path.type }}
-                                </Badge>
+
+                    <!-- Contextual Variables Section -->
+                    <div v-if="contextualPaths.length > 0" class="mb-4">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h4 class="text-sm font-medium text-blue-700">Current Context ({{ currentContext.join('.')
+                                }})</h4>
+                            <Badge variant="outline" class="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                {{ contextualPaths.length }} variables
+                            </Badge>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                            <div v-for="(path, index) in contextualPaths.slice(0, 9)"
+                                :key="`ctx-preview-${path.path}-${index}`"
+                                class="flex items-center gap-2 p-2 rounded border bg-blue-50/50 border-blue-200">
+                                <code
+                                    class="text-sm flex-1 truncate">{{ `&lcub;&lcub;${path.path}&rcub;&rcub;` }}</code>
+                                <div class="flex items-center gap-1">
+                                    <Badge variant="outline" class="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                        ctx
+                                    </Badge>
+                                    <Badge v-if="isArrayPath(path)" variant="outline"
+                                        class="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                        loop
+                                    </Badge>
+                                    <Badge variant="secondary" :class="cn('text-xs', getTypeColor(path.type))">
+                                        {{ path.type }}
+                                    </Badge>
+                                </div>
+                            </div>
+                            <div v-if="contextualPaths.length > 9"
+                                class="text-sm text-muted-foreground p-2 flex items-center justify-center border border-dashed border-blue-200 rounded bg-blue-50/30">
+                                +{{ contextualPaths.length - 9 }} more contextual variables...
                             </div>
                         </div>
-                        <div v-if="(contextualPaths.length > 0 ? contextualPaths : globalPaths).length > 12"
-                            class="text-sm text-muted-foreground p-2">
-                            +{{ (contextualPaths.length > 0 ? contextualPaths : globalPaths).length - 12 }} more
-                            variables...
+                    </div>
+
+                    <!-- Global Variables Section -->
+                    <div v-if="globalPaths.length > 0">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h4 class="text-sm font-medium text-gray-700">Root Level Variables</h4>
+                            <Badge variant="outline" class="text-xs bg-gray-50 text-gray-700 border-gray-200">
+                                {{ globalPaths.length }} variables
+                            </Badge>
                         </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                            <div v-for="(path, index) in globalPaths.slice(0, contextualPaths.length > 0 ? 6 : 12)"
+                                :key="`global-preview-${path.path}-${index}`"
+                                class="flex items-center gap-2 p-2 rounded border bg-muted/50">
+                                <code
+                                    class="text-sm flex-1 truncate">{{ `&lcub;&lcub;${path.path}&rcub;&rcub;` }}</code>
+                                <div class="flex items-center gap-1">
+                                    <Badge v-if="isArrayPath(path)" variant="outline"
+                                        class="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                        loop
+                                    </Badge>
+                                    <Badge variant="secondary" :class="cn('text-xs', getTypeColor(path.type))">
+                                        {{ path.type }}
+                                    </Badge>
+                                </div>
+                            </div>
+                            <div v-if="globalPaths.length > (contextualPaths.length > 0 ? 6 : 12)"
+                                class="text-sm text-muted-foreground p-2 flex items-center justify-center border border-dashed border-gray-200 rounded bg-gray-50/30">
+                                +{{ globalPaths.length - (contextualPaths.length > 0 ? 6 : 12) }} more global
+                                variables...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fallback message when no variables -->
+                    <div v-if="contextualPaths.length === 0 && globalPaths.length === 0"
+                        class="text-sm text-muted-foreground text-center py-4">
+                        No variables available. Please provide a schema to see available template variables.
                     </div>
                 </div>
             </div>
