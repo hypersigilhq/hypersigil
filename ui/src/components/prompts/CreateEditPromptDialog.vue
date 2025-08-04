@@ -32,47 +32,63 @@
 
                     <!-- Right Column -->
                     <div class="flex flex-col">
-                        <div class="flex-1 flex flex-col">
-                            <div class="flex items-center justify-between">
-                                <Label for="acceptFileUpload">Accept file upload</Label>
-                                <Switch id="acceptFileUpload" :model-value="formData.options?.acceptFileUpload || false"
-                                    @update:model-value="(v: boolean) => {
-                                        formData.options!.acceptFileUpload = v;
-                                    }" />
-                            </div>
-                            <p class="text-sm text-muted-foreground mt-1">
-                                Enable file upload support for this prompt. When enabled, users can upload files as
-                                part of their input.
-                            </p>
-                        </div>
-                        <div class="flex-1 flex flex-col">
-                            <Label for="schema">JSON Schema Input</Label>
-                            <p class="text-sm text-muted-foreground mt-1">
-                                Enter a valid JSON schema that defines the expected input structure.
-                                Use <a href="https://transform.tools/json-to-json-schema" target="_blank">JSON to
-                                    JSON
-                                    Schema</a> or
-                                <a href="https://bjdash.github.io/JSON-Schema-Builder/" target="_blank">JSON Schema
-                                    Builder</a>
-                            </p>
-                            <Textarea id="schema" v-model="schemaInputText"
-                                placeholder='{"type": "object", "properties": {...}}'
-                                class="flex-1 min-h-[300px] resize-none font-mono text-sm" />
-                        </div>
-                        <div class="flex-1 flex flex-col mt-3">
-                            <Label for="schema">JSON Schema Response</Label>
-                            <p class="text-sm text-muted-foreground mt-1">
-                                Enter a valid JSON schema that defines the expected response structure.
-                                Use <a href="https://transform.tools/json-to-json-schema" target="_blank">JSON to
-                                    JSON
-                                    Schema</a> or
-                                <a href="https://bjdash.github.io/JSON-Schema-Builder/" target="_blank">JSON Schema
-                                    Builder</a>
-                            </p>
-                            <Textarea id="schema" v-model="schemaOutputText"
-                                placeholder='{"type": "object", "properties": {...}}'
-                                class="flex-1 min-h-[300px] resize-none font-mono text-sm" />
-                        </div>
+                        <Tabs default-value="input-schema" class="w-full">
+                            <TabsList class="grid w-full grid-cols-3">
+                                <TabsTrigger value="input-schema">Input Schema</TabsTrigger>
+                                <TabsTrigger value="output-schema">Output Schema</TabsTrigger>
+                                <TabsTrigger value="options">Options</TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="input-schema" class="flex-1 flex flex-col">
+                                <Label for="input-schema">JSON Schema Input</Label>
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    Enter a valid JSON schema that defines the expected input structure.
+                                    Use <a href="https://transform.tools/json-to-json-schema" target="_blank">JSON to
+                                        JSON
+                                        Schema</a> or
+                                    <a href="https://bjdash.github.io/JSON-Schema-Builder/" target="_blank">JSON Schema
+                                        Builder</a>
+                                </p>
+                                <Textarea id="input-schema" v-model="schemaInputText"
+                                    placeholder='{"type": "object", "properties": {...}}'
+                                    class="flex-1 min-h-[400px] resize-none font-mono text-sm" />
+                            </TabsContent>
+
+                            <TabsContent value="output-schema" class="flex-1 flex flex-col">
+                                <Label for="output-schema">JSON Schema Response</Label>
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    Enter a valid JSON schema that defines the expected response structure.
+                                    Use <a href="https://transform.tools/json-to-json-schema" target="_blank">JSON to
+                                        JSON
+                                        Schema</a> or
+                                    <a href="https://bjdash.github.io/JSON-Schema-Builder/" target="_blank">JSON Schema
+                                        Builder</a>
+                                </p>
+                                <Textarea id="output-schema" v-model="schemaOutputText"
+                                    placeholder='{"type": "object", "properties": {...}}'
+                                    class="flex-1 min-h-[400px] resize-none font-mono text-sm" />
+                            </TabsContent>
+
+                            <TabsContent value="options" class="flex-1 flex flex-col">
+                                <div class="flex flex-col space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex flex-col">
+                                            <Label for="acceptFileUpload">Accept file upload</Label>
+                                            <p class="text-sm text-muted-foreground mt-1">
+                                                Enable file upload support for this prompt. When enabled, users can
+                                                upload files as
+                                                part of their input.
+                                            </p>
+                                        </div>
+                                        <Switch id="acceptFileUpload"
+                                            :model-value="formData.options?.acceptFileUpload || false"
+                                            @update:model-value="(v: boolean) => {
+                                                formData.options!.acceptFileUpload = v;
+                                            }" />
+                                    </div>
+                                </div>
+                            </TabsContent>
+                        </Tabs>
                     </div>
                 </div>
 
@@ -103,6 +119,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/ui/tabs'
 import Switch from '@/components/ui/switch/Switch.vue'
 import TemplateSuggestion from '@/components/ui/template-suggestion/TemplateSuggestion.vue'
 import { promptsApi } from '@/services/api-client'

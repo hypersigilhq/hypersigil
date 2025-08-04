@@ -281,7 +281,7 @@ interface ExecutionStats {
     running: number
     completed: number
     failed: number
-    byProvider: Record<string, number>
+    byProvider: Record<string, number | undefined>
 }
 
 // Reactive state

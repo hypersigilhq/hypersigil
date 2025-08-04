@@ -167,8 +167,8 @@
         </div>
 
         <!-- Create/Edit Dialog -->
-        <PromptDialog v-model:open="showDialog" :editing-prompt="editingPrompt" :cloning-prompt="cloningPrompt"
-            @success="onPromptDialogSuccess" @error="onPromptDialogError" />
+        <CreateEditPromptDialog v-model:open="showDialog" :editing-prompt="editingPrompt"
+            :cloning-prompt="cloningPrompt" @success="onPromptDialogSuccess" @error="onPromptDialogError" />
 
         <ViewPromptDialog :open="showViewDialog" :prompt="viewingPrompt" @close="showViewDialog = false" />
 
@@ -206,7 +206,7 @@ import type { PromptResponse, CreatePromptRequest } from '../../services/definit
 import ScheduleExecutionDialog from '@/components/executions/ScheduleExecutionDialog.vue'
 import { useRouter } from 'vue-router'
 import ViewPromptDialog from './ViewPromptDialog.vue'
-import PromptDialog from './PromptDialog.vue'
+import CreateEditPromptDialog from './CreateEditPromptDialog.vue'
 import DropdownMenu from '../ui/dropdown-menu/DropdownMenu.vue'
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { useUI } from '@/services/ui'
