@@ -49,7 +49,9 @@
                 <TableHeader>
                     <TableRow>
                         <TableHead>Name</TableHead>
-                        <TableHead>Prompt Preview</TableHead>
+                        <TableHead>Input Schema</TableHead>
+                        <TableHead>Output Schema</TableHead>
+                        <TableHead>Accepts Files</TableHead>
                         <TableHead>Versions</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead>Updated</TableHead>
@@ -58,16 +60,41 @@
                 </TableHeader>
                 <TableBody>
                     <TableRow v-if="prompts.length === 0">
-                        <TableCell colspan="6" class="text-center py-8 text-muted-foreground">
+                        <TableCell colspan="9" class="text-center py-8 text-muted-foreground">
                             No prompts found
                         </TableCell>
                     </TableRow>
                     <TableRow v-for="prompt in prompts" :key="prompt.id">
                         <TableCell class="font-medium">{{ prompt.name }}</TableCell>
-                        <TableCell class="max-w-xs">
-                            <div class="truncate" :title="prompt.prompt">
-                                {{ prompt.prompt }}
-                            </div>
+                        <TableCell class="text-center">
+                            <span v-if="prompt.json_schema_input"
+                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Defined
+                            </span>
+                            <span v-else
+                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                - None
+                            </span>
+                        </TableCell>
+                        <TableCell class="text-center">
+                            <span v-if="prompt.json_schema_response"
+                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Defined
+                            </span>
+                            <span v-else
+                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                - None
+                            </span>
+                        </TableCell>
+                        <TableCell class="text-center">
+                            <span v-if="prompt.options?.acceptFileUpload"
+                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                ✓ Yes
+                            </span>
+                            <span v-else
+                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                - No
+                            </span>
                         </TableCell>
                         <TableCell>{{ prompt.current_version }}</TableCell>
                         <TableCell>{{ formatDate(prompt.created_at) }}</TableCell>
