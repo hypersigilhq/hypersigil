@@ -144,8 +144,15 @@ function handleDragEnd() {
             <component :is="typeIcon" class="w-4 h-4 text-gray-600" />
 
             <!-- Property Name -->
-            <Input :model-value="node.name" @update:model-value="(value) => updateNode({ name: String(value) })"
-                placeholder="Property name" class="h-8 min-w-32 max-w-48" />
+            <Input v-if="node.name !== 'items'" :model-value="node.name"
+                @update:model-value="(value) => updateNode({ name: String(value) })" placeholder="Property name"
+                class="h-8 min-w-32 max-w-48" />
+
+            <!-- Array Item Schema Label -->
+            <div v-else
+                class="h-8 min-w-32 max-w-48 flex items-center px-3 bg-gray-50 border border-gray-200 rounded-md">
+                <span class="text-sm text-gray-600 font-medium">Array Item Schema</span>
+            </div>
 
             <!-- Type Selector -->
             <Select :model-value="node.type" @update:model-value="(value) => handleTypeChange(value as JsonSchemaType)">
@@ -162,8 +169,8 @@ function handleDragEnd() {
                 </SelectContent>
             </Select>
 
-            <!-- Required Checkbox -->
-            <div class="flex items-center gap-2">
+            <!-- Required Checkbox (not shown for items as they are schema definitions) -->
+            <div v-if="node.name !== 'items'" class="flex items-center gap-2">
                 <Checkbox :model-value="node.required"
                     @update:model-value="(checked: boolean | 'indeterminate') => updateNode({ required: checked === true })" />
                 <label class="text-sm text-gray-600">Required</label>
