@@ -220,17 +220,17 @@ function hideAllDetails() {
 </script>
 
 <template>
-    <div class="json-schema-builder w-full">
-        <Tabs default-value="builder" class="w-full">
-            <TabsList class="grid w-full grid-cols-2">
+    <div class="json-schema-builder w-full h-full flex flex-col">
+        <Tabs default-value="builder" class="w-full h-full flex flex-col">
+            <TabsList class="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="builder">Schema Builder</TabsTrigger>
                 <TabsTrigger value="output">JSON Output</TabsTrigger>
             </TabsList>
 
             <!-- Schema Builder Tab -->
-            <TabsContent value="builder" class="mt-6">
-                <Card>
-                    <CardHeader class="pb-4">
+            <TabsContent value="builder" class="mt-6 flex-1 flex flex-col min-h-0">
+                <Card class="flex-1 flex flex-col min-h-0">
+                    <CardHeader class="pb-4 flex-shrink-0">
                         <div class="flex items-center justify-between">
                             <CardTitle class="text-lg">Schema Builder</CardTitle>
                             <div class="flex items-center gap-2">
@@ -273,28 +273,31 @@ function hideAllDetails() {
                         </div>
                     </CardHeader>
 
-                    <CardContent class="pt-0">
-                        <div class="space-y-1 max-h-96 overflow-y-auto" @dragover="handleDragOver">
-                            <template v-for="node in flatNodes" :key="node.id">
-                                <SchemaNode :node="node" :can-delete="flatNodes.length > 1"
-                                    :is-dragging="draggedNode?.id === node.id" @update="updateNode" @delete="deleteNode"
-                                    @add-child="addChildProperty" @toggle-expanded="toggleExpanded"
-                                    @drag-start="handleDragStart" @drag-end="handleDragEnd" />
-                            </template>
+                    <CardContent class="pt-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+                        <div class="flex-1 overflow-y-auto min-h-0" @dragover="handleDragOver">
+                            <div class="space-y-1 pb-4">
+                                <template v-for="node in flatNodes" :key="node.id">
+                                    <SchemaNode :node="node" :can-delete="flatNodes.length > 1"
+                                        :is-dragging="draggedNode?.id === node.id" @update="updateNode"
+                                        @delete="deleteNode" @add-child="addChildProperty"
+                                        @toggle-expanded="toggleExpanded" @drag-start="handleDragStart"
+                                        @drag-end="handleDragEnd" />
+                                </template>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
             </TabsContent>
 
             <!-- JSON Output Tab -->
-            <TabsContent value="output" class="mt-6">
-                <Card>
-                    <CardHeader class="pb-4">
+            <TabsContent value="output" class="mt-6 flex-1 flex flex-col min-h-0">
+                <Card class="flex-1 flex flex-col min-h-0">
+                    <CardHeader class="pb-4 flex-shrink-0">
                         <CardTitle class="text-lg">JSON Schema Output</CardTitle>
                     </CardHeader>
 
-                    <CardContent class="pt-0">
-                        <pre class="bg-gray-50 p-4 rounded-md text-sm overflow-x-auto max-h-96 overflow-y-auto border">{{
+                    <CardContent class="pt-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+                        <pre class="bg-gray-50 p-4 rounded-md text-sm flex-1 overflow-auto border">{{
                             JSON.stringify(jsonSchema, null, 2) }}</pre>
                     </CardContent>
                 </Card>

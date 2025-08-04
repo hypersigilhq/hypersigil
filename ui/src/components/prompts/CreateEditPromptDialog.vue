@@ -11,54 +11,58 @@
                 </DialogDescription>
             </DialogHeader>
 
-            <div class="flex flex-col h-full">
-                <div class="grid grid-cols-2 gap-6 flex-1">
+            <div class="flex flex-col h-full overflow-hidden">
+                <div class="grid grid-cols-2 gap-6 flex-1 min-h-0">
                     <!-- Left Column -->
-                    <div class="flex flex-col">
-                        <div>
+                    <div class="flex flex-col h-full overflow-hidden">
+                        <div class="flex-shrink-0">
                             <Label for="name">Name</Label>
                             <Input id="name" v-model="formData.name" placeholder="Enter prompt name" required />
                         </div>
 
-                        <div class="flex-1 flex flex-col mt-2">
-                            <Label for="prompt">Prompt</Label>
-                            <div class="flex-1 min-h-[300px] resize-none">
+                        <div class="flex-1 flex flex-col mt-2 min-h-0">
+                            <Label for="prompt" class="flex-shrink-0">Prompt</Label>
+                            <div class="flex-1 min-h-0 mt-2">
                                 <TemplateSuggestion id="prompt" v-model="formData.prompt" :schema="inputSchema"
-                                    placeholder="Enter your prompt text" class="" required />
+                                    placeholder="Enter your prompt text" class="h-full" required />
                             </div>
                         </div>
                     </div>
 
                     <!-- Right Column -->
-                    <div class="flex flex-col">
-                        <Tabs default-value="input-schema" class="w-full">
-                            <TabsList class="grid w-full grid-cols-3">
+                    <div class="flex flex-col h-full overflow-hidden">
+                        <Tabs default-value="input-schema" class="w-full h-full flex flex-col">
+                            <TabsList class="grid w-full grid-cols-3 flex-shrink-0">
                                 <TabsTrigger value="input-schema">Input Schema</TabsTrigger>
                                 <TabsTrigger value="output-schema">Output Schema</TabsTrigger>
                                 <TabsTrigger value="options">Options</TabsTrigger>
                             </TabsList>
 
-                            <TabsContent value="input-schema" class="flex-1 flex flex-col">
-                                <Label for="input-schema">JSON Schema Input</Label>
-                                <p class="text-sm text-muted-foreground mt-1">
-                                    Define the expected input structure using the visual schema builder below.
-                                </p>
-                                <div class="flex-1 min-h-[400px]">
+                            <TabsContent value="input-schema" class="flex-1 flex flex-col mt-6 overflow-hidden">
+                                <div class="flex-shrink-0">
+                                    <Label for="input-schema">JSON Schema Input</Label>
+                                    <p class="text-sm text-muted-foreground mt-1">
+                                        Define the expected input structure using the visual schema builder below.
+                                    </p>
+                                </div>
+                                <div class="flex-1 mt-4 min-h-0 overflow-auto">
                                     <JsonSchemaBuilder v-model="inputSchema" />
                                 </div>
                             </TabsContent>
 
-                            <TabsContent value="output-schema" class="flex-1 flex flex-col">
-                                <Label for="output-schema">JSON Schema Response</Label>
-                                <p class="text-sm text-muted-foreground mt-1">
-                                    Define the expected response structure using the visual schema builder below.
-                                </p>
-                                <div class="flex-1 min-h-[400px]">
+                            <TabsContent value="output-schema" class="flex-1 flex flex-col mt-6 overflow-hidden">
+                                <div class="flex-shrink-0">
+                                    <Label for="output-schema">JSON Schema Response</Label>
+                                    <p class="text-sm text-muted-foreground mt-1">
+                                        Define the expected response structure using the visual schema builder below.
+                                    </p>
+                                </div>
+                                <div class="flex-1 mt-4 min-h-0 overflow-auto">
                                     <JsonSchemaBuilder v-model="outputSchema" />
                                 </div>
                             </TabsContent>
 
-                            <TabsContent value="options" class="flex-1 flex flex-col">
+                            <TabsContent value="options" class="flex-1 flex flex-col mt-6 overflow-auto">
                                 <div class="flex flex-col space-y-4">
                                     <div class="flex items-center justify-between">
                                         <div class="flex flex-col">
