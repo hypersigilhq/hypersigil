@@ -128,12 +128,18 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-const { toast } = useUI()
+const { toast, confirm } = useUI()
 
 // Computed for v-model:open
 const isOpen = computed({
     get: () => props.open,
-    set: (value: boolean) => emit('update:open', value)
+    set: (value: boolean) => {
+        if (!value) {
+            handleCloseDialog()
+        } else {
+            emit('update:open', value)
+        }
+    }
 })
 
 // State
@@ -152,6 +158,21 @@ const formData = reactive<CreatePromptRequest>({
 
 const schemaOutputText = ref('')
 const schemaInputText = ref('')
+
+// Original data for comparison
+const originalData = ref<{
+    name: string
+    prompt: string
+    schemaInputText: string
+    schemaOutputText: string
+    acceptFileUpload: boolean
+}>({
+    name: '',
+    prompt: '',
+    schemaInputText: '',
+    schemaOutputText: '',
+    acceptFileUpload: false
+})
 
 // Methods
 const resetForm = () => {
@@ -174,8 +195,43 @@ const populateForm = (prompt: PromptResponse, isClone = false) => {
     schemaInputText.value = JSON.stringify(prompt.json_schema_input, null, 2)
 }
 
-const closeDialog = () => {
+const storeOriginalData = () => {
+    originalData.value = {
+        name: formData.name,
+        prompt: formData.prompt,
+        schemaInputText: schemaInputText.value,
+        schemaOutputText: schemaOutputText.value,
+        acceptFileUpload: formData.options?.acceptFileUpload || false
+    }
+}
+
+const hasUnsavedChanges = (): boolean => {
+    return (
+        originalData.value.name !== formData.name ||
+        originalData.value.prompt !== formData.prompt ||
+        originalData.value.schemaInputText !== schemaInputText.value ||
+        originalData.value.schemaOutputText !== schemaOutputText.value ||
+        originalData.value.acceptFileUpload !== (formData.options?.acceptFileUpload || false)
+    )
+}
+
+const handleCloseDialog = async () => {
+    if (hasUnsavedChanges()) {
+        const confirmed = await confirm({
+            title: 'Unsaved Changes',
+            message: 'You have unsaved changes. Are you sure you want to close without saving?',
+            confirmText: 'Close without saving',
+            variant: 'destructive'
+        })
+
+        if (!confirmed) return
+    }
+
     emit('update:open', false)
+}
+
+const closeDialog = () => {
+    handleCloseDialog()
 }
 
 const savePrompt = async () => {
@@ -219,7 +275,8 @@ const savePrompt = async () => {
         })
 
         emit('success')
-        closeDialog()
+        // Directly close without confirmation since user saved their changes
+        emit('update:open', false)
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to save prompt'
         emit('error', errorMessage)
@@ -238,6 +295,8 @@ watch(() => props.open, (newValue) => {
         } else {
             resetForm()
         }
+        // Store the original data after form is populated for comparison
+        storeOriginalData()
     }
 })
 </script>
