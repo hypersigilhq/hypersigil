@@ -10,6 +10,7 @@ import { ApiKeyApiDefinition, type CreateApiKeyRequest, type UpdateApiKeyRequest
 import { SettingsApiDefinition, type CreateSettingsRequest, type UpdateSettingsRequest } from './definitions/settings';
 import { FileApiDefinition, type CreateFileRequest, type UpdateFileRequest } from './definitions/file';
 import { DeploymentApiDefinition, type CreateDeploymentRequest, type UpdateDeploymentRequest } from './definitions/deployment';
+import { JobApiDefinition } from './definitions/job';
 import { CommonApiDefinition } from './definitions/common';
 import { eventBus } from './event-bus';
 
@@ -69,6 +70,11 @@ export const deploymentApiClient = new ApiClient(
     DeploymentApiDefinition
 );
 
+export const jobApiClient = new ApiClient(
+    document.location.origin, // Adjust this to match your backend URL
+    JobApiDefinition
+);
+
 export const commonApiClient = new ApiClient(
     document.location.origin, // Adjust this to match your backend URL
     CommonApiDefinition
@@ -87,6 +93,7 @@ const allApiClients = [
     settingsApiClient,
     fileApiClient,
     deploymentApiClient,
+    jobApiClient,
     commonApiClient
 ];
 
@@ -705,6 +712,27 @@ export const deploymentsApi = {
 
     run: (name: string, body: { userInput: string; traceId?: string; fileId?: string }) =>
         deploymentApiClient.callApi('deployments', 'run', { params: { name }, body }, {
+            ...errorHandle,
+            201: (payload) => payload.data,
+        })
+};
+
+// Helper functions for jobs API
+export const jobsApi = {
+    list: (options?: { query?: { page?: string; limit?: string; status?: 'pending' | 'running' | 'completed' | 'failed' | 'retrying' | 'terminated'; jobName?: string; search?: string; orderBy?: 'created_at' | 'updated_at' | 'scheduledAt' | 'startedAt' | 'completedAt'; orderDirection?: 'ASC' | 'DESC' } }) =>
+        jobApiClient.callApi('jobs', 'list', options, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    getById: (id: string) =>
+        jobApiClient.callApi('jobs', 'getById', { params: { id } }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    trigger: (body: { job: { type: 'webhook-delivery'; data: { url: string } } }) =>
+        jobApiClient.callApi('jobs', 'trigger', { body }, {
             ...errorHandle,
             201: (payload) => payload.data,
         })

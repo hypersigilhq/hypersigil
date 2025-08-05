@@ -64,6 +64,7 @@ export abstract class Model<T extends BaseDocument> {
     protected convertDateFields(document: T): void {
         const dateFieldPatterns = [
             /_at$/,     // ends with _at (started_at, completed_at, etc.)
+            /At$/,     // ends with At
             /_date$/,   // ends with _date
             /^date_/,   // starts with date_
             /timestamp/, // contains timestamp

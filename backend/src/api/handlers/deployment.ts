@@ -228,7 +228,8 @@ RegisterHandlers(app, DeploymentApiDefinition, {
                 ...(executionOptions && { options: executionOptions }),
                 origin: req.isApiCall() ? 'api' : 'app',
                 traceId,
-                fileId
+                fileId,
+                ...(deployment.webhookDestinationIds?.length && { webhookDestinationIds: deployment.webhookDestinationIds })
             });
 
             if (result.err) {

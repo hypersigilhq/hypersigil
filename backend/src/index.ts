@@ -12,10 +12,12 @@ import "./api/handlers/settings"
 import "./api/handlers/common"
 import "./api/handlers/file"
 import "./api/handlers/deployment"
+import "./api/handlers/job"
 import { config } from "./config";
 import { migrationManager } from './database/index'
 import { executionWorker } from "./services/execution-worker";
 import { initializeAllModels } from "./database/model-initializer";
+import { startWorkerSystem, stopWorkerSystem } from "./workers";
 
 // Initialize database and services
 const initializeServices = async () => {
@@ -32,6 +34,10 @@ const initializeServices = async () => {
         // Then initialize other services
         await executionWorker.initialize();
         console.log('✅ Services initialized successfully');
+
+        await startWorkerSystem()
+        console.log('✅ System job worker initialized');
+
     } catch (error) {
         console.error('❌ Failed to initialize services:', error);
         process.exit(1);
@@ -54,9 +60,10 @@ const startServer = async () => {
     await initializeServices();
     const server = await startServer();
 
-    const shutdown = () => {
+    const shutdown = async () => {
         console.log('SIGINT received, shutting down gracefully');
         executionWorker.shutdown();
+        await stopWorkerSystem();
         server.close(() => {
             console.log('Process terminated');
             process.exit(0);

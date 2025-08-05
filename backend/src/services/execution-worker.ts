@@ -4,6 +4,8 @@ import { fileModel } from '../models/file';
 import { providerRegistry } from '../providers/provider-registry';
 import { ProviderError, ExecutionOptions, JSONSchema, AIProviderName, AIProviderNames, FileAttachment } from '../providers/base-provider';
 import { promptService } from './prompt-service';
+import { Scheduler } from '../workers';
+import { randomUUID } from 'crypto';
 
 
 export class ExecutionWorker {
@@ -233,13 +235,14 @@ export class ExecutionWorker {
      * Process a single execution
      */
     private async processExecution(executionId: string): Promise<void> {
+        let status: Execution['status']
+        // Get execution
+        const execution = await executionModel.findById(executionId);
+        if (!execution) {
+            console.error(`Execution not found: ${executionId}`);
+            return;
+        }
         try {
-            // Get execution
-            const execution = await executionModel.findById(executionId);
-            if (!execution) {
-                console.error(`Execution not found: ${executionId}`);
-                return;
-            }
 
             // Skip if not pending or running (interrupted executions)
             if (execution.status !== 'pending' && execution.status !== 'running') {
@@ -375,9 +378,9 @@ export class ExecutionWorker {
             } else {
                 resultOutput = result.output
             }
-
+            status = 'completed'
             // Update with result and validation
-            await executionModel.updateStatus(executionId, 'completed', {
+            await executionModel.updateStatus(executionId, status, {
                 result: resultOutput, // null values has been removed
                 input_tokens_used: result.inputTokensUsed,
                 output_tokens_used: result.outputTokensUsed,
@@ -396,9 +399,27 @@ export class ExecutionWorker {
                 errorMessage = error.message;
             }
 
-            await executionModel.updateStatus(executionId, 'failed', {
+            status = 'failed'
+            await executionModel.updateStatus(executionId, status, {
                 error_message: errorMessage
             });
+        }
+
+        if (execution.webhookDestinationIds) {
+            for (let w of execution.webhookDestinationIds) {
+                await Scheduler.sendWithRetryConfig('webhook-delivery', {
+                    webhookId: w,
+                    data: {
+                        event: "execution-finished",
+                        executionId,
+                        status
+                    }
+                }, {
+                    maxAttempts: 8,
+                    retryBackoffMultiplier: 5,
+                    retryDelayMs: 5000
+                })
+            }
         }
     }
 

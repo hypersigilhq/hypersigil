@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import { Settings, User, FileText, Play, Database, PanelLeftClose, PanelLeftOpen, Terminal, File, Rocket, Beaker } from 'lucide-vue-next'
+import { Settings, User, FileText, Play, Database, PanelLeftClose, PanelLeftOpen, Terminal, File, Rocket, Beaker, Cog } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import NavigationItem from './NavigationItem.vue'
 import { useAuth } from '@/composables/useAuth'
@@ -128,6 +128,11 @@ const navigationItems = computed<NavigationItemType[]>(() => {
             name: 'Deployments',
             path: '/deployments',
             icon: Rocket,
+        },
+        {
+            name: 'Jobs',
+            path: '/jobs',
+            icon: Cog,
         },
         {
             name: 'Settings',

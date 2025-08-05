@@ -94,6 +94,8 @@
 - [todo] add GET /deployment/run/:id with less data than GET /execution
 - [done] 05-08-25 00:17 webhooks for finished Executions (define in the settings webhook targets, in the deployment pick for which targets to deliver the webhooks) - webhook destinations management UI implemented
 - [done] 05-08-25 00:41 Add webhook column to DeploymentsTable.vue showing webhook destination names by ID
+- [done] 05-08-25 14:25 Implement jobs listing view with filtering and deeply linked job details dialog for background job monitoring
+- [done] 05-08-25 21:33 Add webhook testing functionality to CreateWebhookDestinationDialog with trigger endpoint integration
 - [todo] adding comments to prompts
 - [todo] /stats/all doesnt work when ollama is not configured
 - [todo] empty userInput raises error, for example when sending a file for OC

@@ -18,7 +18,8 @@ export interface CreateExecutionRequest {
     testDataItemId?: string
     traceId?: string | undefined
     fileId?: string | undefined
-    origin: Execution['origin']
+    origin: Execution['origin'];
+    webhookDestinationIds?: string[] | undefined; // destined webhooks to deliver
 }
 
 export class ExecutionService {
@@ -66,7 +67,6 @@ export class ExecutionService {
         // Parse and validate provider:model format
         const { provider: providerName, model } = providerRegistry.parseProviderModel(request.providerModel);
 
-
         // Create execution record
         const executionData: Omit<Execution, 'id' | 'created_at' | 'updated_at'> = {
             prompt_id: request.promptId,
@@ -81,7 +81,8 @@ export class ExecutionService {
             options: request.options,
             origin: request.origin,
             trace_id: request.traceId,
-            fileId: request.fileId
+            fileId: request.fileId,
+            webhookDestinationIds: request.webhookDestinationIds
         };
 
         const execution = await executionModel.create(executionData);

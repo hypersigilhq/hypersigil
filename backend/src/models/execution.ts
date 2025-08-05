@@ -31,6 +31,7 @@ export interface Execution extends BaseDocument {
     fileId?: string | undefined;
     // whats the origin of the execution
     origin: 'app' | 'api';
+    webhookDestinationIds?: string[] | undefined; // destined webhooks to deliver
 }
 
 export class ExecutionModel extends Model<Execution> {

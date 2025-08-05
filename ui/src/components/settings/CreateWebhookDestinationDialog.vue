@@ -18,9 +18,16 @@
 
                 <div class="space-y-2">
                     <Label for="url">Webhook URL</Label>
-                    <Input id="url" v-model="form.url" type="url"
-                        placeholder="https://your-webhook-endpoint.com/webhook"
-                        :class="{ 'border-destructive': errors.url }" required />
+                    <div class="flex space-x-2">
+                        <Input id="url" v-model="form.url" type="url"
+                            placeholder="https://your-webhook-endpoint.com/webhook"
+                            :class="{ 'border-destructive': errors.url }" required />
+                        <Button type="button" variant="outline" size="sm" @click="testWebhook"
+                            :disabled="!form.url.trim() || testLoading" class="shrink-0">
+                            <TestTube v-if="!testLoading" class="h-4 w-4" />
+                            <Loader2 v-else class="h-4 w-4 animate-spin" />
+                        </Button>
+                    </div>
                     <p v-if="errors.url" class="text-sm text-destructive">{{ errors.url }}</p>
                     <p class="text-xs text-muted-foreground">
                         The URL where webhook notifications will be sent.
@@ -50,7 +57,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2, TestTube } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -63,7 +70,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
-import { settingsApi } from '@/services/api-client'
+import { settingsApi, jobsApi } from '@/services/api-client'
 import type { WebhookDestinationSettings } from '@/services/definitions/settings'
 import { useUI } from '@/services/ui'
 
@@ -84,6 +91,7 @@ const emit = defineEmits<Emits>()
 const { toast } = useUI()
 
 const loading = ref(false)
+const testLoading = ref(false)
 const form = ref({
     name: '',
     url: '',
@@ -204,6 +212,57 @@ const handleSubmit = async () => {
         }
     } finally {
         loading.value = false
+    }
+}
+
+const testWebhook = async () => {
+    // Validate URL first
+    if (!form.value.url.trim()) {
+        toast({
+            title: 'Error',
+            description: 'Please enter a webhook URL first',
+            variant: 'error'
+        })
+        return
+    }
+
+    try {
+        new URL(form.value.url)
+    } catch {
+        toast({
+            title: 'Error',
+            description: 'Please enter a valid URL',
+            variant: 'error'
+        })
+        return
+    }
+
+    testLoading.value = true
+
+    try {
+        await jobsApi.trigger({
+            job: {
+                type: 'webhook-delivery',
+                data: {
+                    url: form.value.url.trim()
+                }
+            }
+        })
+
+        toast({
+            title: 'Test Webhook Sent',
+            description: 'A test webhook has been queued for delivery. Check your endpoint logs to verify receipt.'
+        })
+    } catch (error: any) {
+        console.error('Failed to test webhook:', error)
+
+        toast({
+            title: 'Test Failed',
+            description: error?.message || 'Failed to send test webhook',
+            variant: 'error'
+        })
+    } finally {
+        testLoading.value = false
     }
 }
 </script>
