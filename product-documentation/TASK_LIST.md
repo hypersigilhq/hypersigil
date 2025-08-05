@@ -96,6 +96,7 @@
 - [done] 05-08-25 00:41 Add webhook column to DeploymentsTable.vue showing webhook destination names by ID
 - [done] 05-08-25 14:25 Implement jobs listing view with filtering and deeply linked job details dialog for background job monitoring
 - [done] 05-08-25 21:33 Add webhook testing functionality to CreateWebhookDestinationDialog with trigger endpoint integration
+- [done] 05-08-25 21:50 Implement per-job-type concurrency system with type-safe configuration, reserved capacity model, and priority-based scheduling for optimal webhook delivery performance
 - [todo] adding comments to prompts
 - [todo] /stats/all doesnt work when ollama is not configured
 - [todo] empty userInput raises error, for example when sending a file for OC

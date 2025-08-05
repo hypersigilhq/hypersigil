@@ -93,9 +93,21 @@ export interface ScheduleOptions {
     maxRetryDelayMs?: number;        // Maximum delay cap for exponential backoff
 }
 
+// Job type concurrency configuration
+export interface JobTypeConcurrencyConfig {
+    maxConcurrency: number;
+    priority?: number; // Lower numbers = higher priority (1 = highest)
+}
+
 // Worker engine configuration
 export interface WorkerEngineConfig {
-    maxConcurrency: number;
+    // Global fallback for unspecified job types
+    defaultMaxConcurrency: number;
+
+    // Type-safe per-job-type limits - keys must match WorkerTypeMap
+    jobTypeConcurrency: Partial<Record<keyof WorkerTypeMap, JobTypeConcurrencyConfig>>;
+
+    // Existing config
     pollIntervalMs: number;
     defaultMaxAttempts: number;
     enableRetries: boolean;

@@ -1,20 +1,21 @@
 import { jobModel } from './models/job';
 import { WorkerRegistry } from './worker-registry';
 import { WorkerContextImpl } from './worker-context';
-import { WorkerEngineConfig, JobDocument } from './types';
+import { WorkerEngineConfig, JobDocument, JobTypeConcurrencyConfig } from './types';
 
 /**
- * Worker engine that processes jobs from the queue
+ * Worker engine that processes jobs from the queue with per-job-type concurrency control
  */
 export class WorkerEngine {
     private isRunning = false;
-    private runningJobs = new Set<string>();
+    private runningJobsByType = new Map<string, Set<string>>();
     private config: WorkerEngineConfig;
     private pollTimer?: NodeJS.Timeout | undefined;
 
     constructor(config?: Partial<WorkerEngineConfig>) {
         this.config = {
-            maxConcurrency: config?.maxConcurrency || 5,
+            defaultMaxConcurrency: config?.defaultMaxConcurrency || 5,
+            jobTypeConcurrency: config?.jobTypeConcurrency || {},
             pollIntervalMs: config?.pollIntervalMs || 1000,
             defaultMaxAttempts: config?.defaultMaxAttempts || 3,
             enableRetries: config?.enableRetries ?? true
@@ -52,8 +53,9 @@ export class WorkerEngine {
         }
 
         // Wait for running jobs to complete
-        while (this.runningJobs.size > 0) {
-            console.log(`Waiting for ${this.runningJobs.size} jobs to complete...`);
+        const totalRunningJobs = this.getTotalRunningJobs();
+        while (totalRunningJobs > 0) {
+            console.log(`Waiting for ${totalRunningJobs} jobs to complete...`);
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
@@ -61,18 +63,89 @@ export class WorkerEngine {
     }
 
     /**
-     * Get engine status
+     * Get total number of running jobs across all types
+     */
+    private getTotalRunningJobs(): number {
+        let total = 0;
+        for (const jobSet of this.runningJobsByType.values()) {
+            total += jobSet.size;
+        }
+        return total;
+    }
+
+    /**
+     * Get running jobs count for a specific job type
+     */
+    private getRunningJobsForType(jobType: string): number {
+        return this.runningJobsByType.get(jobType)?.size || 0;
+    }
+
+    /**
+     * Get max concurrency for a specific job type
+     */
+    private getMaxConcurrencyForType(jobType: string): number {
+        const typeConfig = this.config.jobTypeConcurrency[jobType as keyof typeof this.config.jobTypeConcurrency];
+        return typeConfig?.maxConcurrency || this.config.defaultMaxConcurrency;
+    }
+
+    /**
+     * Get priority for a specific job type (lower number = higher priority)
+     */
+    private getPriorityForType(jobType: string): number {
+        const typeConfig = this.config.jobTypeConcurrency[jobType as keyof typeof this.config.jobTypeConcurrency];
+        return typeConfig?.priority || 999; // Default to low priority
+    }
+
+    /**
+     * Check if a job type has available capacity
+     */
+    private hasCapacityForType(jobType: string): boolean {
+        const running = this.getRunningJobsForType(jobType);
+        const maxConcurrency = this.getMaxConcurrencyForType(jobType);
+        return running < maxConcurrency;
+    }
+
+    /**
+     * Add job to running jobs tracking
+     */
+    private addRunningJob(jobId: string, jobType: string): void {
+        if (!this.runningJobsByType.has(jobType)) {
+            this.runningJobsByType.set(jobType, new Set());
+        }
+        this.runningJobsByType.get(jobType)!.add(jobId);
+    }
+
+    /**
+     * Remove job from running jobs tracking
+     */
+    private removeRunningJob(jobId: string, jobType: string): void {
+        const jobSet = this.runningJobsByType.get(jobType);
+        if (jobSet) {
+            jobSet.delete(jobId);
+            if (jobSet.size === 0) {
+                this.runningJobsByType.delete(jobType);
+            }
+        }
+    }
+
+    /**
+     * Get engine status with per-job-type breakdown
      */
     getStatus(): {
         isRunning: boolean;
         runningJobs: number;
-        maxConcurrency: number;
+        runningJobsByType: Record<string, number>;
         config: WorkerEngineConfig;
     } {
+        const runningJobsByType: Record<string, number> = {};
+        for (const [jobType, jobSet] of this.runningJobsByType.entries()) {
+            runningJobsByType[jobType] = jobSet.size;
+        }
+
         return {
             isRunning: this.isRunning,
-            runningJobs: this.runningJobs.size,
-            maxConcurrency: this.config.maxConcurrency,
+            runningJobs: this.getTotalRunningJobs(),
+            runningJobsByType,
             config: this.config
         };
     }
@@ -103,28 +176,36 @@ export class WorkerEngine {
     }
 
     /**
-     * Poll for jobs and process them
+     * Poll for jobs and process them with per-job-type concurrency control
      */
     private async pollForJobs(): Promise<void> {
-        if (this.runningJobs.size >= this.config.maxConcurrency) {
-            return; // At max concurrency
-        }
-
         try {
-            const job = await jobModel.getNextPendingJob();
-            if (!job) {
-                return; // No jobs available
+            // Get all available job types sorted by priority
+            const availableJobTypes = await this.getAvailableJobTypes();
+            if (availableJobTypes.length === 0) {
+                return; // No capacity available for any job type
             }
 
-            // Check if job is scheduled for future execution
-            if (job.scheduledAt > new Date()) {
-                return; // Job not ready yet
-            }
+            // Try to get a job for each available job type (in priority order)
+            for (const jobType of availableJobTypes) {
+                const job = await jobModel.getNextPendingJobByType(jobType);
+                if (!job) {
+                    continue; // No jobs of this type available
+                }
 
-            // Process the job
-            this.processJob(job).catch(error => {
-                console.error(`Error processing job ${job.id}:`, error);
-            });
+                // Check if job is scheduled for future execution
+                if (job.scheduledAt > new Date()) {
+                    continue; // Job not ready yet
+                }
+
+                // Process the job
+                this.processJob(job).catch(error => {
+                    console.error(`Error processing job ${job.id}:`, error);
+                });
+
+                // Only process one job per poll cycle to maintain fairness
+                break;
+            }
 
         } catch (error) {
             console.error('Error polling for jobs:', error);
@@ -132,7 +213,23 @@ export class WorkerEngine {
     }
 
     /**
-     * Process a single job
+     * Get job types that have available capacity, sorted by priority
+     */
+    private async getAvailableJobTypes(): Promise<string[]> {
+        // Get all registered job types
+        const allJobTypes = WorkerRegistry.getTypes();
+
+        // Filter to only those with available capacity
+        const availableTypes = allJobTypes.filter(jobType => this.hasCapacityForType(jobType));
+
+        // Sort by priority (lower number = higher priority)
+        availableTypes.sort((a, b) => this.getPriorityForType(a) - this.getPriorityForType(b));
+
+        return availableTypes;
+    }
+
+    /**
+     * Process a single job with per-job-type tracking
      */
     private async processJob(job: JobDocument): Promise<void> {
         const jobId = job.id;
@@ -141,7 +238,14 @@ export class WorkerEngine {
             return;
         }
 
-        this.runningJobs.add(jobId);
+        // Check if job type has capacity before processing
+        if (!this.hasCapacityForType(job.type)) {
+            console.warn(`No capacity available for job type ${job.type}, skipping job ${jobId}`);
+            return;
+        }
+
+        // Add to running jobs tracking
+        this.addRunningJob(jobId, job.type);
 
         try {
             // Get the worker function
@@ -170,7 +274,9 @@ export class WorkerEngine {
             context.logger.info(`Starting job execution`, {
                 type: job.type,
                 attempt: job.attempts + 1,
-                maxAttempts: job.maxAttempts
+                maxAttempts: job.maxAttempts,
+                runningJobsOfType: this.getRunningJobsForType(job.type),
+                maxConcurrencyForType: this.getMaxConcurrencyForType(job.type)
             });
 
             // Execute the worker
@@ -222,7 +328,8 @@ export class WorkerEngine {
                 }
             }
         } finally {
-            this.runningJobs.delete(jobId);
+            // Remove from running jobs tracking
+            this.removeRunningJob(jobId, job.type);
         }
     }
 
@@ -273,5 +380,16 @@ export class WorkerEngine {
     }
 }
 
-// Export singleton instance
-export const workerEngine = new WorkerEngine();
+// Export singleton instance with optimized configuration for webhook delivery
+export const workerEngine = new WorkerEngine({
+    defaultMaxConcurrency: 3,
+    jobTypeConcurrency: {
+        'webhook-delivery': {
+            maxConcurrency: 10,
+            priority: 1 // Highest priority - process webhooks first
+        }
+    },
+    pollIntervalMs: 1000,
+    defaultMaxAttempts: 3,
+    enableRetries: true
+});

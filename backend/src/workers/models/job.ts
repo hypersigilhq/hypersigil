@@ -46,6 +46,52 @@ export class JobModel extends Model<JobDocument> {
     }
 
     /**
+     * Get the next pending job of a specific type that's ready to be processed
+     */
+    async getNextPendingJobByType(jobType: string): Promise<JobDocument | null> {
+        const now = new Date();
+
+        // Find pending jobs of the specified type
+        const sql = `
+            SELECT * FROM ${this.tableName} 
+            WHERE JSON_EXTRACT(data, '$.status') = 'pending' 
+            AND JSON_EXTRACT(data, '$.type') = ?
+            AND (JSON_EXTRACT(data, '$.scheduledAt') IS NULL OR JSON_EXTRACT(data, '$.scheduledAt') <= ?)
+            ORDER BY created_at ASC 
+            LIMIT 1
+        `;
+
+        try {
+            const stmt = this.getDatabase().prepare(sql);
+            const row = stmt.get(jobType, now.toISOString());
+            if (row) {
+                return this.deserializeDocument(row);
+            }
+        } catch (error) {
+            console.error('Error getting next pending job by type:', error);
+        }
+
+        // Check for retry jobs of the specified type that are ready
+        const retrySql = `
+            SELECT * FROM ${this.tableName} 
+            WHERE JSON_EXTRACT(data, '$.status') = 'retrying' 
+            AND JSON_EXTRACT(data, '$.type') = ?
+            AND (JSON_EXTRACT(data, '$.nextRetryAt') IS NULL OR JSON_EXTRACT(data, '$.nextRetryAt') <= ?)
+            ORDER BY created_at ASC 
+            LIMIT 1
+        `;
+
+        try {
+            const stmt = this.getDatabase().prepare(retrySql);
+            const row = stmt.get(jobType, now.toISOString());
+            return row ? this.deserializeDocument(row) : null;
+        } catch (error) {
+            console.error('Error getting next retry job by type:', error);
+            return null;
+        }
+    }
+
+    /**
      * Mark a job as running
      */
     async markAsRunning(jobId: string): Promise<Result<JobDocument, string>> {
