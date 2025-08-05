@@ -4,22 +4,50 @@ import { SettingsApiDefinition, SettingsDocument } from '../definitions/settings
 import { settingsModel, SettingsDocument as SettingsModelDocument } from '../../models/settings';
 import { encryptString } from '../../util/encryption';
 import { providerRegistry } from '../../providers/provider-registry';
+import { randomUUID } from 'crypto';
 
 /**
  * Helper function to format settings document to API response format
  */
 function formatSettingsDocument(setting: SettingsModelDocument): SettingsDocument {
-    return {
+    const baseDocument = {
         id: setting.id!,
-        type: setting.type as any,
-        identifier: setting.identifier,
-        provider: (setting as any).provider,
-        api_key: (setting as any).api_key,
-        model: (setting as any).model,
-        limit: (setting as any).limit,
+        type: setting.type,
         created_at: setting.created_at!.toISOString(),
         updated_at: setting.updated_at!.toISOString()
-    } as SettingsDocument;
+    };
+
+    switch (setting.type) {
+        case 'llm-api-key': {
+            const llmSetting = setting as any; // Type assertion needed due to union type complexity
+            return {
+                ...baseDocument,
+                type: 'llm-api-key',
+                identifier: llmSetting.provider,
+                provider: llmSetting.provider,
+                api_key: llmSetting.api_key
+            };
+        }
+
+        case 'webhook-destination': {
+            const webhookSetting = setting as any; // Type assertion needed due to union type complexity
+            return {
+                ...baseDocument,
+                type: 'webhook-destination',
+                identifier: webhookSetting.identifier,
+                name: webhookSetting.name,
+                url: webhookSetting.url,
+                active: webhookSetting.active
+            };
+        }
+
+        default:
+            // Fallback for unknown types - should not happen in practice
+            return {
+                ...baseDocument,
+                identifier: setting.identifier
+            } as SettingsDocument;
+    }
 }
 
 function formatSettingsDocuments(settings: SettingsModelDocument[]): SettingsDocument[] {
@@ -44,13 +72,25 @@ RegisterHandlers(app, SettingsApiDefinition, {
             // Check if setting already exists for multiple-type settings
             switch (type) {
                 case 'llm-api-key':
-                    const identifier = data.provider;
-                    const exists = await settingsModel.settingExists(type, identifier);
+                    const llmIdentifier = data.provider;
+                    const llmExists = await settingsModel.settingExists(type, llmIdentifier);
 
-                    if (exists) {
+                    if (llmExists) {
                         res.respond(409, {
                             error: 'Conflict',
-                            message: `Setting of type '${type}' with identifier '${identifier}' already exists`
+                            message: `Setting of type '${type}' with identifier '${llmIdentifier}' already exists`
+                        });
+                        return;
+                    }
+                    break
+                case 'webhook-destination':
+                    const webhookIdentifier = data.name;
+                    const webhookExists = await settingsModel.settingExists(type, webhookIdentifier);
+
+                    if (webhookExists) {
+                        res.respond(409, {
+                            error: 'Conflict',
+                            message: `Setting of type '${type}' with identifier '${webhookIdentifier}' already exists`
                         });
                         return;
                     }
@@ -61,6 +101,12 @@ RegisterHandlers(app, SettingsApiDefinition, {
             let settingData: any;
 
             switch (type) {
+                case 'webhook-destination':
+                    settingData = {
+                        ...data,
+                        identifier: randomUUID()
+                    };
+                    break
                 case 'llm-api-key':
 
                     let available = providerRegistry.isProviderAvailable(data.provider, data.api_key)
@@ -95,6 +141,9 @@ RegisterHandlers(app, SettingsApiDefinition, {
                         provider: data.provider,
                         api_key: encrypted.data
                     };
+                    break
+                default:
+                    settingData = data
                     break
             }
 
@@ -191,7 +240,6 @@ RegisterHandlers(app, SettingsApiDefinition, {
         listByType: async (req, res) => {
             const { type } = req.params;
             const settings = await settingsModel.getSettingsByType(type);
-
             const formattedSettings = formatSettingsDocuments(settings);
             res.respond(200, { settings: formattedSettings, type });
         },

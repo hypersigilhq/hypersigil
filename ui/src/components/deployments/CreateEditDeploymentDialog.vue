@@ -29,7 +29,8 @@
                             <Label for="prompt">Prompt</Label>
                             <PromptSelector @update:model-value="(v) => formData.promptId = v"
                                 @update:version-value="(v) => formData.promptVersion = v || 0"
-                                v-model="formData.promptId" :label="'Choose prompt'" />
+                                v-model="formData.promptId" :label="'Choose prompt'"
+                                :version-value="formData.promptVersion" />
                         </div>
 
                         <div>
@@ -73,6 +74,25 @@
                                 Limits token choices (integer ≥ 1)
                             </p>
                         </div>
+
+                        <div>
+                            <Label for="webhookDestination">Webhook Destination</Label>
+                            <Select v-model="selectedWebhookDestination">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select webhook destination (optional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem v-for="destination in webhookDestinations" :key="destination.id"
+                                        :value="destination.id">
+                                        {{ destination.name }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p class="text-sm text-muted-foreground mt-1">
+                                Webhook destination for execution notifications
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -102,11 +122,19 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
 
-import { deploymentsApi, promptsApi } from '@/services/api-client'
+import { deploymentsApi, promptsApi, settingsApi } from '@/services/api-client'
 import type { DeploymentResponse, CreateDeploymentRequest, UpdateDeploymentRequest } from '../../services/definitions/deployment'
 import type { PromptSelectListResponse } from '../../services/definitions/prompt'
 import type { AIProviderNameDefinition } from '../../services/definitions/execution'
+import type { WebhookDestinationSettings } from '../../services/definitions/settings'
 import { useUI } from '@/services/ui'
 import PromptSelector from '../prompts/PromptSelector.vue'
 import ModelSelector from '@/components/ui/model-selector/ModelSelector.vue'
@@ -150,6 +178,8 @@ const formData = reactive<CreateDeploymentRequest & { options: NonNullable<Creat
 const saving = ref(false)
 const prompts = ref<PromptSelectListResponse['items']>([])
 const selectedProviderModel = ref<string>('')
+const webhookDestinations = ref<WebhookDestinationSettings[]>([])
+const selectedWebhookDestination = ref<string>('none')
 
 // Load prompts for selection
 const loadPrompts = async () => {
@@ -161,6 +191,21 @@ const loadPrompts = async () => {
         toast({
             title: 'Error',
             description: 'Failed to load prompts',
+            variant: 'error'
+        })
+    }
+}
+
+// Load webhook destinations for selection
+const loadWebhookDestinations = async () => {
+    try {
+        const response = await settingsApi.listByType('webhook-destination')
+        webhookDestinations.value = response.settings.filter(s => s.type === 'webhook-destination') as WebhookDestinationSettings[]
+    } catch (err) {
+        console.error('Failed to load webhook destinations:', err)
+        toast({
+            title: 'Error',
+            description: 'Failed to load webhook destinations',
             variant: 'error'
         })
     }
@@ -195,6 +240,9 @@ const initializeForm = () => {
 
         // Set the selected provider:model for ModelSelector
         selectedProviderModel.value = `${props.deployment.provider}:${props.deployment.model}`
+
+        // Set the selected webhook destination (only single selection supported)
+        selectedWebhookDestination.value = (props.deployment).webhookDestinationIds?.[0] || ''
     } else {
         // Create mode
         formData.name = ''
@@ -208,12 +256,15 @@ const initializeForm = () => {
             topK: undefined
         }
         selectedProviderModel.value = ''
+        selectedWebhookDestination.value = ''
     }
 }
 
 // Save deployment
 const saveDeployment = async () => {
     saving.value = true
+
+    let webhookDestination = selectedWebhookDestination.value
 
     try {
         // Prepare the request data
@@ -227,9 +278,9 @@ const saveDeployment = async () => {
                 ...(formData.options.temperature !== undefined && { temperature: formData.options.temperature }),
                 ...(formData.options.topP !== undefined && { topP: formData.options.topP }),
                 ...(formData.options.topK !== undefined && { topK: formData.options.topK })
-            }
+            },
+            webhookDestinationIds: webhookDestination === 'none' ? [] : [webhookDestination]
         }
-
         // Remove empty options object
         if (Object.keys(requestData.options || {}).length === 0) {
             delete requestData.options
@@ -279,5 +330,6 @@ watch(() => props.open, (newOpen) => {
 // Initialize
 onMounted(() => {
     loadPrompts()
+    loadWebhookDestinations()
 })
 </script>

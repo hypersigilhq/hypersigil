@@ -92,7 +92,8 @@
 
 - [todo] in prompt selector preselect latest version
 - [todo] add GET /deployment/run/:id with less data than GET /execution
-- [todo] webhooks for finished Executions (define in the settings webhook targets, in the deployment pick for which targets to deliver the wbehooks)
+- [done] 05-08-25 00:17 webhooks for finished Executions (define in the settings webhook targets, in the deployment pick for which targets to deliver the webhooks) - webhook destinations management UI implemented
+- [done] 05-08-25 00:41 Add webhook column to DeploymentsTable.vue showing webhook destination names by ID
 - [todo] adding comments to prompts
 - [todo] /stats/all doesnt work when ollama is not configured
 - [todo] empty userInput raises error, for example when sending a file for OC

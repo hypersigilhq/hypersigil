@@ -24,6 +24,7 @@
                     </p>
                 </div>
                 <LlmApiKeysTable />
+                <WebhookDestinationsTable />
             </TabsContent>
 
             <TabsContent value="users" class="space-y-4">
@@ -49,4 +50,5 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import UsersTable from '@/components/settings/UsersTable.vue'
 import ApiKeysTable from '@/components/settings/ApiKeysTable.vue'
 import LlmApiKeysTable from '@/components/settings/LlmApiKeysTable.vue'
+import WebhookDestinationsTable from '@/components/settings/WebhookDestinationsTable.vue'
 </script>

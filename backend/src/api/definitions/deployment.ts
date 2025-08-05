@@ -21,6 +21,7 @@ export const DeploymentResponseSchema = z.object({
     provider: AIProviderNameSchema,
     model: z.string(),
     options: DeploymentOptionsSchema.optional(),
+    webhookDestinationIds: z.array(z.string().min(1)).optional(),
     created_at: z.string(),
     updated_at: z.string()
 });
@@ -34,7 +35,8 @@ export const CreateDeploymentRequestSchema = z.object({
     promptVersion: z.number().min(1),
     provider: AIProviderNameSchema,
     model: z.string().min(1),
-    options: DeploymentOptionsSchema.optional()
+    options: DeploymentOptionsSchema.optional(),
+    webhookDestinationIds: z.array(z.string().min(1)).optional(),
 });
 
 export type CreateDeploymentRequest = z.infer<typeof CreateDeploymentRequestSchema>;
@@ -44,7 +46,8 @@ export const UpdateDeploymentRequestSchema = z.object({
     promptVersion: z.number().min(1),
     provider: AIProviderNameSchema.optional(),
     model: z.string().min(1).optional(),
-    options: DeploymentOptionsSchema.optional()
+    options: DeploymentOptionsSchema.optional(),
+    webhookDestinationIds: z.array(z.string().min(1)).optional(),
 });
 
 export type UpdateDeploymentRequest = z.infer<typeof UpdateDeploymentRequestSchema>;

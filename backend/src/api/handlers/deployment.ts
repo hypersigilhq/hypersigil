@@ -17,6 +17,7 @@ function formatDeploymentForResponse(deployment: Deployment): DeploymentResponse
         provider: deployment.provider,
         model: deployment.model,
         options: deployment.options,
+        webhookDestinationIds: deployment.webhookDestinationIds,
         created_at: (deployment.created_at instanceof Date ? deployment.created_at.toISOString() : deployment.created_at)!,
         updated_at: (deployment.updated_at instanceof Date ? deployment.updated_at.toISOString() : deployment.updated_at)!
     };

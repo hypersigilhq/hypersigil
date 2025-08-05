@@ -578,13 +578,13 @@ export const settingsApi = {
             },
         }),
 
-    listByType: (type: 'llm-api-key') =>
+    listByType: (type: 'llm-api-key' | 'webhook-destination') =>
         settingsApiClient.callApi('settings', 'listByType', { params: { type } }, {
             ...errorHandle,
             200: (payload) => payload.data,
         }),
 
-    getByTypeAndIdentifier: (type: 'llm-api-key', identifier: string) =>
+    getByTypeAndIdentifier: (type: 'llm-api-key' | 'webhook-destination', identifier: string) =>
         settingsApiClient.callApi('settings', 'getByTypeAndIdentifier', { params: { type, identifier } }, {
             ...errorHandle,
             200: (payload) => payload.data,

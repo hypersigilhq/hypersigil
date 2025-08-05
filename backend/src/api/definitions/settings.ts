@@ -4,6 +4,7 @@ import { ErrorResponseSchema } from './common';
 import { AIProviderNamesDefinition } from './execution';
 
 const settingsTypeLLMApiKey = "llm-api-key"
+const settingsTypeWebhookDestination = "webhook-destination"
 // more types can be added here
 
 // AI Provider enum schema
@@ -26,19 +27,35 @@ export const LlmApiKeySettingsSchema = BaseSettingsDocumentSchema.extend({
     api_key: z.string()
 });
 
+// Webhook Destination Settings schemas
+export const WebhookDestinationSettingsSchema = BaseSettingsDocumentSchema.extend({
+    type: z.literal(settingsTypeWebhookDestination),
+    identifier: z.string(),
+    name: z.string(),
+    url: z.string().url(),
+    active: z.boolean()
+});
 
 // Union type for all settings
 export const SettingsDocumentSchema = z.discriminatedUnion('type', [
     LlmApiKeySettingsSchema,
+    WebhookDestinationSettingsSchema,
 ]);
 
 export type LlmApiKeySettings = z.infer<typeof LlmApiKeySettingsSchema>;
+export type WebhookDestinationSettings = z.infer<typeof WebhookDestinationSettingsSchema>;
 export type SettingsDocument = z.infer<typeof SettingsDocumentSchema>;
 
 // Request schemas for creating settings
 export const CreateLlmApiKeySettingsRequestSchema = z.object({
     provider: AIProviderNameSchema,
     api_key: z.string().min(1)
+});
+
+export const CreateWebhookDestinationSettingsRequestSchema = z.object({
+    name: z.string().min(1),
+    url: z.string().url(),
+    active: z.boolean().default(true)
 });
 
 export const CreateTokenLimitSettingsRequestSchema = z.object({
@@ -52,6 +69,12 @@ export const UpdateLlmApiKeySettingsRequestSchema = z.object({
     api_key: z.string().min(1).optional()
 });
 
+export const UpdateWebhookDestinationSettingsRequestSchema = z.object({
+    name: z.string().min(1).optional(),
+    url: z.string().url().optional(),
+    active: z.boolean().optional()
+});
+
 export const UpdateTokenLimitSettingsRequestSchema = z.object({
     limit: z.number().min(1).optional()
 });
@@ -61,6 +84,10 @@ export const CreateSettingsRequestSchema = z.discriminatedUnion('type', [
     z.object({
         type: z.literal(settingsTypeLLMApiKey),
         data: CreateLlmApiKeySettingsRequestSchema
+    }),
+    z.object({
+        type: z.literal(settingsTypeWebhookDestination),
+        data: CreateWebhookDestinationSettingsRequestSchema
     })
 ]);
 
@@ -68,11 +95,17 @@ export const UpdateSettingsRequestSchema = z.discriminatedUnion('type', [
     z.object({
         type: z.literal(settingsTypeLLMApiKey),
         data: UpdateLlmApiKeySettingsRequestSchema
+    }),
+    z.object({
+        type: z.literal(settingsTypeWebhookDestination),
+        data: UpdateWebhookDestinationSettingsRequestSchema
     })
 ]);
 
 export type CreateLlmApiKeySettingsRequest = z.infer<typeof CreateLlmApiKeySettingsRequestSchema>;
+export type CreateWebhookDestinationSettingsRequest = z.infer<typeof CreateWebhookDestinationSettingsRequestSchema>;
 export type UpdateLlmApiKeySettingsRequest = z.infer<typeof UpdateLlmApiKeySettingsRequestSchema>;
+export type UpdateWebhookDestinationSettingsRequest = z.infer<typeof UpdateWebhookDestinationSettingsRequestSchema>;
 export type CreateSettingsRequest = z.infer<typeof CreateSettingsRequestSchema>;
 export type UpdateSettingsRequest = z.infer<typeof UpdateSettingsRequestSchema>;
 
@@ -171,7 +204,7 @@ export const SettingsApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/type/:type',
                 params: z.object({
-                    type: z.enum([settingsTypeLLMApiKey])
+                    type: z.enum([settingsTypeLLMApiKey, settingsTypeWebhookDestination])
                 }),
                 responses: CreateResponses({
                     200: ListSettingsByTypeResponseSchema,
@@ -186,7 +219,7 @@ export const SettingsApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/type/:type/identifier/:identifier',
                 params: z.object({
-                    type: z.enum([settingsTypeLLMApiKey]),
+                    type: z.enum([settingsTypeLLMApiKey, settingsTypeWebhookDestination]),
                     identifier: z.string()
                 }),
                 responses: CreateResponses({

@@ -18,8 +18,8 @@ export interface Deployment extends BaseDocument {
     provider: AIProviderName;
     model: string;
     options?: DeploymentOptions;
+    webhookDestinationIds?: string[];
 }
-
 export class DeploymentModel extends Model<Deployment> {
     protected tableName = 'deployments';
 

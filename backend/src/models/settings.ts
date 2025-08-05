@@ -3,14 +3,24 @@ import { BaseDocument } from '../database/types';
 import { AIProviderName } from '../providers/base-provider';
 
 
-export const SettingsMultipleTypes = ['llm-api-key'] as const
+export const SettingsMultipleTypes = ['llm-api-key', 'webhook-destination'] as const
 export type SettingsMultipleType = typeof SettingsMultipleTypes[number]
 
 export type SettingsMultipleTypeMap = {
     "llm-api-key": {
         document: LlmApiKeySettingsDocument;
         identifier: `${AIProviderName}`;
+    },
+    "webhook-destination": {
+        document: WebhookDestinationSettingsDocument;
+        identifier: `${string}`;
     }
+}
+
+export interface WebhookDestinationSettingsDocument extends SettingsDocument<"webhook-destination"> {
+    name: string;
+    url: string;
+    active: boolean;
 }
 
 export interface LlmApiKeySettingsDocument extends SettingsDocument<"llm-api-key"> {

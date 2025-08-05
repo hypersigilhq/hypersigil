@@ -57,6 +57,7 @@
                         <TableHead>Provider</TableHead>
                         <TableHead>Model</TableHead>
                         <TableHead>Options</TableHead>
+                        <TableHead>Webhook</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead>Updated</TableHead>
                         <TableHead class="text-right">Actions</TableHead>
@@ -64,7 +65,7 @@
                 </TableHeader>
                 <TableBody>
                     <TableRow v-if="deployments.length === 0">
-                        <TableCell colspan="8" class="text-center py-8 text-muted-foreground">
+                        <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
                             No deployments found
                         </TableCell>
                     </TableRow>
@@ -93,6 +94,18 @@
                                 </div>
                             </div>
                             <span v-else class="text-muted-foreground">Default</span>
+                        </TableCell>
+                        <TableCell>
+                            <div v-if="deployment.webhookDestinationIds && deployment.webhookDestinationIds.length > 0"
+                                class="space-y-1">
+                                <div v-for="webhookId in deployment.webhookDestinationIds" :key="webhookId"
+                                    class="text-sm">
+                                    <Badge variant="secondary" class="text-xs">
+                                        {{ webhookNames[webhookId] || webhookId }}
+                                    </Badge>
+                                </div>
+                            </div>
+                            <span v-else class="text-muted-foreground text-sm">None</span>
                         </TableCell>
                         <TableCell>{{ formatDate(deployment.created_at) }}</TableCell>
                         <TableCell>{{ formatDate(deployment.updated_at) }}</TableCell>
@@ -175,8 +188,9 @@ import {
 import DropdownMenu from '../ui/dropdown-menu/DropdownMenu.vue'
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 
-import { deploymentsApi, promptsApi } from '@/services/api-client'
+import { deploymentsApi, promptsApi, settingsApi } from '@/services/api-client'
 import type { DeploymentResponse } from '../../services/definitions/deployment'
+import type { WebhookDestinationSettings } from '../../services/definitions/settings'
 import CreateEditDeploymentDialog from './CreateEditDeploymentDialog.vue'
 import { useUI } from '@/services/ui'
 
@@ -207,6 +221,9 @@ const editingDeployment = ref<DeploymentResponse | null>(null)
 
 // Prompt names cache
 const promptNames = ref<Record<string, string>>({})
+
+// Webhook names cache
+const webhookNames = ref<Record<string, string>>({})
 
 // Debounced search
 const debouncedSearch = debounce(() => {
@@ -240,8 +257,9 @@ const loadDeployments = async () => {
             hasPrev: response.hasPrev
         }
 
-        // Load prompt names for display
+        // Load prompt names and webhook names for display
         await loadPromptNames()
+        await loadWebhookNames()
     } catch (err) {
         error.value = err instanceof Error ? err.message : 'Failed to load deployments'
     } finally {
@@ -262,6 +280,24 @@ const loadPromptNames = async () => {
         promptNames.value = names
     } catch (err) {
         console.error('Failed to load prompt names:', err)
+    }
+}
+
+// Load webhook destination names for display
+const loadWebhookNames = async () => {
+    try {
+        const webhookResponse = await settingsApi.listByType('webhook-destination')
+
+        const names: Record<string, string> = {}
+        webhookResponse.settings.forEach(setting => {
+            if (setting.type === 'webhook-destination') {
+                const webhookSetting = setting as WebhookDestinationSettings
+                names[webhookSetting.id] = webhookSetting.name
+            }
+        })
+        webhookNames.value = names
+    } catch (err) {
+        console.error('Failed to load webhook destination names:', err)
     }
 }
 
