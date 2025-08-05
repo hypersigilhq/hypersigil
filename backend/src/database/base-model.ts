@@ -3,9 +3,18 @@ import { db } from './manager';
 import { BaseDocument, QueryOptions, PaginationResult, WhereClause } from './types';
 import { modelRegistry } from './model-registry';
 
+export interface VirtualColumnDefinition {
+    columnName: string;
+    jsonPath: string;
+    dataType: 'TEXT' | 'INTEGER' | 'REAL' | 'BLOB';
+    indexed?: boolean;
+    indexName?: string;
+}
+
 export abstract class Model<T extends BaseDocument> {
     protected abstract tableName: string;
     private _isRegistered = false;
+    protected virtualColumns: VirtualColumnDefinition[] = [];
 
     constructor() {
         // Registration will happen on first method call that needs the table
@@ -16,10 +25,15 @@ export abstract class Model<T extends BaseDocument> {
      * Ensure this model is registered with the registry
      * Called automatically before any database operations
      */
-    public ensureRegistered(): void {
-        const modelName = this.constructor.name;
-        modelRegistry.registerModel(modelName, this.tableName);
-        this._isRegistered = true;
+    public ensureRegistered(virtualColumns?: VirtualColumnDefinition[]): void {
+        if (!this._isRegistered) {
+            if (virtualColumns) {
+                this.virtualColumns = virtualColumns;
+            }
+            const modelName = this.constructor.name;
+            modelRegistry.registerModel(modelName, this.tableName, this.virtualColumns);
+            this._isRegistered = true;
+        }
     }
 
     protected serializeDocument(doc: T): string {
@@ -129,9 +143,10 @@ export abstract class Model<T extends BaseDocument> {
         };
     }
 
-    public async create(data: Omit<T, 'id' | 'created_at' | 'updated_at'>): Promise<T> {
+    public async create(data: Omit<T, 'created_at' | 'updated_at'>): Promise<T> {
+
         const now = new Date();
-        const id = randomUUID();
+        const id = data.id || randomUUID();
 
         const fullDoc = {
             ...data,
@@ -156,6 +171,7 @@ export abstract class Model<T extends BaseDocument> {
     }
 
     public async findById(id: string): Promise<T | null> {
+
         const sql = `SELECT * FROM ${this.tableName} WHERE id = ?`;
 
         try {
@@ -438,5 +454,183 @@ export abstract class Model<T extends BaseDocument> {
             console.error(`Error updating JSON properties in ${this.tableName}:`, error);
             throw error;
         }
+    }
+
+    /**
+     * Enhanced buildWhereClause that can use virtual columns for better performance
+     */
+    protected buildOptimizedWhereClause(where: WhereClause): { clause: string; params: any[] } {
+        if (!where || Object.keys(where).length === 0) {
+            return { clause: '', params: [] };
+        }
+
+        const conditions: string[] = [];
+        const params: any[] = [];
+
+        for (const [key, value] of Object.entries(where)) {
+            if (key === 'id') {
+                // Direct column access for id
+                if (Array.isArray(value)) {
+                    const placeholders = value.map(() => '?').join(', ');
+                    conditions.push(`id IN (${placeholders})`);
+                    params.push(...value);
+                } else {
+                    conditions.push('id = ?');
+                    params.push(value);
+                }
+            } else if (key === 'created_at' || key === 'updated_at') {
+                // Direct column access for timestamps
+                conditions.push(`${key} = ?`);
+                params.push(value instanceof Date ? value.toISOString() : value);
+            } else {
+                // Check if we have a virtual column for this field
+                const virtualColumn = this.virtualColumns.find(vc =>
+                    vc.jsonPath === `$.${key}` || vc.columnName === key
+                );
+
+                if (virtualColumn && db.hasVirtualColumn(this.tableName, virtualColumn.columnName)) {
+                    // Use virtual column for better performance
+                    if (Array.isArray(value)) {
+                        const placeholders = value.map(() => '?').join(', ');
+                        conditions.push(`${virtualColumn.columnName} IN (${placeholders})`);
+                        params.push(...value);
+                    } else {
+                        conditions.push(`${virtualColumn.columnName} = ?`);
+                        if (typeof value === 'boolean') {
+                            params.push(value === true ? 1 : 0);
+                        } else {
+                            params.push(value);
+                        }
+                    }
+                } else {
+                    // Fall back to JSON_EXTRACT
+                    if (Array.isArray(value)) {
+                        const placeholders = value.map(() => 'JSON_EXTRACT(data, ?) = ?').join(' OR ');
+                        conditions.push(`(${placeholders})`);
+                        for (const v of value) {
+                            params.push(`$.${key}`, v);
+                        }
+                    } else {
+                        conditions.push('JSON_EXTRACT(data, ?) = ?');
+                        if (typeof value === 'boolean') {
+                            params.push(`$.${key}`, value === true ? 1 : 0);
+                        } else {
+                            params.push(`$.${key}`, value);
+                        }
+                    }
+                }
+            }
+        }
+
+        return {
+            clause: `WHERE ${conditions.join(' AND ')}`,
+            params
+        };
+    }
+
+    /**
+     * Enhanced findMany that uses virtual columns when available
+     */
+    public async findManyOptimized(options: QueryOptions & { where?: WhereClause } = {}): Promise<T[]> {
+
+        const { where, orderBy = 'created_at', orderDirection = 'DESC', limit, offset } = options;
+
+        let sql = `SELECT * FROM ${this.tableName}`;
+        const params: any[] = [];
+
+        if (where) {
+            const { clause, params: whereParams } = this.buildOptimizedWhereClause(where);
+            sql += ` ${clause}`;
+            params.push(...whereParams);
+        }
+
+        // Handle ordering - check for virtual columns first
+        if (orderBy === 'id' || orderBy === 'created_at' || orderBy === 'updated_at') {
+            sql += ` ORDER BY ${orderBy} ${orderDirection}`;
+        } else {
+            const virtualColumn = this.virtualColumns.find(vc =>
+                vc.jsonPath === `$.${orderBy}` || vc.columnName === orderBy
+            );
+
+            if (virtualColumn && db.hasVirtualColumn(this.tableName, virtualColumn.columnName)) {
+                sql += ` ORDER BY ${virtualColumn.columnName} ${orderDirection}`;
+            } else {
+                sql += ` ORDER BY JSON_EXTRACT(data, '$.${orderBy}') ${orderDirection}`;
+            }
+        }
+
+        if (limit) {
+            sql += ` LIMIT ?`;
+            params.push(limit);
+        }
+
+        if (offset) {
+            sql += ` OFFSET ?`;
+            params.push(offset);
+        }
+
+        try {
+            const stmt = db.getDatabase().prepare(sql);
+            const rows = stmt.all(...params);
+
+            return rows.map(row => this.deserializeDocument(row));
+        } catch (error) {
+            console.error(`Error finding documents in ${this.tableName}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Enhanced findWithPagination that uses virtual columns when available
+     */
+    public async findWithPaginationOptimized(options: QueryOptions & { page: number; limit: number; where?: WhereClause }): Promise<PaginationResult<T>> {
+        const { page, limit, where, orderBy = 'created_at', orderDirection = 'DESC' } = options;
+        const offset = (page - 1) * limit;
+
+        // Get total count using optimized where clause
+        let countSql = `SELECT COUNT(*) as total FROM ${this.tableName}`;
+        const countParams: any[] = [];
+
+        if (where) {
+            const { clause, params: whereParams } = this.buildOptimizedWhereClause(where);
+            countSql += ` ${clause}`;
+            countParams.push(...whereParams);
+        }
+
+        const countStmt = db.getDatabase().prepare(countSql);
+        const { total } = countStmt.get(...countParams) as { total: number };
+
+        // Get data using optimized method
+        const findOptions: QueryOptions & { where?: WhereClause } = {
+            orderBy,
+            orderDirection,
+            limit,
+            offset
+        };
+
+        if (where) {
+            findOptions.where = where;
+        }
+
+        const data = await this.findManyOptimized(findOptions);
+
+        const totalPages = Math.ceil(total / limit);
+
+        return {
+            data,
+            total,
+            page,
+            limit,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1
+        };
+    }
+
+    /**
+     * Get all virtual columns for this model
+     */
+    public getVirtualColumns(): string[] {
+        return db.getVirtualColumns(this.tableName);
     }
 }

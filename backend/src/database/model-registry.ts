@@ -1,8 +1,10 @@
 import { db } from './manager';
+import { VirtualColumnDefinition } from './base-model';
 
 interface ModelRegistration {
     tableName: string;
     initialized: boolean;
+    virtualColumns?: VirtualColumnDefinition[];
 }
 
 export class ModelRegistry {
@@ -19,9 +21,9 @@ export class ModelRegistry {
     }
 
     /**
-     * Register a model with its table name
+     * Register a model with its table name and optional virtual columns
      */
-    public registerModel(modelName: string, tableName: string): void {
+    public registerModel(modelName: string, tableName: string, virtualColumns?: VirtualColumnDefinition[]): void {
         if (this.models.has(modelName)) {
             console.warn(`⚠️  Model '${modelName}' is already registered`);
             return;
@@ -29,10 +31,11 @@ export class ModelRegistry {
 
         this.models.set(modelName, {
             tableName,
-            initialized: false
+            initialized: false,
+            ...(virtualColumns && { virtualColumns })
         });
 
-        console.log(`📝 Registered model '${modelName}' with table '${tableName}'`);
+        console.log(`📝 Registered model '${modelName}' with table '${tableName}'${virtualColumns ? ` and ${virtualColumns.length} virtual columns` : ''}`);
     }
 
     /**
@@ -54,11 +57,42 @@ export class ModelRegistry {
     }
 
     /**
-     * Initialize a specific model's table
+     * Initialize a specific model's table and virtual columns
      */
     private async initializeModelTable(modelName: string, registration: ModelRegistration): Promise<void> {
         try {
+            // First ensure the table exists
             db.ensureTable(registration.tableName);
+
+            // Create virtual columns if defined
+            if (registration.virtualColumns && registration.virtualColumns.length > 0) {
+                console.log(`🔧 Creating ${registration.virtualColumns.length} virtual columns for table '${registration.tableName}'...`);
+
+                for (const virtualColumn of registration.virtualColumns) {
+                    try {
+                        // Create the virtual column
+                        db.createVirtualColumn(
+                            registration.tableName,
+                            virtualColumn.columnName,
+                            virtualColumn.jsonPath,
+                            virtualColumn.dataType
+                        );
+
+                        // Create index if requested
+                        if (virtualColumn.indexed) {
+                            db.createVirtualColumnIndex(
+                                registration.tableName,
+                                virtualColumn.columnName,
+                                virtualColumn.indexName
+                            );
+                        }
+                    } catch (error) {
+                        console.error(`❌ Failed to create virtual column '${virtualColumn.columnName}' for table '${registration.tableName}':`, error);
+                        // Continue with other virtual columns even if one fails
+                    }
+                }
+            }
+
             registration.initialized = true;
             console.log(`✅ Table '${registration.tableName}' initialized for model '${modelName}'`);
         } catch (error) {
@@ -88,6 +122,29 @@ export class ModelRegistry {
         }
 
         return status;
+    }
+
+    /**
+     * Register a model with virtual columns (convenience method for models to self-register)
+     */
+    public registerModelWithVirtualColumns(modelName: string, tableName: string, virtualColumns: VirtualColumnDefinition[]): void {
+        this.registerModel(modelName, tableName, virtualColumns);
+    }
+
+    /**
+     * Get virtual columns for a registered model
+     */
+    public getModelVirtualColumns(modelName: string): VirtualColumnDefinition[] | undefined {
+        const registration = this.models.get(modelName);
+        return registration?.virtualColumns;
+    }
+
+    /**
+     * Check if a model has virtual columns defined
+     */
+    public hasVirtualColumns(modelName: string): boolean {
+        const registration = this.models.get(modelName);
+        return !!(registration?.virtualColumns && registration.virtualColumns.length > 0);
     }
 
     /**
