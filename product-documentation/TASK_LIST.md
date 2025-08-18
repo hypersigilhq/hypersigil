@@ -102,5 +102,13 @@
 - [todo] empty userInput raises error, for example when sending a file for OC
 - [todo] deployment GET /info so that it returns info about promptId. (then I can run GET {promptId} download input/output schema and generate typescript types)
 - [todo] add more tracing options so apart from traceId add a possibility to send metadata object along with the execution/deployment. Up to 1kb of data serialized
+- [todo] deployment webhook should contain traceId as well as metadata
+- [todo] a failed execution because of 5xx error from an LLM provided should be repeated - it should be handled in deployment options - retry up to X times
 - [todo] add edit button in view prompt dialog
 - [todo] in execution view details add a button/toggle to show compiled prompt
+
+# Big features
+- [todo] pricing $ implementation
+- [todo] dashboard
+- [todo] reports tab: usage of prompt/deployment/model/api-key
+- [todo] projects
