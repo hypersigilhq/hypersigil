@@ -16,11 +16,9 @@
                             <SelectValue placeholder="Select a provider" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="openai">OpenAI</SelectItem>
-                            <SelectItem value="anthropic">Anthropic</SelectItem>
-                            <SelectItem value="ollama">Ollama</SelectItem>
-                            <SelectItem value="gemini">Gemini</SelectItem>
-                            <SelectItem value="deepseek">DeepSeek</SelectItem>
+                            <SelectItem v-for="provider in AIProviderNamesDefinition" :key="provider" :value="provider">
+                                {{ provider }}
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -69,6 +67,7 @@ import {
 } from '@/components/ui/select'
 import { settingsApi } from '@/services/api-client'
 import type { CreateLlmApiKeySettingsRequest } from '@/services/definitions/settings'
+import { AIProviderNamesDefinition, type AIProviderNameDefinition } from '@/services/definitions/execution'
 import { useUI } from '@/services/ui'
 
 interface Props {
@@ -87,12 +86,12 @@ const { toast } = useUI()
 
 const loading = ref(false)
 const formData = reactive<CreateLlmApiKeySettingsRequest>({
-    provider: '' as any,
+    provider: '' as AIProviderNameDefinition,
     api_key: ''
 })
 
 const resetForm = () => {
-    formData.provider = '' as any
+    formData.provider = '' as AIProviderNameDefinition
     formData.api_key = ''
 }
 
