@@ -38,7 +38,7 @@
 - [done] Implement database integration
 - [done] Add API documentation
 - [todo] Set up testing framework
-- [done] Add more AI providers (Claude/Anthropic and OpenAI providers implemented)
+- [done] Add more AI providers (Claude/Anthropic, OpenAI, and Gemini providers implemented)
 - [done] Implement execution bundles list view with macOS Finder-style interface
 - [todo] Implement streaming responses for real-time execution updates
 - [todo] Add execution result caching and optimization

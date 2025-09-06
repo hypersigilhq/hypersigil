@@ -19,6 +19,7 @@
                             <SelectItem value="openai">OpenAI</SelectItem>
                             <SelectItem value="anthropic">Anthropic</SelectItem>
                             <SelectItem value="ollama">Ollama</SelectItem>
+                            <SelectItem value="gemini">Gemini</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
