@@ -106,6 +106,8 @@
 - [todo] a failed execution because of 5xx error from an LLM provided should be repeated - it should be handled in deployment options - retry up to X times
 - [todo] add edit button in view prompt dialog
 - [todo] in execution view details add a button/toggle to show compiled prompt
+- [done] Add enum support for string types with descriptions in JSON schema builder
+- [todo] e2e contract/functional testing with hurl https://github.com/Orange-OpenSource/hurl?tab=readme-ov-file
 
 # Big features
 - [todo] pricing $ implementation

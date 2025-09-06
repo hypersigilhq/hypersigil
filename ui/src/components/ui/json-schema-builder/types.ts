@@ -9,6 +9,7 @@ export interface JsonSchemaProperty {
     properties?: JsonSchemaProperty[]
     items?: JsonSchemaProperty
     enum?: string[]
+    enumValues?: Array<{ value: string, description?: string }>
     default?: any
     minimum?: number
     maximum?: number
@@ -37,6 +38,7 @@ export interface SchemaBuilderNode {
     children?: SchemaBuilderNode[]
     // Type-specific properties
     enum?: string[]
+    enumValues?: Array<{ value: string, description?: string }>
     default?: any
     minimum?: number
     maximum?: number

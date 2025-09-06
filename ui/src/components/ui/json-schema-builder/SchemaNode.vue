@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { SchemaBuilderNode, JsonSchemaType } from './types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -44,8 +44,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-const showAdvanced = ref(false)
-
 const typeOptions: { value: JsonSchemaType; label: string; icon: any }[] = [
     { value: 'string', label: 'String', icon: Type },
     { value: 'number', label: 'Number', icon: Hash },
@@ -66,9 +64,8 @@ const canExpand = computed(() => {
     return props.node.type === 'object' || props.node.type === 'array'
 })
 
-const hasChildren = computed(() => {
-    return (props.node.children && props.node.children.length > 0) ||
-        (props.node.type === 'array' && props.node.items)
+const enumValues = computed(() => {
+    return props.node.enumValues || []
 })
 
 function updateNode(updates: Partial<SchemaBuilderNode>) {
@@ -120,6 +117,27 @@ function handleDragStart(event: DragEvent) {
 
 function handleDragEnd() {
     emit('drag-end')
+}
+
+function addEnumValue() {
+    const currentValues = enumValues.value
+    const newValues = [...currentValues, { value: '', description: undefined }]
+    updateNode({ enumValues: newValues })
+}
+
+function updateEnumValue(index: number, field: 'value' | 'description', value: string) {
+    const currentValues = enumValues.value
+    const newValues = [...currentValues]
+    if (newValues[index]) {
+        newValues[index] = { ...newValues[index], [field]: value || undefined }
+        updateNode({ enumValues: newValues })
+    }
+}
+
+function removeEnumValue(index: number) {
+    const currentValues = enumValues.value
+    const newValues = currentValues.filter((_, i) => i !== index)
+    updateNode({ enumValues: newValues })
 }
 </script>
 
@@ -230,6 +248,35 @@ function handleDragEnd() {
                     <Input :model-value="node.pattern || ''"
                         @update:model-value="(value) => updateNode({ pattern: String(value) })"
                         placeholder="Regular expression pattern" class="h-8" />
+                </div>
+
+                <!-- Enum Values -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm text-gray-600">Enum Values:</label>
+                        <Button variant="outline" size="sm" @click="addEnumValue" class="h-7 px-2">
+                            <Plus class="w-3 h-3 mr-1" />
+                            Add
+                        </Button>
+                    </div>
+                    <div v-if="enumValues.length === 0" class="text-sm text-gray-500 italic">
+                        No enum values defined
+                    </div>
+                    <div v-else class="space-y-2 max-h-40 overflow-y-auto">
+                        <div v-for="(enumValue, index) in enumValues" :key="index"
+                            class="flex items-center gap-2 p-2 border border-gray-200 rounded-md">
+                            <Input :model-value="enumValue.value"
+                                @update:model-value="(value) => updateEnumValue(index, 'value', String(value))"
+                                placeholder="Enum value" class="h-7 flex-1" />
+                            <Input :model-value="enumValue.description || ''"
+                                @update:model-value="(value) => updateEnumValue(index, 'description', String(value))"
+                                placeholder="Description (optional)" class="h-7 flex-1" />
+                            <Button variant="ghost" size="sm" @click="removeEnumValue(index)"
+                                class="h-7 w-7 p-0 text-red-600 hover:text-red-700">
+                                <Trash2 class="w-3 h-3" />
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </template>
 

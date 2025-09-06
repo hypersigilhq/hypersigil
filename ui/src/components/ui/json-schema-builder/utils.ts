@@ -78,7 +78,28 @@ function convertNodeToSchemaProperty(node: SchemaBuilderNode): any {
             break
 
         case 'string':
-            if (node.enum && node.enum.length > 0) {
+            if (node.enumValues && node.enumValues.length > 0) {
+                base.enum = node.enumValues.map(ev => ev.value)
+                // Append enum descriptions to the property description
+                if (node.description) {
+                    const enumDescriptions = node.enumValues
+                        .filter(ev => ev.description)
+                        .map(ev => `${ev.value} (${ev.description})`)
+                        .join(', ')
+                    if (enumDescriptions) {
+                        base.description = `${node.description}. Possible values: ${enumDescriptions}`
+                    } else {
+                        base.description = node.description
+                    }
+                } else if (node.enumValues.some(ev => ev.description)) {
+                    const enumDescriptions = node.enumValues
+                        .filter(ev => ev.description)
+                        .map(ev => `${ev.value} (${ev.description})`)
+                        .join(', ')
+                    base.description = `Possible values: ${enumDescriptions}`
+                }
+            } else if (node.enum && node.enum.length > 0) {
+                // Backward compatibility for simple enum arrays
                 base.enum = node.enum
             }
             if (node.minLength !== undefined) {
@@ -163,7 +184,7 @@ export function updateNodeById(
             return { ...node, ...updates }
         }
 
-        let updatedNode = { ...node }
+        const updatedNode = { ...node }
 
         if (node.children) {
             const updatedChildren = updateNodeById(node.children, id, updates)
@@ -248,7 +269,11 @@ function convertSchemaPropertyToNode(
     }
 
     // Copy type-specific properties
-    if (property.enum) node.enum = property.enum
+    if (property.enum) {
+        // Convert simple enum array to new format for backward compatibility
+        node.enumValues = property.enum.map((value: string) => ({ value, description: undefined }))
+        node.enum = property.enum // Keep for backward compatibility
+    }
     if (property.default !== undefined) node.default = property.default
     if (property.minimum !== undefined) node.minimum = property.minimum
     if (property.maximum !== undefined) node.maximum = property.maximum
