@@ -20,6 +20,7 @@
                             <SelectItem value="anthropic">Anthropic</SelectItem>
                             <SelectItem value="ollama">Ollama</SelectItem>
                             <SelectItem value="gemini">Gemini</SelectItem>
+                            <SelectItem value="deepseek">DeepSeek</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

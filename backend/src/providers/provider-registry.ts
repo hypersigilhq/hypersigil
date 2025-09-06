@@ -3,6 +3,7 @@ import { OllamaProvider } from './ollama-provider';
 import { AnthropicProvider } from './anthropic-provider';
 import { OpenAIProvider } from './openai-provider';
 import { GeminiProvider } from './gemini-provider';
+import { DeepSeekProvider } from './deepseek-provider';
 import { settingsModel, LlmApiKeySettingsDocument } from '../models/settings';
 import { decryptString } from '../util/encryption';
 
@@ -376,6 +377,8 @@ export class ProviderRegistry {
                 return Ok(new OllamaProvider())
             case 'gemini':
                 return Ok(new GeminiProvider({ apiKey }))
+            case 'deepseek':
+                return Ok(new DeepSeekProvider({ apiKey }))
             default:
                 return Err(`Unknown provider: ${providerName}`);
         }

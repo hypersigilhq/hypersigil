@@ -42,7 +42,7 @@ export interface ExecutionResult {
     outputTokensUsed: number;
 }
 
-export const AIProviderNames = ['ollama', 'openai', 'anthropic', 'gemini'] as const
+export const AIProviderNames = ['ollama', 'openai', 'anthropic', 'gemini', 'deepseek'] as const
 export type AIProviderName = typeof AIProviderNames[number]
 
 // Base interface for AI providers

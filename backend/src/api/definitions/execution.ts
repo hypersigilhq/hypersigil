@@ -4,7 +4,7 @@ import { ErrorResponseSchema, createPaginationResponseSchema, PaginationQuerySch
 import { JSONSchemaSchema } from './prompt';
 
 // copy of base-provider AIProviderNames, leave it here as is since this file cannot import from outside of this dir
-export const AIProviderNamesDefinition = ['ollama', 'openai', 'anthropic', 'gemini'] as const
+export const AIProviderNamesDefinition = ['ollama', 'openai', 'anthropic', 'gemini', 'deepseek'] as const
 export type AIProviderNameDefinition = typeof AIProviderNamesDefinition[number]
 
 // Execution options schema
