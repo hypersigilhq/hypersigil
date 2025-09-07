@@ -13,6 +13,7 @@ import "./api/handlers/common"
 import "./api/handlers/file"
 import "./api/handlers/deployment"
 import "./api/handlers/job"
+import "./api/handlers/dashboard"
 import { config } from "./config";
 import { migrationManager } from './database/index'
 import { executionWorker } from "./services/execution-worker";
