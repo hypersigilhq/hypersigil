@@ -11,6 +11,7 @@ import { userApiClient } from './user';
 import { jobApiClient } from './job';
 import { executionBundleApiClient } from './execution-bundle';
 import { commonApiClient } from './common';
+import { dashboardApiClient } from './dashboard';
 
 export { promptsApi } from "./prompt"
 export { commentsApi } from "./commentsApi"
@@ -25,6 +26,7 @@ export { jobsApi } from "./job"
 export { userApi } from "./user"
 export { executionBundlesApi } from "./execution-bundle"
 export { commonApi } from "./common"
+export { dashboardApi } from "./dashboard"
 
 // Array of all API clients for token management
 const allApiClients = [
@@ -40,7 +42,8 @@ const allApiClients = [
     fileApiClient,
     deploymentApiClient,
     jobApiClient,
-    commonApiClient
+    commonApiClient,
+    dashboardApiClient
 ];
 
 // Token management function

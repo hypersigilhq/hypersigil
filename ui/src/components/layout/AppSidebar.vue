@@ -106,7 +106,7 @@ const navigationItems = computed<NavigationItemType[]>(() => {
     const items: NavigationItemType[] = [
         {
             name: 'Dashboard',
-            path: '/dashboard',
+            path: '/',
             icon: BarChart3,
         },
         {

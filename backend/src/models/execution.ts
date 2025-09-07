@@ -423,6 +423,11 @@ export class ExecutionModel extends Model<Execution> {
                 conditions.push(`JSON_EXTRACT(data, '$.completed_at') <= '${endDate}'`);
             }
             dateFilter += conditions.join(' AND ');
+        } else if (hours > 0) {
+            // If no explicit dates provided, use hours parameter to filter to last N hours
+            const cutoffDate = new Date();
+            cutoffDate.setHours(cutoffDate.getHours() - hours);
+            dateFilter = ` AND JSON_EXTRACT(data, '$.completed_at') >= '${cutoffDate.toISOString()}'`;
         }
 
         const sql = `

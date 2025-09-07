@@ -20,11 +20,6 @@ const router = createRouter({
 
     // Protected routes
     {
-      path: '/',
-      name: 'home',
-      component: () => import('../views/PromptsView.vue'),
-    },
-    {
       path: '/settings',
       name: 'settings',
       component: () => import('../views/SettingsView.vue'),
@@ -76,7 +71,7 @@ const router = createRouter({
       component: () => import('../views/PlaygroundView.vue'),
     },
     {
-      path: '/dashboard',
+      path: '/',
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue'),
     },
