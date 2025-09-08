@@ -193,7 +193,7 @@ const chartData = computed((): ChartData<'bar'> => {
                     backgroundColor: getModelColor(provider, model, true),
                     borderColor: getModelBorderColor(provider, model, true),
                     borderWidth: 1,
-                    stack: `${provider}-${model}`
+                    stack: provider // ✅ Fixed: Stack by provider, not provider-model
                 })
 
                 // Output tokens dataset for this specific model
@@ -207,7 +207,7 @@ const chartData = computed((): ChartData<'bar'> => {
                     backgroundColor: getModelColor(provider, model, false),
                     borderColor: getModelBorderColor(provider, model, false),
                     borderWidth: 1,
-                    stack: `${provider}-${model}`
+                    stack: provider // ✅ Fixed: Stack by provider, not provider-model
                 })
             } else {
                 // Total tokens dataset for this specific model
@@ -268,7 +268,7 @@ const chartOptions = computed((): ChartOptions<'bar'> => ({
             }
         },
         y: {
-            stacked: false,
+            stacked: props.groupingMode !== 'none', // ✅ Fixed: Enable Y-axis stacking for proper bar stacking
             beginAtZero: true,
             ticks: {
                 callback: (value) => props.formatValue(Number(value)),
