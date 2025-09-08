@@ -103,6 +103,12 @@ const barWidth = computed(() => {
 })
 
 const showTooltip = (item: BarChartData, event: MouseEvent) => {
+    // Don't show tooltip for zero or negative values
+    if (item.value <= 0) {
+        hideTooltip()
+        return
+    }
+
     const rect = (event.target as HTMLElement).getBoundingClientRect()
     tooltip.value = {
         visible: true,

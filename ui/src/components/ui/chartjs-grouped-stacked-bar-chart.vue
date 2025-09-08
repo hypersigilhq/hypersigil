@@ -274,11 +274,13 @@ const chartOptions = computed((): ChartOptions<'bar'> => ({
         tooltip: {
             mode: props.groupingMode === 'none' ? 'nearest' : 'index' as const,
             intersect: false,
+            filter: (tooltipItem) => {
+                return tooltipItem.parsed.y > 0 // Only show items with values > 0
+            },
             callbacks: {
                 label: (context) => {
-                    const value = context.parsed.y
                     const datasetLabel = context.dataset.label || ''
-                    return `${datasetLabel}: ${props.formatValue(value)} tokens`
+                    return `${datasetLabel}: ${props.formatValue(context.parsed.y)} tokens`
                 },
                 footer: (tooltipItems) => {
                     const total = tooltipItems.reduce((sum, item) => sum + item.parsed.y, 0)

@@ -83,10 +83,12 @@ const chartOptions = computed((): ChartOptions<'bar'> => ({
             display: false
         },
         tooltip: {
+            filter: (tooltipItem) => {
+                return tooltipItem.parsed.y > 0 // Only show items with values > 0
+            },
             callbacks: {
                 label: (context) => {
-                    const value = context.parsed.y
-                    return `${context.label}: ${props.formatValue(value)}`
+                    return `${context.label}: ${props.formatValue(context.parsed.y)}`
                 }
             }
         }
