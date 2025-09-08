@@ -125,31 +125,46 @@ const chartData = computed((): ChartData<'bar'> => {
     const datasets: ChartDataset<'bar'>[] = []
 
     if (props.groupingMode === 'none') {
-        // No grouping: Each provider-model combination as separate bars
-        const providerModelCombinations = new Map<string, { provider: string, model: string }>()
-
-        filteredData.forEach(item => {
-            const key = `${item.provider}-${item.model}`
-            if (!providerModelCombinations.has(key)) {
-                providerModelCombinations.set(key, { provider: item.provider, model: item.model })
-            }
-        })
-
-        // Create separate datasets for each provider-model combination (no stacking)
-        Array.from(providerModelCombinations.values()).forEach(({ provider, model }) => {
+        // No grouping: Sum all providers together
+        if (props.showInputOutput) {
+            // Show separate input and output totals
             datasets.push({
-                label: `${provider} ${model}`,
+                label: 'Total Input',
                 data: timeLabels.map(timeLabel => {
                     const timeData = timeGroups.get(timeLabel) || []
-                    const modelData = timeData.find(item => item.provider === provider && item.model === model)
-                    return modelData ? modelData.totalTokens : 0
+                    return timeData.reduce((sum, item) => sum + item.inputTokens, 0)
                 }),
-                backgroundColor: getModelColor(provider, model, true),
-                borderColor: getModelBorderColor(provider, model, true),
+                backgroundColor: `hsl(120, ${inputSaturation}%, 60%)`, // Green for input
+                borderColor: `hsl(120, ${inputSaturation + 10}%, 50%)`,
                 borderWidth: 1,
-                stack: undefined // No stacking for 'none' mode
+                stack: 'total' // Stack input and output together
             })
-        })
+
+            datasets.push({
+                label: 'Total Output',
+                data: timeLabels.map(timeLabel => {
+                    const timeData = timeGroups.get(timeLabel) || []
+                    return timeData.reduce((sum, item) => sum + item.outputTokens, 0)
+                }),
+                backgroundColor: `hsl(240, ${outputSaturation}%, 60%)`, // Blue for output
+                borderColor: `hsl(240, ${outputSaturation + 10}%, 50%)`,
+                borderWidth: 1,
+                stack: 'total' // Stack input and output together
+            })
+        } else {
+            // Show total tokens only
+            datasets.push({
+                label: 'Total Tokens',
+                data: timeLabels.map(timeLabel => {
+                    const timeData = timeGroups.get(timeLabel) || []
+                    return timeData.reduce((sum, item) => sum + item.totalTokens, 0)
+                }),
+                backgroundColor: `hsl(200, 70%, 60%)`, // Teal for total
+                borderColor: `hsl(200, 80%, 50%)`,
+                borderWidth: 1,
+                stack: undefined // No stacking for single total bar
+            })
+        }
 
     } else if (props.groupingMode === 'provider') {
         // Provider grouping: Aggregate all models within each provider
