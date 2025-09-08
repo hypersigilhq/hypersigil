@@ -115,8 +115,23 @@ const chartData = computed((): ChartData<'bar'> => {
         timeGroups.get(timeKey)!.push(item)
     })
 
-    // Get all unique time labels
-    const timeLabels = Array.from(timeGroups.keys()).sort()
+    // Get all unique time labels and sort them chronologically
+    const timeLabels = Array.from(timeGroups.keys()).sort((a, b) => {
+        // Check if this is hourly data (format: "H:00")
+        const isHourly = /^\d{1,2}:00$/.test(a) && /^\d{1,2}:00$/.test(b)
+
+        if (isHourly) {
+            // Sort hourly data numerically by hour
+            const hourA = parseInt(a.split(':')[0])
+            const hourB = parseInt(b.split(':')[0])
+            return hourA - hourB
+        } else {
+            // Sort daily data chronologically by parsing dates
+            const dateA = new Date(a)
+            const dateB = new Date(b)
+            return dateA.getTime() - dateB.getTime()
+        }
+    })
 
     // Get all unique providers from filtered data
     const allProviders = Array.from(new Set(filteredData.map(item => item.provider)))

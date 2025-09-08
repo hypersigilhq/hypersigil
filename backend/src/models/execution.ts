@@ -384,7 +384,7 @@ export class ExecutionModel extends Model<Execution> {
             WHERE JSON_EXTRACT(data, '$.status') = 'completed'
                 AND JSON_EXTRACT(data, '$.completed_at') IS NOT NULL${dateFilter}
             GROUP BY DATE(JSON_EXTRACT(data, '$.completed_at'))
-            ORDER BY date DESC
+            ORDER BY date ASC
             LIMIT ?
         `;
 
@@ -494,7 +494,7 @@ export class ExecutionModel extends Model<Execution> {
             WHERE JSON_EXTRACT(data, '$.status') = 'completed'
                 AND JSON_EXTRACT(data, '$.completed_at') IS NOT NULL${dateFilter}
             GROUP BY DATE(JSON_EXTRACT(data, '$.completed_at')), JSON_EXTRACT(data, '$.provider'), JSON_EXTRACT(data, '$.model')
-            ORDER BY date DESC, provider, model
+            ORDER BY date ASC, provider, model
         `;
 
         const rows = db.getDatabase().prepare(sql).all() as {

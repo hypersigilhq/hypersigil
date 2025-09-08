@@ -342,6 +342,160 @@ const formatNumber = (num: number): string => {
     return num.toLocaleString()
 }
 
+// Gap-filling functions
+// These functions ensure that charts display complete time spans by filling missing time periods with zero values.
+// This provides consistent visualization even when there are gaps in the data (e.g., days/hours with no executions).
+const fillDailyGaps = (data: Array<{
+    timeLabel: string
+    provider: string
+    model: string
+    inputTokens: number
+    outputTokens: number
+    totalTokens: number
+}>, startDate: Date, endDate: Date): Array<{
+    timeLabel: string
+    provider: string
+    model: string
+    inputTokens: number
+    outputTokens: number
+    totalTokens: number
+}> => {
+    // If no data, return empty array
+    if (!data || data.length === 0) {
+        return []
+    }
+
+    // Get all unique provider/model combinations from the data
+    const providerModelCombinations = new Set<string>()
+    data.forEach(item => {
+        providerModelCombinations.add(`${item.provider}:${item.model}`)
+    })
+
+    // Generate all dates in the range using consistent formatting
+    const allDates: string[] = []
+    const currentDate = new Date(startDate)
+    while (currentDate <= endDate) {
+        const dateLabel = currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        allDates.push(dateLabel)
+        currentDate.setDate(currentDate.getDate() + 1)
+    }
+
+    // Create filled data
+    const filledData: Array<{
+        timeLabel: string
+        provider: string
+        model: string
+        inputTokens: number
+        outputTokens: number
+        totalTokens: number
+    }> = []
+
+    // For each date in the full range and each provider/model combination, add data
+    allDates.forEach(dateLabel => {
+        providerModelCombinations.forEach(providerModelKey => {
+            const [provider, model] = providerModelKey.split(':')
+
+            // Look for existing data for this exact date/provider/model combination
+            const existingData = data.find(item =>
+                item.timeLabel === dateLabel &&
+                item.provider === provider &&
+                item.model === model
+            )
+
+            if (existingData) {
+                // Preserve existing data exactly as it is
+                filledData.push(existingData)
+            } else {
+                // Add zero entry for missing combination
+                filledData.push({
+                    timeLabel: dateLabel,
+                    provider,
+                    model,
+                    inputTokens: 0,
+                    outputTokens: 0,
+                    totalTokens: 0
+                })
+            }
+        })
+    })
+
+    return filledData
+}
+
+const fillHourlyGaps = (data: Array<{
+    timeLabel: string
+    provider: string
+    model: string
+    inputTokens: number
+    outputTokens: number
+    totalTokens: number
+}>): Array<{
+    timeLabel: string
+    provider: string
+    model: string
+    inputTokens: number
+    outputTokens: number
+    totalTokens: number
+}> => {
+    // If no data, return empty array
+    if (!data || data.length === 0) {
+        return []
+    }
+
+    // Get all unique provider/model combinations from the data
+    const providerModelCombinations = new Set<string>()
+    data.forEach(item => {
+        providerModelCombinations.add(`${item.provider}:${item.model}`)
+    })
+
+    // Generate all 24 hours
+    const allHours: string[] = []
+    for (let hour = 0; hour < 24; hour++) {
+        allHours.push(`${hour}:00`)
+    }
+
+    // Create filled data
+    const filledData: Array<{
+        timeLabel: string
+        provider: string
+        model: string
+        inputTokens: number
+        outputTokens: number
+        totalTokens: number
+    }> = []
+
+    // For each hour in the full range and each provider/model combination, add data
+    allHours.forEach(hourLabel => {
+        providerModelCombinations.forEach(providerModelKey => {
+            const [provider, model] = providerModelKey.split(':')
+
+            // Look for existing data for this exact hour/provider/model combination
+            const existingData = data.find(item =>
+                item.timeLabel === hourLabel &&
+                item.provider === provider &&
+                item.model === model
+            )
+
+            if (existingData) {
+                // Preserve existing data exactly as it is
+                filledData.push(existingData)
+            } else {
+                // Add zero entry for missing combination
+                filledData.push({
+                    timeLabel: hourLabel,
+                    provider,
+                    model,
+                    inputTokens: 0,
+                    outputTokens: 0,
+                    totalTokens: 0
+                })
+            }
+        })
+    })
+
+    return filledData
+}
+
 // API data loading functions
 const loadDashboardData = async () => {
     loading.value = true
@@ -383,7 +537,7 @@ const loadDashboardData = async () => {
         providerModelData.value = providerModelResponse
 
         // Transform grouped data for chart component
-        dailyGroupedData.value = dailyGroupedResponse.map(item => ({
+        const rawDailyData = dailyGroupedResponse.map(item => ({
             timeLabel: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             provider: item.provider,
             model: item.model,
@@ -392,7 +546,7 @@ const loadDashboardData = async () => {
             totalTokens: item.totalTokens
         }))
 
-        hourlyGroupedData.value = hourlyGroupedResponse.map(item => ({
+        const rawHourlyData = hourlyGroupedResponse.map(item => ({
             timeLabel: `${item.hour}:00`,
             provider: item.provider,
             model: item.model,
@@ -400,6 +554,17 @@ const loadDashboardData = async () => {
             outputTokens: item.outputTokens,
             totalTokens: item.totalTokens
         }))
+
+        // Fill gaps in the data to ensure complete time spans
+        if (selectedDateRange.value.start && selectedDateRange.value.end) {
+            const filledDaily = fillDailyGaps(rawDailyData, selectedDateRange.value.start, selectedDateRange.value.end)
+            dailyGroupedData.value = filledDaily.length > 0 ? filledDaily : rawDailyData
+        } else {
+            dailyGroupedData.value = rawDailyData
+        }
+
+        const filledHourly = fillHourlyGaps(rawHourlyData)
+        hourlyGroupedData.value = filledHourly.length > 0 ? filledHourly : rawHourlyData
 
         // Update available providers list
         const allProviders = new Set([
