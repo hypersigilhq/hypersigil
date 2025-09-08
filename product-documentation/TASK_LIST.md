@@ -113,5 +113,6 @@
 - [todo] pricing $ implementation
 - [todo] dashboard
 - [done] 25-09-08 Dashboard date range picker with conditional hourly/daily charts (Today, This week, Last 7 days, Last 30 days presets) - Fixed same-day filtering issue, extended charts to always show full spans
+- [done] 25-09-08 14:09 Grouped stacked bar chart with input/output token distinction, grouping switch, and advanced controls - Implemented comprehensive dashboard charts with three grouping modes (None, Provider, Provider+Model), token type toggle (input/output vs total), and provider filter for complete chart customization
 - [todo] reports tab: usage of prompt/deployment/model/api-key
 - [todo] projects

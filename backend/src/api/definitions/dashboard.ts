@@ -28,6 +28,26 @@ export const HourlyTokenUsageSchema = z.object({
     executionCount: z.number()
 });
 
+export const DailyTokenUsageByProviderModelSchema = z.object({
+    date: z.string(), // YYYY-MM-DD format
+    provider: z.string(),
+    model: z.string(),
+    totalTokens: z.number(),
+    inputTokens: z.number(),
+    outputTokens: z.number(),
+    executionCount: z.number()
+});
+
+export const HourlyTokenUsageByProviderModelSchema = z.object({
+    hour: z.number(), // 0-23
+    provider: z.string(),
+    model: z.string(),
+    totalTokens: z.number(),
+    inputTokens: z.number(),
+    outputTokens: z.number(),
+    executionCount: z.number()
+});
+
 export const DashboardStatsSchema = z.object({
     totalTokensUsed: z.number(),
     totalExecutions: z.number(),
@@ -51,6 +71,10 @@ export const TokenUsageSummaryResponseSchema = z.array(TokenUsageSummarySchema);
 export const DailyTokenUsageResponseSchema = z.array(DailyTokenUsageSchema);
 
 export const HourlyTokenUsageResponseSchema = z.array(HourlyTokenUsageSchema);
+
+export const DailyTokenUsageByProviderModelResponseSchema = z.array(DailyTokenUsageByProviderModelSchema);
+
+export const HourlyTokenUsageByProviderModelResponseSchema = z.array(HourlyTokenUsageByProviderModelSchema);
 
 export const DashboardStatsResponseSchema = DashboardStatsSchema;
 
@@ -104,6 +128,30 @@ export const DashboardApiDefinition = CreateApiDefinition({
                 }),
                 responses: CreateResponses({
                     200: HourlyTokenUsageResponseSchema,
+                    500: ErrorResponseSchema
+                })
+            },
+
+            getDailyTokenUsageByProviderModel: {
+                method: 'GET',
+                path: '/token-usage/daily/grouped',
+                query: DateRangeQuerySchema.extend({
+                    days: z.number().min(1).max(90).optional().default(30)
+                }),
+                responses: CreateResponses({
+                    200: DailyTokenUsageByProviderModelResponseSchema,
+                    500: ErrorResponseSchema
+                })
+            },
+
+            getHourlyTokenUsageByProviderModel: {
+                method: 'GET',
+                path: '/token-usage/hourly/grouped',
+                query: DateRangeQuerySchema.extend({
+                    hours: z.number().min(1).max(168).optional().default(24) // max 1 week
+                }),
+                responses: CreateResponses({
+                    200: HourlyTokenUsageByProviderModelResponseSchema,
                     500: ErrorResponseSchema
                 })
             }

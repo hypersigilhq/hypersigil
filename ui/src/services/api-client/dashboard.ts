@@ -31,5 +31,17 @@ export const dashboardApi = {
         dashboardApiClient.callApi('dashboard', 'getHourlyTokenUsage', { query }, {
             ...errorHandle,
             200: (payload) => payload.data,
+        }),
+
+    getDailyTokenUsageByProviderModel: (query?: { startDate?: string; endDate?: string; days?: number }) =>
+        dashboardApiClient.callApi('dashboard', 'getDailyTokenUsageByProviderModel', { query }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
+        }),
+
+    getHourlyTokenUsageByProviderModel: (query?: { startDate?: string; endDate?: string; hours?: number }) =>
+        dashboardApiClient.callApi('dashboard', 'getHourlyTokenUsageByProviderModel', { query }, {
+            ...errorHandle,
+            200: (payload) => payload.data,
         })
 };

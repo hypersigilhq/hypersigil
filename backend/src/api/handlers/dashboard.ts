@@ -51,6 +51,30 @@ RegisterHandlers(app, DashboardApiDefinition, {
                 console.error('Error getting hourly token usage:', error);
                 res.status(500).json(Err('Failed to get hourly token usage'));
             }
+        },
+        getDailyTokenUsageByProviderModel: async (req, res) => {
+            try {
+                const { startDate, endDate, days } = req.query;
+                const daysNum = days || 30;
+
+                const result = await executionModel.getDailyTokenUsageByProviderModel(daysNum, startDate, endDate);
+                res.json(Ok(result));
+            } catch (error) {
+                console.error('Error getting daily token usage by provider model:', error);
+                res.status(500).json(Err('Failed to get daily token usage by provider model'));
+            }
+        },
+        getHourlyTokenUsageByProviderModel: async (req, res) => {
+            try {
+                const { startDate, endDate, hours } = req.query;
+                const hoursNum = hours || 24;
+
+                const result = await executionModel.getHourlyTokenUsageByProviderModel(hoursNum, startDate, endDate);
+                res.json(Ok(result));
+            } catch (error) {
+                console.error('Error getting hourly token usage by provider model:', error);
+                res.status(500).json(Err('Failed to get hourly token usage by provider model'));
+            }
         }
     }
 }, [loggingMiddleware, timingMiddleware, authMiddleware]);

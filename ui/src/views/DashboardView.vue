@@ -24,9 +24,47 @@
 
         <!-- Dashboard Content -->
         <div v-else>
-            <!-- Date Range Picker -->
-            <div class="mb-6">
-                <DateRangePicker v-model="selectedDateRange" @update:model-value="onDateRangeChange" />
+            <!-- Date Range Picker and Grouping Controls -->
+            <div class="mb-6 space-y-4">
+                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                    <DateRangePicker v-model="selectedDateRange" @update:model-value="onDateRangeChange" />
+
+                    <!-- Grouping Mode Switch -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm font-medium">Grouping:</label>
+                        <select v-model="groupingMode"
+                            class="px-3 py-1 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                            <option value="none">None</option>
+                            <option value="provider">Provider</option>
+                            <option value="provider-model">Provider + Model</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Token Type and Provider Filter Controls -->
+                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                    <!-- Input/Output Toggle -->
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="showInputOutput" v-model="showInputOutput"
+                            class="rounded border border-input">
+                        <label for="showInputOutput" class="text-sm font-medium">Show Input/Output Breakdown</label>
+                    </div>
+
+                    <!-- Provider Filter -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm font-medium">Providers:</label>
+                        <select multiple v-model="selectedProviders"
+                            class="px-3 py-1 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring max-w-xs">
+                            <option v-for="provider in availableProviders" :key="provider" :value="provider">
+                                {{ provider }}
+                            </option>
+                        </select>
+                        <button @click="selectedProviders = []"
+                            class="text-xs text-muted-foreground hover:text-foreground">
+                            Clear
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Summary Cards -->
@@ -126,25 +164,29 @@
                 <!-- Conditional Chart Display -->
                 <Card v-if="!showHourlyChart">
                     <CardHeader>
-                        <CardTitle>{{ chartTitle }}</CardTitle>
+                        <CardTitle>{{ chartTitle }} (Grouped by Provider/Model)</CardTitle>
                         <CardDescription>
-                            {{ chartDescription }}
+                            {{ chartDescription }} - Shows input and output token usage by provider and model
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ChartjsBarChart :data="dailyChartData" height="300px" :format-value="formatNumber" />
+                        <ChartjsGroupedStackedBarChart :data="dailyGroupedData" height="400px"
+                            :format-value="formatNumber" :show-input-output="showInputOutput"
+                            :grouping-mode="groupingMode" :selected-providers="selectedProviders" />
                     </CardContent>
                 </Card>
 
                 <Card v-if="showHourlyChart">
                     <CardHeader>
-                        <CardTitle>{{ chartTitle }}</CardTitle>
+                        <CardTitle>{{ chartTitle }} (Grouped by Provider/Model)</CardTitle>
                         <CardDescription>
-                            {{ chartDescription }}
+                            {{ chartDescription }} - Shows input and output token usage by provider and model
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ChartjsBarChart :data="hourlyChartData" height="300px" :format-value="formatNumber" />
+                        <ChartjsGroupedStackedBarChart :data="hourlyGroupedData" height="400px"
+                            :format-value="formatNumber" :show-input-output="showInputOutput"
+                            :grouping-mode="groupingMode" :selected-providers="selectedProviders" />
                     </CardContent>
                 </Card>
 
@@ -171,6 +213,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import ChartjsBarChart from '@/components/ui/chartjs-bar-chart.vue'
+import ChartjsGroupedStackedBarChart from '@/components/ui/chartjs-grouped-stacked-bar-chart.vue'
 import DateRangePicker from '@/components/ui/date-range-picker.vue'
 import { Activity, Play, Server, Bot, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -226,6 +269,30 @@ const stats = ref<DashboardStats>({
 const dailyData = ref<TokenUsageData[]>([])
 const hourlyData = ref<TokenUsageData[]>([])
 const providerModelData = ref<ProviderModelData[]>([])
+const dailyGroupedData = ref<Array<{
+    timeLabel: string
+    provider: string
+    model: string
+    inputTokens: number
+    outputTokens: number
+    totalTokens: number
+}>>([])
+const hourlyGroupedData = ref<Array<{
+    timeLabel: string
+    provider: string
+    model: string
+    inputTokens: number
+    outputTokens: number
+    totalTokens: number
+}>>([])
+
+// Grouping mode state
+const groupingMode = ref<'none' | 'provider' | 'provider-model'>('provider-model')
+
+// Token type and provider filter state
+const showInputOutput = ref(true)
+const selectedProviders = ref<string[]>([])
+const availableProviders = ref<string[]>([])
 
 // Date range state
 const selectedDateRange = ref<{ start: Date | null; end: Date | null }>({
@@ -256,63 +323,7 @@ const chartDescription = computed(() => {
     }
 })
 
-// Computed properties for chart data
-const dailyChartData = computed(() => {
-    if (!selectedDateRange.value.start || !selectedDateRange.value.end) {
-        return []
-    }
-
-    // Create array of all days in the selected range
-    const days: { date: string; value: number }[] = []
-    const currentDate = new Date(selectedDateRange.value.start)
-
-    while (currentDate <= selectedDateRange.value.end) {
-        const dateString = currentDate.toISOString().split('T')[0] // YYYY-MM-DD format
-        days.push({
-            date: dateString,
-            value: 0 // Default to 0
-        })
-        currentDate.setDate(currentDate.getDate() + 1)
-    }
-
-    // Merge with actual data from API
-    dailyData.value.forEach(item => {
-        if (item.date) {
-            const dayIndex = days.findIndex(day => day.date === item.date)
-            if (dayIndex !== -1) {
-                days[dayIndex].value = item.totalTokens
-            }
-        }
-    })
-
-    return days.map(day => ({
-        label: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        value: day.value
-    }))
-})
-
-const hourlyChartData = computed(() => {
-    // Create array of all 24 hours
-    const hours: { hour: number; value: number }[] = []
-    for (let i = 0; i < 24; i++) {
-        hours.push({
-            hour: i,
-            value: 0 // Default to 0
-        })
-    }
-
-    // Merge with actual data from API
-    hourlyData.value.forEach(item => {
-        if (item.hour !== undefined && item.hour >= 0 && item.hour < 24) {
-            hours[item.hour].value = item.totalTokens
-        }
-    })
-
-    return hours.map(hour => ({
-        label: `${hour.hour}:00`,
-        value: hour.value
-    }))
-})
+// Computed properties for chart data (legacy - kept for potential future use)
 
 const providerModelChartData = computed(() => {
     return providerModelData.value.map(item => ({
@@ -356,11 +367,13 @@ const loadDashboardData = async () => {
         }
 
         // Load all dashboard data in parallel with date filtering
-        const [statsResponse, dailyResponse, hourlyResponse, providerModelResponse] = await Promise.all([
+        const [statsResponse, dailyResponse, hourlyResponse, providerModelResponse, dailyGroupedResponse, hourlyGroupedResponse] = await Promise.all([
             dashboardApi.getStats(dateParams),
             dashboardApi.getDailyTokenUsage(dateParams),
             dashboardApi.getHourlyTokenUsage(dateParams),
-            dashboardApi.getTokenUsageByProviderModel(dateParams)
+            dashboardApi.getTokenUsageByProviderModel(dateParams),
+            dashboardApi.getDailyTokenUsageByProviderModel(dateParams),
+            dashboardApi.getHourlyTokenUsageByProviderModel(dateParams)
         ])
 
         // Update reactive state
@@ -368,6 +381,37 @@ const loadDashboardData = async () => {
         dailyData.value = dailyResponse
         hourlyData.value = hourlyResponse
         providerModelData.value = providerModelResponse
+
+        // Transform grouped data for chart component
+        dailyGroupedData.value = dailyGroupedResponse.map(item => ({
+            timeLabel: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            provider: item.provider,
+            model: item.model,
+            inputTokens: item.inputTokens,
+            outputTokens: item.outputTokens,
+            totalTokens: item.totalTokens
+        }))
+
+        hourlyGroupedData.value = hourlyGroupedResponse.map(item => ({
+            timeLabel: `${item.hour}:00`,
+            provider: item.provider,
+            model: item.model,
+            inputTokens: item.inputTokens,
+            outputTokens: item.outputTokens,
+            totalTokens: item.totalTokens
+        }))
+
+        // Update available providers list
+        const allProviders = new Set([
+            ...dailyGroupedResponse.map(item => item.provider),
+            ...hourlyGroupedResponse.map(item => item.provider)
+        ])
+        availableProviders.value = Array.from(allProviders).sort()
+
+        // Reset selected providers if they include providers that are no longer available
+        selectedProviders.value = selectedProviders.value.filter(provider =>
+            availableProviders.value.includes(provider)
+        )
 
     } catch (err) {
         console.error('Error loading dashboard data:', err)

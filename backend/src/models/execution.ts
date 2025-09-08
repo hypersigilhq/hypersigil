@@ -458,6 +458,127 @@ export class ExecutionModel extends Model<Execution> {
             executionCount: row.executionCount
         }));
     }
+
+    public async getDailyTokenUsageByProviderModel(days: number = 30, startDate?: string, endDate?: string): Promise<{
+        date: string;
+        provider: string;
+        model: string;
+        totalTokens: number;
+        inputTokens: number;
+        outputTokens: number;
+        executionCount: number;
+    }[]> {
+        // Build date filter
+        let dateFilter = '';
+        if (startDate || endDate) {
+            dateFilter = ' AND ';
+            const conditions: string[] = [];
+            if (startDate) {
+                conditions.push(`JSON_EXTRACT(data, '$.completed_at') >= '${startDate}'`);
+            }
+            if (endDate) {
+                conditions.push(`JSON_EXTRACT(data, '$.completed_at') <= '${endDate}'`);
+            }
+            dateFilter += conditions.join(' AND ');
+        }
+
+        const sql = `
+            SELECT
+                DATE(JSON_EXTRACT(data, '$.completed_at')) as date,
+                JSON_EXTRACT(data, '$.provider') as provider,
+                JSON_EXTRACT(data, '$.model') as model,
+                SUM(COALESCE(JSON_EXTRACT(data, '$.input_tokens_used'), 0)) as inputTokens,
+                SUM(COALESCE(JSON_EXTRACT(data, '$.output_tokens_used'), 0)) as outputTokens,
+                COUNT(*) as executionCount
+            FROM ${this.tableName}
+            WHERE JSON_EXTRACT(data, '$.status') = 'completed'
+                AND JSON_EXTRACT(data, '$.completed_at') IS NOT NULL${dateFilter}
+            GROUP BY DATE(JSON_EXTRACT(data, '$.completed_at')), JSON_EXTRACT(data, '$.provider'), JSON_EXTRACT(data, '$.model')
+            ORDER BY date DESC, provider, model
+        `;
+
+        const rows = db.getDatabase().prepare(sql).all() as {
+            date: string;
+            provider: string;
+            model: string;
+            inputTokens: number;
+            outputTokens: number;
+            executionCount: number;
+        }[];
+
+        return rows.map(row => ({
+            date: row.date,
+            provider: row.provider,
+            model: row.model,
+            totalTokens: row.inputTokens + row.outputTokens,
+            inputTokens: row.inputTokens,
+            outputTokens: row.outputTokens,
+            executionCount: row.executionCount
+        }));
+    }
+
+    public async getHourlyTokenUsageByProviderModel(hours: number = 24, startDate?: string, endDate?: string): Promise<{
+        hour: number;
+        provider: string;
+        model: string;
+        totalTokens: number;
+        inputTokens: number;
+        outputTokens: number;
+        executionCount: number;
+    }[]> {
+        // Build date filter
+        let dateFilter = '';
+        if (startDate || endDate) {
+            dateFilter = ' AND ';
+            const conditions: string[] = [];
+            if (startDate) {
+                conditions.push(`JSON_EXTRACT(data, '$.completed_at') >= '${startDate}'`);
+            }
+            if (endDate) {
+                conditions.push(`JSON_EXTRACT(data, '$.completed_at') <= '${endDate}'`);
+            }
+            dateFilter += conditions.join(' AND ');
+        } else if (hours > 0) {
+            // If no explicit dates provided, use hours parameter to filter to last N hours
+            const cutoffDate = new Date();
+            cutoffDate.setHours(cutoffDate.getHours() - hours);
+            dateFilter = ` AND JSON_EXTRACT(data, '$.completed_at') >= '${cutoffDate.toISOString()}'`;
+        }
+
+        const sql = `
+            SELECT
+                CAST(STRFTIME('%H', JSON_EXTRACT(data, '$.completed_at')) AS INTEGER) as hour,
+                JSON_EXTRACT(data, '$.provider') as provider,
+                JSON_EXTRACT(data, '$.model') as model,
+                SUM(COALESCE(JSON_EXTRACT(data, '$.input_tokens_used'), 0)) as inputTokens,
+                SUM(COALESCE(JSON_EXTRACT(data, '$.output_tokens_used'), 0)) as outputTokens,
+                COUNT(*) as executionCount
+            FROM ${this.tableName}
+            WHERE JSON_EXTRACT(data, '$.status') = 'completed'
+                AND JSON_EXTRACT(data, '$.completed_at') IS NOT NULL${dateFilter}
+            GROUP BY STRFTIME('%H', JSON_EXTRACT(data, '$.completed_at')), JSON_EXTRACT(data, '$.provider'), JSON_EXTRACT(data, '$.model')
+            ORDER BY hour, provider, model
+        `;
+
+        const rows = db.getDatabase().prepare(sql).all() as {
+            hour: number;
+            provider: string;
+            model: string;
+            inputTokens: number;
+            outputTokens: number;
+            executionCount: number;
+        }[];
+
+        return rows.map(row => ({
+            hour: row.hour,
+            provider: row.provider,
+            model: row.model,
+            totalTokens: row.inputTokens + row.outputTokens,
+            inputTokens: row.inputTokens,
+            outputTokens: row.outputTokens,
+            executionCount: row.executionCount
+        }));
+    }
 }
 
 // Export a singleton instance
