@@ -24,6 +24,11 @@
 
         <!-- Dashboard Content -->
         <div v-else>
+            <!-- Date Range Picker -->
+            <div class="mb-6">
+                <DateRangePicker v-model="selectedDateRange" @update:model-value="onDateRangeChange" />
+            </div>
+
             <!-- Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <Card>
@@ -118,12 +123,12 @@
 
             <!-- Charts -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Daily Token Usage Chart -->
-                <Card>
+                <!-- Conditional Chart Display -->
+                <Card v-if="!showHourlyChart">
                     <CardHeader>
-                        <CardTitle>Daily Token Usage</CardTitle>
+                        <CardTitle>{{ chartTitle }}</CardTitle>
                         <CardDescription>
-                            Token consumption over the last 30 days
+                            {{ chartDescription }}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -131,32 +136,33 @@
                     </CardContent>
                 </Card>
 
-                <!-- Hourly Token Usage Chart -->
-                <Card>
+                <Card v-if="showHourlyChart">
                     <CardHeader>
-                        <CardTitle>Hourly Token Usage</CardTitle>
+                        <CardTitle>{{ chartTitle }}</CardTitle>
                         <CardDescription>
-                            Token consumption over the last 24 hours
+                            {{ chartDescription }}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ChartjsBarChart :data="hourlyChartData" height="300px" :format-value="formatNumber" />
                     </CardContent>
                 </Card>
+
+                <!-- Provider/Model Breakdown -->
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Token Usage by Provider & Model</CardTitle>
+                        <CardDescription>
+                            Breakdown of token consumption across different providers and models
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ChartjsBarChart :data="providerModelChartData" height="400px" :format-value="formatNumber" />
+                    </CardContent>
+                </Card>
             </div>
 
-            <!-- Provider/Model Breakdown -->
-            <Card class="mt-6">
-                <CardHeader>
-                    <CardTitle>Token Usage by Provider & Model</CardTitle>
-                    <CardDescription>
-                        Breakdown of token consumption across different providers and models
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ChartjsBarChart :data="providerModelChartData" height="400px" :format-value="formatNumber" />
-                </CardContent>
-            </Card>
+
         </div>
     </div>
 </template>
@@ -165,6 +171,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import ChartjsBarChart from '@/components/ui/chartjs-bar-chart.vue'
+import DateRangePicker from '@/components/ui/date-range-picker.vue'
 import { Activity, Play, Server, Bot, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { dashboardApi } from '@/services/api-client'
@@ -220,18 +227,90 @@ const dailyData = ref<TokenUsageData[]>([])
 const hourlyData = ref<TokenUsageData[]>([])
 const providerModelData = ref<ProviderModelData[]>([])
 
+// Date range state
+const selectedDateRange = ref<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+})
+
+// Computed property to determine chart display mode
+const showHourlyChart = computed(() => {
+    const { start, end } = selectedDateRange.value
+    if (!start || !end) return false
+
+    // Show hourly chart if same day is selected
+    return start.toDateString() === end.toDateString()
+})
+
+// Computed property for dynamic chart titles and descriptions
+const chartTitle = computed(() => {
+    return showHourlyChart.value ? 'Hourly Token Usage' : 'Daily Token Usage'
+})
+
+const chartDescription = computed(() => {
+    if (showHourlyChart.value) {
+        const date = selectedDateRange.value.start
+        return date ? `Token consumption on ${date.toLocaleDateString('en-GB')}` : 'Token consumption for selected day'
+    } else {
+        return 'Token consumption over selected date range'
+    }
+})
+
 // Computed properties for chart data
 const dailyChartData = computed(() => {
-    return dailyData.value.map(item => ({
-        label: item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '',
-        value: item.totalTokens
+    if (!selectedDateRange.value.start || !selectedDateRange.value.end) {
+        return []
+    }
+
+    // Create array of all days in the selected range
+    const days: { date: string; value: number }[] = []
+    const currentDate = new Date(selectedDateRange.value.start)
+
+    while (currentDate <= selectedDateRange.value.end) {
+        const dateString = currentDate.toISOString().split('T')[0] // YYYY-MM-DD format
+        days.push({
+            date: dateString,
+            value: 0 // Default to 0
+        })
+        currentDate.setDate(currentDate.getDate() + 1)
+    }
+
+    // Merge with actual data from API
+    dailyData.value.forEach(item => {
+        if (item.date) {
+            const dayIndex = days.findIndex(day => day.date === item.date)
+            if (dayIndex !== -1) {
+                days[dayIndex].value = item.totalTokens
+            }
+        }
+    })
+
+    return days.map(day => ({
+        label: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        value: day.value
     }))
 })
 
 const hourlyChartData = computed(() => {
-    return hourlyData.value.map(item => ({
-        label: item.hour !== undefined ? `${item.hour}:00` : '',
-        value: item.totalTokens
+    // Create array of all 24 hours
+    const hours: { hour: number; value: number }[] = []
+    for (let i = 0; i < 24; i++) {
+        hours.push({
+            hour: i,
+            value: 0 // Default to 0
+        })
+    }
+
+    // Merge with actual data from API
+    hourlyData.value.forEach(item => {
+        if (item.hour !== undefined && item.hour >= 0 && item.hour < 24) {
+            hours[item.hour].value = item.totalTokens
+        }
+    })
+
+    return hours.map(hour => ({
+        label: `${hour.hour}:00`,
+        value: hour.value
     }))
 })
 
@@ -258,12 +337,30 @@ const loadDashboardData = async () => {
     error.value = null
 
     try {
-        // Load all dashboard data in parallel
+        // Prepare date range parameters
+        let dateParams = {}
+        if (selectedDateRange.value.start && selectedDateRange.value.end) {
+            const startDate = selectedDateRange.value.start
+            let endDate = selectedDateRange.value.end
+
+            // If same day is selected, extend end date to end of day to include all executions
+            if (startDate.toDateString() === endDate.toDateString()) {
+                endDate = new Date(endDate)
+                endDate.setHours(23, 59, 59, 999)
+            }
+
+            dateParams = {
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            }
+        }
+
+        // Load all dashboard data in parallel with date filtering
         const [statsResponse, dailyResponse, hourlyResponse, providerModelResponse] = await Promise.all([
-            dashboardApi.getStats(),
-            dashboardApi.getDailyTokenUsage(),
-            dashboardApi.getHourlyTokenUsage(),
-            dashboardApi.getTokenUsageByProviderModel()
+            dashboardApi.getStats(dateParams),
+            dashboardApi.getDailyTokenUsage(dateParams),
+            dashboardApi.getHourlyTokenUsage(dateParams),
+            dashboardApi.getTokenUsageByProviderModel(dateParams)
         ])
 
         // Update reactive state
@@ -280,8 +377,24 @@ const loadDashboardData = async () => {
     }
 }
 
+// Date range change handler
+const onDateRangeChange = async (dateRange: { start: Date | null; end: Date | null }) => {
+    selectedDateRange.value = dateRange
+    await loadDashboardData()
+}
+
 // Load data on mount
 onMounted(async () => {
+    // Set default date range to last 7 days
+    const end = new Date()
+    const start = new Date()
+    start.setDate(end.getDate() - 7)
+
+    selectedDateRange.value = {
+        start,
+        end
+    }
+
     await loadDashboardData()
 })
 </script>

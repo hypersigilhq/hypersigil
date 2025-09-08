@@ -112,5 +112,6 @@
 # Big features
 - [todo] pricing $ implementation
 - [todo] dashboard
+- [done] 25-09-08 Dashboard date range picker with conditional hourly/daily charts (Today, This week, Last 7 days, Last 30 days presets) - Fixed same-day filtering issue, extended charts to always show full spans
 - [todo] reports tab: usage of prompt/deployment/model/api-key
 - [todo] projects
