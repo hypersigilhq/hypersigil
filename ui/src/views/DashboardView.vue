@@ -24,9 +24,10 @@
 
         <!-- Dashboard Content -->
         <div v-else>
-            <!-- Date Range Picker and Grouping Controls -->
-            <div class="mb-6 space-y-4">
-                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <!-- Combined Filter Controls -->
+            <div class="mb-6">
+                <div class="flex flex-col lg:flex-row gap-4 items-start lg:items-center flex-wrap">
+                    <!-- Date Range Picker -->
                     <DateRangePicker v-model="selectedDateRange" @update:model-value="onDateRangeChange" />
 
                     <!-- Grouping Mode Switch -->
@@ -39,10 +40,7 @@
                             <option value="provider-model">Provider + Model</option>
                         </select>
                     </div>
-                </div>
 
-                <!-- Token Type and Provider Filter Controls -->
-                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                     <!-- Input/Output Toggle -->
                     <div class="flex items-center gap-2">
                         <input type="checkbox" id="showInputOutput" v-model="showInputOutput"
@@ -53,12 +51,16 @@
                     <!-- Provider Filter -->
                     <div class="flex items-center gap-2">
                         <label class="text-sm font-medium">Providers:</label>
-                        <select multiple v-model="selectedProviders"
-                            class="px-3 py-1 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring max-w-xs">
-                            <option v-for="provider in availableProviders" :key="provider" :value="provider">
-                                {{ provider }}
-                            </option>
-                        </select>
+                        <Select v-model="selectedProviders" multiple>
+                            <SelectTrigger class="w-48">
+                                <SelectValue placeholder="Select providers..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem v-for="provider in availableProviders" :key="provider" :value="provider">
+                                    {{ provider }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                         <button @click="selectedProviders = []"
                             class="text-xs text-muted-foreground hover:text-foreground">
                             Clear
@@ -215,6 +217,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import ChartjsBarChart from '@/components/ui/chartjs-bar-chart.vue'
 import ChartjsGroupedStackedBarChart from '@/components/ui/chartjs-grouped-stacked-bar-chart.vue'
 import DateRangePicker from '@/components/ui/date-range-picker.vue'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Activity, Play, Server, Bot, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { dashboardApi } from '@/services/api-client'

@@ -268,7 +268,7 @@ const chartOptions = computed((): ChartOptions<'bar'> => ({
     maintainAspectRatio: false,
     plugins: {
         legend: {
-            display: true,
+            display: false,
             position: 'top' as const
         },
         tooltip: {
