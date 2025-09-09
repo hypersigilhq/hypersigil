@@ -66,8 +66,8 @@ const providerBaseColors: Record<string, { hue: number; saturation: number; ligh
 const modelLightnessVariations = [70, 75, 65, 60, 55, 80] // Base, lighter, darker, etc.
 
 // Input/Output saturation variations
-const inputSaturation = 80  // More vibrant for input
-const outputSaturation = 60 // More muted for output
+const inputSaturation = 80  // Vibrant for input
+const outputSaturation = 40 // Distinct but slightly muted for output
 
 const getProviderBaseColor = (provider: string) => {
     return providerBaseColors[provider.toLowerCase()] || providerBaseColors.default
@@ -143,18 +143,7 @@ const chartData = computed((): ChartData<'bar'> => {
         // No grouping: Sum all providers together
         if (props.showInputOutput) {
             // Show separate input and output totals
-            datasets.push({
-                label: 'Total Input',
-                data: timeLabels.map(timeLabel => {
-                    const timeData = timeGroups.get(timeLabel) || []
-                    return timeData.reduce((sum, item) => sum + item.inputTokens, 0)
-                }),
-                backgroundColor: `hsl(120, ${inputSaturation}%, 60%)`, // Green for input
-                borderColor: `hsl(120, ${inputSaturation + 10}%, 50%)`,
-                borderWidth: 1,
-                stack: 'total' // Stack input and output together
-            })
-
+            // Draw output bars first (bottom layer) so they're visible
             datasets.push({
                 label: 'Total Output',
                 data: timeLabels.map(timeLabel => {
@@ -163,6 +152,19 @@ const chartData = computed((): ChartData<'bar'> => {
                 }),
                 backgroundColor: `hsl(240, ${outputSaturation}%, 60%)`, // Blue for output
                 borderColor: `hsl(240, ${outputSaturation + 10}%, 50%)`,
+                borderWidth: 1,
+                stack: 'total' // Stack input and output together
+            })
+
+            // Draw input bars on top
+            datasets.push({
+                label: 'Total Input',
+                data: timeLabels.map(timeLabel => {
+                    const timeData = timeGroups.get(timeLabel) || []
+                    return timeData.reduce((sum, item) => sum + item.inputTokens, 0)
+                }),
+                backgroundColor: `hsl(120, ${inputSaturation}%, 60%)`, // Green for input
+                borderColor: `hsl(120, ${inputSaturation + 10}%, 50%)`,
                 borderWidth: 1,
                 stack: 'total' // Stack input and output together
             })
@@ -291,7 +293,7 @@ const chartOptions = computed((): ChartOptions<'bar'> => ({
     },
     scales: {
         x: {
-            stacked: props.groupingMode !== 'none', // Only stack for provider and provider-model modes
+            stacked: props.groupingMode !== 'none' || props.showInputOutput, // Stack for provider/model modes OR when showing input/output
             ticks: {
                 color: 'hsl(var(--muted-foreground))'
             },
@@ -300,7 +302,7 @@ const chartOptions = computed((): ChartOptions<'bar'> => ({
             }
         },
         y: {
-            stacked: props.groupingMode !== 'none', // ✅ Fixed: Enable Y-axis stacking for proper bar stacking
+            stacked: props.groupingMode !== 'none' || props.showInputOutput, // Stack for provider/model modes OR when showing input/output
             beginAtZero: true,
             ticks: {
                 callback: (value) => props.formatValue(Number(value)),
