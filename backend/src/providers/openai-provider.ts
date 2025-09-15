@@ -1,5 +1,8 @@
 import { AIProvider, ProviderConfig, ProviderError, ProviderUnavailableError, ProviderTimeoutError, ModelNotSupportedError, ExecutionOptions, JSONSchema, ExecutionResult, GenericProvider } from './base-provider';
 
+// OpenAI Provider using the Responses API (/v1/responses)
+// Migrated from Chat Completions API for better structured data handling and reasoning model support
+
 export interface OpenAIConfig extends ProviderConfig {
     apiKey: string;
     baseUrl: string;
@@ -14,31 +17,39 @@ interface OpenAIMessage {
 
 interface OpenAIRequest {
     model: string;
-    messages: OpenAIMessage[];
-    temperature?: number;
-    max_tokens?: number;
-    top_p?: number;
-    response_format?: {
-        type: 'json_object';
-    } | { type: 'json_schema', json_schema: { name: string, description: string, schema: any, strict: boolean } };
+    input?: string | OpenAIMessage[];
+    instructions?: string;
+    reasoning?: {
+        effort: 'low' | 'medium' | 'high';
+    };
+    max_output_tokens?: number;
+    text?: {
+        format?: {
+            type: 'json_schema';
+        } | { name: string, type: 'json_schema', schema: any, strict: boolean };
+        // } | { name: string, description: string, schema: any, strict: boolean };
+        // } | { type: 'json_schema', schema: any, struct: boolean };
+    };
 }
 
 interface OpenAIResponse {
     id: string;
-    object: 'chat.completion';
+    object: 'response';
     created: number;
     model: string;
-    choices: Array<{
-        index: number;
-        message: {
-            role: 'assistant';
-            content: string;
-        };
-        finish_reason: string;
+    output: Array<{
+        id: string;
+        type: 'message';
+        role: 'assistant';
+        content: Array<{
+            type: 'output_text';
+            text: string;
+            annotations: any[];
+        }>;
     }>;
     usage: {
-        prompt_tokens: number;
-        completion_tokens: number;
+        input_tokens: number;
+        output_tokens: number;
         total_tokens: number;
     };
 }
@@ -91,40 +102,32 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
             throw new ModelNotSupportedError(this.name, model);
         }
 
-        // Build messages array
-        const messages: OpenAIMessage[] = [
-            {
-                role: 'system',
-                content: options?.schema ? this.buildPromptWithSchema(prompt, options.schema) : prompt
-                // content: prompt
-            },
-            {
-                role: 'user',
-                content: userInput
-            }
-        ];
+        // Build input for Responses API
+        const systemPrompt = options?.schema ? this.buildPromptWithSchema(prompt, options.schema) : prompt;
 
         const requestBody: OpenAIRequest = {
             model,
-            messages,
-            temperature: options?.temperature ?? 0.7,
-            max_tokens: options?.maxTokens || 4096,
-            top_p: options?.topP ?? 0.9,
+            input: userInput,
+            instructions: systemPrompt,
+            // reasoning: {
+            //     effort: options?.temperature && options.temperature < 0.3 ? 'low' :
+            //         options?.temperature && options.temperature > 0.7 ? 'high' : 'medium'
+            // },
+            max_output_tokens: options?.maxTokens || 4096,
             ...(options?.schema && {
-                response_format: { type: 'json_object' }
-                // response_format: {
-                //     type: 'json_schema', json_schema: {
-                //         description: "Follow prompt and schema description",
-                //         name: "Name",
-                //         schema: options.schema,
-                //         strict: true
-                //     }
-                // }
+                text: {
+                    format: {
+                        type: 'json_schema',
+                        name: "schema-name",
+                        schema: options.schema,
+                        strict: true
+                    }
+                }
             })
         };
 
         try {
-            const response = await this.makeRequest('/v1/chat/completions', {
+            const response = await this.makeRequest('/v1/responses', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -157,16 +160,16 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
 
             const result = await response.json() as OpenAIResponse;
 
-            if (!result.choices || result.choices.length === 0) {
+            if (!result.output || result.output.length === 0) {
                 throw new ProviderError(
-                    'OpenAI API returned no choices',
+                    'OpenAI API returned no output',
                     this.name,
-                    'NO_CHOICES'
+                    'NO_OUTPUT'
                 );
             }
 
-            const choice = result.choices[0];
-            if (!choice || !choice.message?.content) {
+            const output = result.output[0];
+            if (!output || !output.content || output.content.length === 0) {
                 throw new ProviderError(
                     'OpenAI API returned empty content',
                     this.name,
@@ -174,10 +177,20 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
                 );
             }
 
+            // Find the text content in the output
+            const textContent = output.content.find(item => item.type === 'output_text');
+            if (!textContent || !textContent.text) {
+                throw new ProviderError(
+                    'OpenAI API returned no text content',
+                    this.name,
+                    'NO_TEXT_CONTENT'
+                );
+            }
+
             return {
-                output: choice.message.content,
-                inputTokensUsed: result.usage.prompt_tokens,
-                outputTokensUsed: result.usage.completion_tokens
+                output: textContent.text,
+                inputTokensUsed: result.usage.input_tokens,
+                outputTokensUsed: result.usage.output_tokens
             };
         } catch (error) {
             if (error instanceof ProviderError) {
@@ -275,7 +288,7 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
     }
 
     supportsStructuredOutput(): boolean {
-        return true; // OpenAI supports structured output through response_format
+        return true; // OpenAI supports structured output through text.format in Responses API
     }
 
     updateConfig(config: Partial<OpenAIConfig>): void {
