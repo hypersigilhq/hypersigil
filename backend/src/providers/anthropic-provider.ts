@@ -27,6 +27,8 @@ interface AnthropicRequest {
     system?: string;
     temperature?: number;
     top_p?: number;
+    tools?: Array<{ name: string; type: string }>;
+    betas?: string[];
 }
 
 interface AnthropicResponse {
@@ -149,7 +151,7 @@ export class AnthropicProvider extends GenericProvider implements AIProvider {
         } else {
             userMessage = userInput;
         }
-
+        console.log("WEBSEARCH", options)
         const requestBody: AnthropicRequest = {
             model,
             max_tokens: options?.maxTokens || 4096,
@@ -161,7 +163,10 @@ export class AnthropicProvider extends GenericProvider implements AIProvider {
             ],
             system: systemPrompt,
             temperature: options?.temperature ?? 0.7,
-            top_p: options?.topP ?? 0.9
+            top_p: options?.topP ?? 0.9,
+            ...(options?.webSearch && {
+                tools: [{ name: "web_search", type: "web_search_20250305" }],
+            })
         };
 
         try {

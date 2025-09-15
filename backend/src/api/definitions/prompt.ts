@@ -7,7 +7,8 @@ export const JSONSchemaSchema: z.ZodType<Record<string, unknown>> = z.record(z.s
 
 // Options schema
 export const PromptOptionsSchema = z.object({
-    acceptFileUpload: z.boolean().optional()
+    acceptFileUpload: z.boolean().optional(),
+    webSearch: z.boolean().optional()
 }).optional();
 
 export type PromptOptions = z.infer<typeof PromptOptionsSchema>;

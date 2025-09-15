@@ -79,6 +79,20 @@
                                                 formData.options!.acceptFileUpload = v;
                                             }" />
                                     </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex flex-col">
+                                            <Label for="webSearch">Enable web search</Label>
+                                            <p class="text-sm text-muted-foreground mt-1">
+                                                Enable web search capabilities for this prompt. When enabled, the AI
+                                                can search the web for current information to enhance its responses.
+                                            </p>
+                                        </div>
+                                        <Switch id="webSearch" :model-value="formData.options?.webSearch || false"
+                                            @update:model-value="(v: boolean) => {
+                                                formData.options!.webSearch = v;
+                                            }" />
+                                    </div>
                                 </div>
                             </TabsContent>
                         </Tabs>
@@ -161,7 +175,7 @@ const isOpen = computed({
 // State
 const saving = ref(false)
 
-const defaultOptions: CreatePromptRequest['options'] = { acceptFileUpload: false }
+const defaultOptions: CreatePromptRequest['options'] = { acceptFileUpload: false, webSearch: false }
 
 // Form data
 const formData = reactive<CreatePromptRequest>({
@@ -183,12 +197,14 @@ const originalData = ref<{
     inputSchema: string
     outputSchema: string
     acceptFileUpload: boolean
+    webSearch: boolean
 }>({
     name: '',
     prompt: '',
     inputSchema: '',
     outputSchema: '',
-    acceptFileUpload: false
+    acceptFileUpload: false,
+    webSearch: false
 })
 
 // Methods
@@ -229,7 +245,8 @@ const storeOriginalData = () => {
         prompt: formData.prompt,
         inputSchema: JSON.stringify(inputSchema.value),
         outputSchema: JSON.stringify(outputSchema.value),
-        acceptFileUpload: formData.options?.acceptFileUpload || false
+        acceptFileUpload: formData.options?.acceptFileUpload || false,
+        webSearch: formData.options?.webSearch || false
     }
 }
 
@@ -239,7 +256,8 @@ const hasUnsavedChanges = (): boolean => {
         originalData.value.prompt !== formData.prompt ||
         originalData.value.inputSchema !== JSON.stringify(inputSchema.value) ||
         originalData.value.outputSchema !== JSON.stringify(outputSchema.value) ||
-        originalData.value.acceptFileUpload !== (formData.options?.acceptFileUpload || false)
+        originalData.value.acceptFileUpload !== (formData.options?.acceptFileUpload || false) ||
+        originalData.value.webSearch !== (formData.options?.webSearch || false)
     )
 }
 

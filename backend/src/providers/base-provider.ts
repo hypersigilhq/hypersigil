@@ -32,6 +32,7 @@ export interface ExecutionOptions {
     topP?: number;
     topK?: number;
     files?: FileAttachment[];
+    webSearch?: boolean;
     [key: string]: any;
 }
 

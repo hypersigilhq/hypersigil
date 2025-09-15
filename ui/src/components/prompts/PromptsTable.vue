@@ -52,6 +52,7 @@
                         <TableHead>Input Schema</TableHead>
                         <TableHead>Output Schema</TableHead>
                         <TableHead>Accepts Files</TableHead>
+                        <TableHead>Web Search</TableHead>
                         <TableHead>Versions</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead>Updated</TableHead>
@@ -60,7 +61,7 @@
                 </TableHeader>
                 <TableBody>
                     <TableRow v-if="prompts.length === 0">
-                        <TableCell colspan="9" class="text-center py-8 text-muted-foreground">
+                        <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
                             No prompts found
                         </TableCell>
                     </TableRow>
@@ -94,6 +95,16 @@
                             <span v-else
                                 class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                                 - No
+                            </span>
+                        </TableCell>
+                        <TableCell class="text-center">
+                            <span v-if="prompt.options?.webSearch"
+                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                ✓ Enabled
+                            </span>
+                            <span v-else
+                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                - Disabled
                             </span>
                         </TableCell>
                         <TableCell>{{ prompt.current_version }}</TableCell>
@@ -202,7 +213,7 @@ import {
 } from '@/components/ui/select'
 
 import { promptsApi } from '@/services/api-client'
-import type { PromptResponse, CreatePromptRequest } from '../../services/definitions/prompt'
+import type { PromptResponse } from '../../services/definitions/prompt'
 import ScheduleExecutionDialog from '@/components/executions/ScheduleExecutionDialog.vue'
 import { useRouter } from 'vue-router'
 import ViewPromptDialog from './ViewPromptDialog.vue'

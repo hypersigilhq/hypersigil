@@ -72,6 +72,18 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium">Web search</span>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs text-muted-foreground">
+                                                {{ currentDisplayVersion.options.webSearch ? 'Enabled' :
+                                                    'Disabled' }}
+                                            </span>
+                                            <div class="w-2 h-2 rounded-full"
+                                                :class="currentDisplayVersion.options.webSearch ? 'bg-green-500' : 'bg-gray-400'">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

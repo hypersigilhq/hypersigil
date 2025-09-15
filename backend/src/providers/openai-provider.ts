@@ -30,6 +30,7 @@ interface OpenAIRequest {
         // } | { name: string, description: string, schema: any, strict: boolean };
         // } | { type: 'json_schema', schema: any, struct: boolean };
     };
+    tools?: Array<{ type: 'web_search' }>;
 }
 
 interface OpenAIResponse {
@@ -114,6 +115,9 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
             //         options?.temperature && options.temperature > 0.7 ? 'high' : 'medium'
             // },
             max_output_tokens: options?.maxTokens || 4096,
+            ...(options?.webSearch && {
+                tools: [{ type: 'web_search' }]
+            }),
             ...(options?.schema && {
                 text: {
                     format: {

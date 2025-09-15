@@ -41,7 +41,8 @@ export interface PromptVersion {
     json_schema_input?: object | undefined;
     json_schema_response?: object | undefined;
     options?: {
-        acceptFileUpload?: boolean | undefined
+        acceptFileUpload?: boolean | undefined;
+        webSearch?: boolean | undefined;
     } | undefined;
     created_at: Date;
 }
@@ -54,7 +55,8 @@ export interface Prompt extends BaseDocument {
     json_schema_response?: object | undefined;
     current_version: number;
     options?: {
-        acceptFileUpload?: boolean | undefined
+        acceptFileUpload?: boolean | undefined;
+        webSearch?: boolean | undefined;
     } | undefined;
     versions: PromptVersion[];
 }
@@ -101,7 +103,9 @@ export class PromptModel extends Model<Prompt> {
             (data.name && data.name !== existing.name) ||
             (data.prompt && data.prompt !== existing.prompt) ||
             (data.json_schema_response && JSON.stringify(data.json_schema_response) !== JSON.stringify(existing.json_schema_response)) ||
-            (data.json_schema_input && JSON.stringify(data.json_schema_input) !== JSON.stringify(existing.json_schema_input));
+            (data.json_schema_input && JSON.stringify(data.json_schema_input) !== JSON.stringify(existing.json_schema_input)) ||
+            (data.options && JSON.stringify(data.options) !== JSON.stringify(existing.options));
+
 
         if (hasContentChanges) {
             // Create new version

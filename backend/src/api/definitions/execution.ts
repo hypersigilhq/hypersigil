@@ -13,7 +13,8 @@ export const ExecutionOptionsSchema = z.object({
     temperature: z.number().min(0).max(2).optional(),
     maxTokens: z.number().min(1).optional(),
     topP: z.number().min(0).max(1).optional(),
-    topK: z.number().min(1).optional()
+    topK: z.number().min(1).optional(),
+    webSearch: z.boolean().optional()
 }).catchall(z.unknown());
 
 export type ExecutionOptions = z.infer<typeof ExecutionOptionsSchema>;
