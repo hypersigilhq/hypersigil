@@ -1,7 +1,7 @@
 import { RegisterHandlers } from 'ts-typed-api';
 import app, { authMiddleware, loggingMiddleware, timingMiddleware } from '../../app';
 import { SettingsApiDefinition, SettingsDocument } from '../definitions/settings';
-import { settingsModel, SettingsDocument as SettingsModelDocument } from '../../models/settings';
+import { LlmApiKeySettingsDocument, settingsModel, SettingsDocument as SettingsModelDocument } from '../../models/settings';
 import { encryptString } from '../../util/encryption';
 import { providerRegistry } from '../../providers/provider-registry';
 import { randomUUID } from 'crypto';
@@ -25,7 +25,8 @@ function formatSettingsDocument(setting: SettingsModelDocument): SettingsDocumen
                 type: 'llm-api-key',
                 identifier: llmSetting.provider,
                 provider: llmSetting.provider,
-                api_key: llmSetting.api_key
+                api_key: llmSetting.api_key,
+                active: llmSetting.active
             };
         }
 
@@ -139,7 +140,8 @@ RegisterHandlers(app, SettingsApiDefinition, {
                     settingData = {
                         identifier: data.provider,
                         provider: data.provider,
-                        api_key: encrypted.data
+                        api_key: encrypted.data,
+                        active: data.active ?? true
                     };
                     break
                 default:
@@ -208,6 +210,22 @@ RegisterHandlers(app, SettingsApiDefinition, {
                     message: 'Setting not found'
                 });
                 return;
+            }
+
+            // Handle provider registry updates for LLM API keys
+            if (type === "llm-api-key") {
+                const llmSetting = updatedSetting as LlmApiKeySettingsDocument; // Type assertion for LLM settings
+
+                // Check if active state changed
+                if (data.active !== undefined) {
+                    if (data.active) {
+                        // Activating - add provider to registry
+                        await providerRegistry.addProviderFromSettings(llmSetting);
+                    } else {
+                        // Deactivating - remove provider from registry
+                        providerRegistry.removeProviderByName(llmSetting.provider);
+                    }
+                }
             }
 
             const formattedSetting = formatSettingsDocument(updatedSetting);

@@ -24,7 +24,8 @@ export const LlmApiKeySettingsSchema = BaseSettingsDocumentSchema.extend({
     type: z.literal(settingsTypeLLMApiKey),
     identifier: AIProviderNameSchema,
     provider: AIProviderNameSchema,
-    api_key: z.string()
+    api_key: z.string(),
+    active: z.boolean()
 });
 
 // Webhook Destination Settings schemas
@@ -49,7 +50,8 @@ export type SettingsDocument = z.infer<typeof SettingsDocumentSchema>;
 // Request schemas for creating settings
 export const CreateLlmApiKeySettingsRequestSchema = z.object({
     provider: AIProviderNameSchema,
-    api_key: z.string().min(1)
+    api_key: z.string().min(1),
+    active: z.boolean().default(true)
 });
 
 export const CreateWebhookDestinationSettingsRequestSchema = z.object({
@@ -66,7 +68,8 @@ export const CreateTokenLimitSettingsRequestSchema = z.object({
 
 // Request schemas for updating settings
 export const UpdateLlmApiKeySettingsRequestSchema = z.object({
-    api_key: z.string().min(1).optional()
+    api_key: z.string().min(1).optional(),
+    active: z.boolean().optional()
 });
 
 export const UpdateWebhookDestinationSettingsRequestSchema = z.object({

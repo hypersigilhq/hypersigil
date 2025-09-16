@@ -87,7 +87,8 @@ const { toast } = useUI()
 const loading = ref(false)
 const formData = reactive<CreateLlmApiKeySettingsRequest>({
     provider: '' as AIProviderNameDefinition,
-    api_key: ''
+    api_key: '',
+    active: true
 })
 
 const resetForm = () => {

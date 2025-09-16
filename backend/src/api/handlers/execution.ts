@@ -302,7 +302,6 @@ RegisterHandlers(app, ExecutionApiDefinition, {
         getProviderHealth: async (req, res) => {
             const health = await providerRegistry.getProviderHealth();
             res.respond(200, health);
-
         },
 
         listProviders: async (req, res) => {

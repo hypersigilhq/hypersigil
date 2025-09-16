@@ -18,6 +18,7 @@
                 <TableHeader>
                     <TableRow>
                         <TableHead>Provider</TableHead>
+                        <TableHead>Active</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead class="w-[100px]">Actions</TableHead>
                     </TableRow>
@@ -36,6 +37,10 @@
                     <TableRow v-else v-for="apiKey in llmApiKeys" :key="apiKey.id">
                         <TableCell class="font-medium">
                             <Badge variant="secondary">{{ apiKey.provider }}</Badge>
+                        </TableCell>
+                        <TableCell>
+                            <Switch :modelValue="apiKey.active"
+                                @update:modelValue="toggleApiKeyActive(apiKey, $event)" />
                         </TableCell>
                         <TableCell>{{ formatDate(apiKey.created_at) }}</TableCell>
                         <TableCell>
@@ -68,6 +73,7 @@ import { ref, onMounted } from 'vue'
 import { Plus, MoreHorizontal, Trash } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import {
     Table,
     TableBody,
@@ -101,11 +107,6 @@ const formatDate = (date: string | Date) => {
         hour: '2-digit',
         minute: '2-digit'
     })
-}
-
-const maskApiKey = (apiKey: string) => {
-    if (apiKey.length <= 8) return apiKey
-    return apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4)
 }
 
 const loadLlmApiKeys = async () => {
@@ -147,6 +148,27 @@ const deleteApiKey = async (apiKey: LlmApiKeySettings) => {
         toast({
             title: 'Error',
             description: 'Failed to delete API key',
+            variant: 'error'
+        })
+    }
+}
+
+const toggleApiKeyActive = async (apiKey: LlmApiKeySettings, active: boolean) => {
+    try {
+        await settingsApi.update(apiKey.id, {
+            type: 'llm-api-key',
+            data: { active }
+        })
+        toast({
+            title: 'Success',
+            description: `API key ${active ? 'activated' : 'deactivated'} successfully`
+        })
+        await loadLlmApiKeys()
+    } catch (error) {
+        console.error('Failed to toggle API key active state:', error)
+        toast({
+            title: 'Error',
+            description: `Failed to ${active ? 'activate' : 'deactivate'} API key`,
             variant: 'error'
         })
     }

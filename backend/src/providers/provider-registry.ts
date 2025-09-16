@@ -51,6 +51,10 @@ export class ProviderRegistry {
         const now = Date.now();
 
         for (const keyDoc of llmKeys) {
+            // Skip inactive API keys
+            if (!keyDoc.active) {
+                continue;
+            }
             const providerName = keyDoc.provider;
             const apiKey = decryptString(keyDoc.api_key);
 
@@ -339,12 +343,70 @@ export class ProviderRegistry {
         this.invalidateConsolidatedCache();
     }
 
-    public removeProvider(name: AIProviderName): boolean {
+    public removeProviderByName(name: AIProviderName): boolean {
         const removed = this.consolidatedData.providers.delete(name);
         if (removed) {
             this.invalidateConsolidatedCache();
         }
         return removed;
+    }
+
+    /**
+     * Add provider from settings document (for activation)
+     */
+    public async addProviderFromSettings(keyDoc: LlmApiKeySettingsDocument): Promise<void> {
+        const providerName = keyDoc.provider;
+        const apiKey = decryptString(keyDoc.api_key);
+
+        if (apiKey.err) {
+            console.error(`Failed to decrypt api key for provider`, providerName);
+            return;
+        }
+
+        // Create provider instance
+        const result = this.createProviderInstance(providerName, apiKey.data);
+
+        if (result.err) {
+            console.error(`Failed to create provider`, providerName, result.error);
+            return;
+        }
+
+        // Check availability and get models
+        const provider = result.data;
+        const isAvailable = await provider.isAvailable();
+        let models: string[] = [];
+        let error: string | undefined;
+
+        if (isAvailable) {
+            try {
+                models = await provider.getSupportedModels();
+                console.log(`Successfully activated ${provider.name} provider`);
+            } catch (modelError) {
+                console.warn(`Failed to get models for provider ${provider.name}:`, modelError);
+                models = [];
+                error = modelError instanceof Error ? modelError.message : String(modelError);
+            }
+        } else {
+            console.warn(`Provider ${provider.name} is not available`);
+            error = 'Provider is not available';
+        }
+
+        const now = Date.now();
+        const status: ProviderStatus = {
+            name: provider.name,
+            available: isAvailable,
+            models,
+            lastChecked: now,
+            provider,
+            supportsFileUpload: provider.supportsFileUpload()
+        };
+
+        if (error) {
+            status.error = error;
+        }
+
+        this.consolidatedData.providers.set(provider.name, status);
+        this.invalidateConsolidatedCache();
     }
 
     /**

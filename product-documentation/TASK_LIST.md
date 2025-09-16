@@ -88,6 +88,8 @@
 - [done] 28-07-28 22:12 Build deployment CRUD interface with table view, dialog forms, and full integration with existing UI patterns
 - [done] 29-07-25 18:34 Implement clipboard service with HTTP/HTTPS fallback support for CopyToClipboard component functionality across all deployment environments
 
+- [done] 15-09-25 17:06 Implement LLM API key activation/deactivation feature with toggle switches in settings UI and backend support for active/inactive key management
+
 
 
 - [todo] in prompt selector preselect latest version

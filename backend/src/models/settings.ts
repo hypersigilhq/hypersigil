@@ -26,6 +26,7 @@ export interface WebhookDestinationSettingsDocument extends SettingsDocument<"we
 export interface LlmApiKeySettingsDocument extends SettingsDocument<"llm-api-key"> {
     provider: AIProviderName;
     api_key: string;
+    active: boolean;
 }
 
 export type SettingsSingleTypeMap = {
