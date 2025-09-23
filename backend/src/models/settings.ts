@@ -228,6 +228,10 @@ export class SettingsModel extends Model<SettingsDocument> {
         return this.getSettingsByType("llm-api-key");
     }
 
+    async getServiceApiKeys(): Promise<ServiceApiKeySettingsDocument[]> {
+        return this.getSettingsByType("service-api-key");
+    }
+
 }
 
 // Export singleton instance

@@ -1,5 +1,7 @@
 import { BaseDocument } from '../database/types';
 import { WebhookDeliveryData } from './workers/webhook-delivery';
+import { VoyageAIEmbeddingsResult } from '../services/voyageai-api';
+import { GenerateEmbeddingData } from './workers/generate-embedding';
 
 // Job statuses
 export type JobStatus =
@@ -61,6 +63,10 @@ export interface WorkerTypeMap {
     "webhook-delivery": {
         input: WebhookDeliveryData;
         output: boolean;
+    };
+    "generate-embedding": {
+        input: GenerateEmbeddingData;
+        output: VoyageAIEmbeddingsResult;
     };
 }
 

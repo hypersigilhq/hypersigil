@@ -387,6 +387,10 @@ export const workerEngine = new WorkerEngine({
         'webhook-delivery': {
             maxConcurrency: 10,
             priority: 1 // Highest priority - process webhooks first
+        },
+        'generate-embedding': {
+            maxConcurrency: 5,
+            priority: 2 // High priority - process embeddings quickly
         }
     },
     pollIntervalMs: 1000,
