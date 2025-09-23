@@ -89,6 +89,7 @@
 - [done] 29-07-25 18:34 Implement clipboard service with HTTP/HTTPS fallback support for CopyToClipboard component functionality across all deployment environments
 
 - [done] 15-09-25 17:06 Implement LLM API key activation/deactivation feature with toggle switches in settings UI and backend support for active/inactive key management
+- [done] 23-09-25 23:00 Implement service API key settings support for VoyageAI provider with full CRUD operations, UI components, and encrypted storage
 
 
 

@@ -24,6 +24,7 @@
                     </p>
                 </div>
                 <LlmApiKeysTable />
+                <ServiceApiKeysTable />
                 <WebhookDestinationsTable />
             </TabsContent>
 
@@ -50,5 +51,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import UsersTable from '@/components/settings/UsersTable.vue'
 import ApiKeysTable from '@/components/settings/ApiKeysTable.vue'
 import LlmApiKeysTable from '@/components/settings/LlmApiKeysTable.vue'
+import ServiceApiKeysTable from '@/components/settings/ServiceApiKeysTable.vue'
 import WebhookDestinationsTable from '@/components/settings/WebhookDestinationsTable.vue'
 </script>

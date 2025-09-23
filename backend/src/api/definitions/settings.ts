@@ -3,12 +3,19 @@ import { CreateApiDefinition, CreateResponses } from 'ts-typed-api/client';
 import { ErrorResponseSchema } from './common';
 import { AIProviderNamesDefinition } from './execution';
 
+const ServiceApiProviderNames = ["voyageai"] as const
+
 const settingsTypeLLMApiKey = "llm-api-key"
 const settingsTypeWebhookDestination = "webhook-destination"
+const settingsTypeServiceApiKey = "service-api-key"
+const SettingTypesSchema = z.enum([settingsTypeLLMApiKey, settingsTypeWebhookDestination, settingsTypeServiceApiKey])
+export type SettingsTypes = z.infer<typeof SettingTypesSchema>;
+
 // more types can be added here
 
 // AI Provider enum schema
 export const AIProviderNameSchema = z.enum(AIProviderNamesDefinition);
+export const ServiceApiProviderNameSchema = z.enum(ServiceApiProviderNames);
 
 // Base settings document schema
 export const BaseSettingsDocumentSchema = z.object({
@@ -37,14 +44,25 @@ export const WebhookDestinationSettingsSchema = BaseSettingsDocumentSchema.exten
     active: z.boolean()
 });
 
+// Service API Key Settings schemas
+export const ServiceApiKeySettingsSchema = BaseSettingsDocumentSchema.extend({
+    type: z.literal(settingsTypeServiceApiKey),
+    identifier: z.string(),
+    provider: ServiceApiProviderNameSchema,
+    api_key: z.string(),
+    active: z.boolean()
+});
+
 // Union type for all settings
 export const SettingsDocumentSchema = z.discriminatedUnion('type', [
     LlmApiKeySettingsSchema,
     WebhookDestinationSettingsSchema,
+    ServiceApiKeySettingsSchema,
 ]);
 
 export type LlmApiKeySettings = z.infer<typeof LlmApiKeySettingsSchema>;
 export type WebhookDestinationSettings = z.infer<typeof WebhookDestinationSettingsSchema>;
+export type ServiceApiKeySettings = z.infer<typeof ServiceApiKeySettingsSchema>;
 export type SettingsDocument = z.infer<typeof SettingsDocumentSchema>;
 
 // Request schemas for creating settings
@@ -57,6 +75,12 @@ export const CreateLlmApiKeySettingsRequestSchema = z.object({
 export const CreateWebhookDestinationSettingsRequestSchema = z.object({
     name: z.string().min(1),
     url: z.string().url(),
+    active: z.boolean().default(true)
+});
+
+export const CreateServiceApiKeySettingsRequestSchema = z.object({
+    provider: z.literal("voyageai"),
+    api_key: z.string().min(1),
     active: z.boolean().default(true)
 });
 
@@ -78,6 +102,11 @@ export const UpdateWebhookDestinationSettingsRequestSchema = z.object({
     active: z.boolean().optional()
 });
 
+export const UpdateServiceApiKeySettingsRequestSchema = z.object({
+    api_key: z.string().min(1).optional(),
+    active: z.boolean().optional()
+});
+
 export const UpdateTokenLimitSettingsRequestSchema = z.object({
     limit: z.number().min(1).optional()
 });
@@ -91,6 +120,10 @@ export const CreateSettingsRequestSchema = z.discriminatedUnion('type', [
     z.object({
         type: z.literal(settingsTypeWebhookDestination),
         data: CreateWebhookDestinationSettingsRequestSchema
+    }),
+    z.object({
+        type: z.literal(settingsTypeServiceApiKey),
+        data: CreateServiceApiKeySettingsRequestSchema
     })
 ]);
 
@@ -102,11 +135,16 @@ export const UpdateSettingsRequestSchema = z.discriminatedUnion('type', [
     z.object({
         type: z.literal(settingsTypeWebhookDestination),
         data: UpdateWebhookDestinationSettingsRequestSchema
+    }),
+    z.object({
+        type: z.literal(settingsTypeServiceApiKey),
+        data: UpdateServiceApiKeySettingsRequestSchema
     })
 ]);
 
 export type CreateLlmApiKeySettingsRequest = z.infer<typeof CreateLlmApiKeySettingsRequestSchema>;
 export type CreateWebhookDestinationSettingsRequest = z.infer<typeof CreateWebhookDestinationSettingsRequestSchema>;
+export type CreateServiceApiKeySettingsRequest = z.infer<typeof CreateServiceApiKeySettingsRequestSchema>;
 export type UpdateLlmApiKeySettingsRequest = z.infer<typeof UpdateLlmApiKeySettingsRequestSchema>;
 export type UpdateWebhookDestinationSettingsRequest = z.infer<typeof UpdateWebhookDestinationSettingsRequestSchema>;
 export type CreateSettingsRequest = z.infer<typeof CreateSettingsRequestSchema>;
@@ -207,7 +245,7 @@ export const SettingsApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/type/:type',
                 params: z.object({
-                    type: z.enum([settingsTypeLLMApiKey, settingsTypeWebhookDestination])
+                    type: SettingTypesSchema
                 }),
                 responses: CreateResponses({
                     200: ListSettingsByTypeResponseSchema,
@@ -222,7 +260,7 @@ export const SettingsApiDefinition = CreateApiDefinition({
                 method: 'GET',
                 path: '/type/:type/identifier/:identifier',
                 params: z.object({
-                    type: z.enum([settingsTypeLLMApiKey, settingsTypeWebhookDestination]),
+                    type: SettingTypesSchema,
                     identifier: z.string()
                 }),
                 responses: CreateResponses({

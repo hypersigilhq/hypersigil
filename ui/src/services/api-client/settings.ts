@@ -1,5 +1,5 @@
 import { ApiClient } from "ts-typed-api/client";
-import { SettingsApiDefinition, type CreateSettingsRequest, type UpdateSettingsRequest } from "../definitions/settings";
+import { SettingsApiDefinition, type CreateSettingsRequest, type SettingsTypes, type UpdateSettingsRequest } from "../definitions/settings";
 import { errorHandle } from "./error-handle";
 import { eventBus } from "../event-bus";
 
@@ -52,13 +52,13 @@ export const settingsApi = {
             },
         }),
 
-    listByType: (type: 'llm-api-key' | 'webhook-destination') =>
+    listByType: (type: SettingsTypes) =>
         settingsApiClient.callApi('settings', 'listByType', { params: { type } }, {
             ...errorHandle,
             200: (payload) => payload.data,
         }),
 
-    getByTypeAndIdentifier: (type: 'llm-api-key' | 'webhook-destination', identifier: string) =>
+    getByTypeAndIdentifier: (type: SettingsTypes, identifier: string) =>
         settingsApiClient.callApi('settings', 'getByTypeAndIdentifier', { params: { type, identifier } }, {
             ...errorHandle,
             200: (payload) => payload.data,

@@ -42,6 +42,18 @@ function formatSettingsDocument(setting: SettingsModelDocument): SettingsDocumen
             };
         }
 
+        case 'service-api-key': {
+            const serviceSetting = setting as any; // Type assertion needed due to union type complexity
+            return {
+                ...baseDocument,
+                type: 'service-api-key',
+                identifier: serviceSetting.identifier,
+                provider: serviceSetting.provider,
+                api_key: serviceSetting.api_key,
+                active: serviceSetting.active
+            };
+        }
+
         default:
             // Fallback for unknown types - should not happen in practice
             return {
@@ -96,6 +108,18 @@ RegisterHandlers(app, SettingsApiDefinition, {
                         return;
                     }
                     break
+                case 'service-api-key':
+                    const serviceIdentifier = data.provider;
+                    const serviceExists = await settingsModel.settingExists(type, serviceIdentifier);
+
+                    if (serviceExists) {
+                        res.respond(409, {
+                            error: 'Conflict',
+                            message: `Setting of type '${type}' with identifier '${serviceIdentifier}' already exists`
+                        });
+                        return;
+                    }
+                    break
             }
 
             // Create the setting
@@ -141,6 +165,24 @@ RegisterHandlers(app, SettingsApiDefinition, {
                         identifier: data.provider,
                         provider: data.provider,
                         api_key: encrypted.data,
+                        active: data.active ?? true
+                    };
+                    break
+                case 'service-api-key':
+                    const serviceEncrypted = encryptString(data.api_key)
+
+                    if (serviceEncrypted.err) {
+                        res.respond(500, {
+                            error: "Error while encrypting API key",
+                            message: serviceEncrypted.error
+                        })
+                        return
+                    }
+
+                    settingData = {
+                        identifier: data.provider,
+                        provider: data.provider,
+                        api_key: serviceEncrypted.data,
                         active: data.active ?? true
                     };
                     break

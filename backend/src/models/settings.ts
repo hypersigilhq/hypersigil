@@ -3,7 +3,7 @@ import { BaseDocument } from '../database/types';
 import { AIProviderName } from '../providers/base-provider';
 
 
-export const SettingsMultipleTypes = ['llm-api-key', 'webhook-destination'] as const
+export const SettingsMultipleTypes = ['llm-api-key', 'webhook-destination', 'service-api-key'] as const
 export type SettingsMultipleType = typeof SettingsMultipleTypes[number]
 
 export type SettingsMultipleTypeMap = {
@@ -13,6 +13,10 @@ export type SettingsMultipleTypeMap = {
     },
     "webhook-destination": {
         document: WebhookDestinationSettingsDocument;
+        identifier: `${string}`;
+    },
+    "service-api-key": {
+        document: ServiceApiKeySettingsDocument;
         identifier: `${string}`;
     }
 }
@@ -25,6 +29,15 @@ export interface WebhookDestinationSettingsDocument extends SettingsDocument<"we
 
 export interface LlmApiKeySettingsDocument extends SettingsDocument<"llm-api-key"> {
     provider: AIProviderName;
+    api_key: string;
+    active: boolean;
+}
+
+export const ServiceApiProviderNames = ["voyageai"] as const
+export type ServiceApiProviderName = typeof ServiceApiProviderNames[number]
+
+export interface ServiceApiKeySettingsDocument extends SettingsDocument<"service-api-key"> {
+    provider: ServiceApiProviderName;
     api_key: string;
     active: boolean;
 }
