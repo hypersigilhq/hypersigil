@@ -244,7 +244,6 @@ RegisterHandlers(app, DeploymentApiDefinition, {
         }
     }
 }, [loggingMiddleware, timingMiddleware, apiKeyMiddleware<typeof DeploymentApiDefinition>((scopes, endpointInfo) => {
-    console.log(scopes, endpointInfo)
     if (endpointInfo.domain !== 'deployments') {
         return false;
     }

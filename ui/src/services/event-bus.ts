@@ -22,6 +22,11 @@ export interface EventMap {
     'deployment:updated': { deploymentId: string; name: string }
     'deployment:deleted': { deploymentId: string }
 
+    // Deployment embedding events
+    'deployment-embedding:created': { deploymentEmbeddingId: string; name: string }
+    'deployment-embedding:updated': { deploymentEmbeddingId: string; name: string }
+    'deployment-embedding:deleted': { deploymentEmbeddingId: string }
+
     // Settings events
     'settings:llm-api-key-added': { provider: string }
     'settings:llm-api-key-removed': { provider: string }

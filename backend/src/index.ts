@@ -12,6 +12,7 @@ import "./api/handlers/settings"
 import "./api/handlers/common"
 import "./api/handlers/file"
 import "./api/handlers/deployment"
+import "./api/handlers/deployment-embedding"
 import "./api/handlers/job"
 import "./api/handlers/dashboard"
 import { config } from "./config";

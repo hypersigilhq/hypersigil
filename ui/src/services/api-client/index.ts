@@ -1,6 +1,7 @@
 import { promptApiClient } from './prompt';
 import { commentApiClient } from './commentsApi';
 import { deploymentApiClient } from './deployment';
+import { deploymentEmbeddingApiClient } from './deployment-embedding';
 import { executionApiClient } from './execution';
 import { testDataApiClient } from './test-data';
 import { settingsApiClient } from './settings';
@@ -16,6 +17,7 @@ import { dashboardApiClient } from './dashboard';
 export { promptsApi } from "./prompt"
 export { commentsApi } from "./commentsApi"
 export { deploymentsApi } from "./deployment"
+export { deploymentEmbeddingsApi } from "./deployment-embedding"
 export { executionsApi } from "./execution"
 export { testDataApi } from "./test-data"
 export { settingsApi } from "./settings"
@@ -41,6 +43,7 @@ const allApiClients = [
     settingsApiClient,
     fileApiClient,
     deploymentApiClient,
+    deploymentEmbeddingApiClient,
     jobApiClient,
     commonApiClient,
     dashboardApiClient

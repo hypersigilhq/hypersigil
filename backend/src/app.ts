@@ -11,7 +11,6 @@ import { ExecutionApiDefinition } from './api/definitions/execution';
 import { PromptApiDefinition } from './api/definitions/prompt';
 import { FileApiDefinition } from './api/definitions/file';
 import { DeploymentApiDefinition } from './api/definitions/deployment';
-import { DashboardApiDefinition } from './api/definitions/dashboard';
 
 // Global error handlers
 process.on('uncaughtException', (error: Error) => {

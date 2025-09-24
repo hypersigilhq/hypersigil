@@ -92,6 +92,7 @@
 - [done] 23-09-25 23:00 Implement service API key settings support for VoyageAI provider with full CRUD operations, UI components, and encrypted storage
 - [done] 24-09-25 00:34 Implement VoyageAI embeddings API service with vector generation, input validation, and error handling
 - [done] 24-09-25 00:41 Implement generate-embedding worker job with asynchronous processing, concurrency control, and retry logic
+- [done] 24-09-25 17:25 Add webhook column to DeploymentEmbeddingTable.vue and webhook selection in CreateEditDeploymentEmbeddingDialog.vue similar to regular deployments functionality
 
 
 

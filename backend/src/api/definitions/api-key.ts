@@ -6,7 +6,8 @@ export const permissions = z.enum([
     'executions:run', 'executions:read',
     'prompts:preview', 'prompts:read',
     'files:upload',
-    'deployments:run'
+    'deployments:run',
+    'deployment-embeddings:run'
 ])
 
 // API Key schemas

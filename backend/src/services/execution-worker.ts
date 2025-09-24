@@ -410,7 +410,7 @@ export class ExecutionWorker {
                 await Scheduler.sendWithRetryConfig('webhook-delivery', {
                     webhookId: w,
                     data: {
-                        event: "execution-finished",
+                        event: "webhook.deployment.execution",
                         executionId,
                         status
                     }

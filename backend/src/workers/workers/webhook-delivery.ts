@@ -156,12 +156,18 @@ export interface WebhookDeliveryData {
     webhookId: string;
     url?: string;
     data: {
-        event: "test",
+        event: "webhook.test",
         time: Date
     } | {
-        event: "execution-finished"
+        event: "webhook.deployment.execution"
         executionId: string,
         status: Execution['status'],
+    } | {
+        event: "webhook.deployment.embedding",
+        jobId: string,
+        status: "success" | "error",
+        embeddings: number[][]
+
     }
 }
 

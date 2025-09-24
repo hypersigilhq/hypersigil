@@ -1,6 +1,7 @@
 import { WorkerRegistry } from '../worker-registry';
 import { WorkerContext } from '../types';
 import { voyageAIApiService } from '../../services';
+import { Scheduler } from '../scheduler';
 
 export type EmbeddingModels = 'voyage-3-large' | 'voyage-3.5' | 'voyage-3.5-lite' | 'voyage-code-3' | 'voyage-finance-2' | 'voyage-law-2'
 export type EmbeddingInputType = 'query' | 'document' | null
@@ -9,6 +10,7 @@ export interface GenerateEmbeddingData {
     inputs: string | string[];
     model: EmbeddingModels;
     inputType?: EmbeddingInputType;
+    webhookDestinationIds?: string[];
 }
 
 WorkerRegistry.register('generate-embedding', async (
@@ -57,7 +59,21 @@ WorkerRegistry.register('generate-embedding', async (
                 totalTokens: result.data.totalTokens,
             });
 
-            return result.data;
+            if (data.webhookDestinationIds) {
+                for (let webhookId of data.webhookDestinationIds) {
+                    await Scheduler.sendNow('webhook-delivery', {
+                        webhookId,
+                        data: {
+                            event: 'webhook.deployment.embedding',
+                            status: 'success',
+                            jobId: context.jobId,
+                            embeddings: result.data.embeddings
+                        }
+                    })
+                }
+            }
+
+            return;
         } else {
             // Handle API key or configuration errors - terminate job
             if (result.error.includes('API key') || result.error.includes('configured')) {

@@ -15,7 +15,7 @@ RegisterHandlers(app, JobApiDefinition, {
                         webhookId: "", // if empty, the url will be taken into account
                         url: req.body.job.data.url,
                         data: {
-                            event: "test",
+                            event: "webhook.test",
                             time: new Date()
                         }
                     }, { maxAttempts: 1 })

@@ -8,6 +8,7 @@ import { userModel } from '../models/user';
 import { apiKeyModel } from '../models/api-key';
 import { commentModel } from '../models/comment';
 import { modelRegistry } from './model-registry';
+import { deploymentEmbeddingModel } from '../models/deployment-embedding';
 import { deploymentModel, fileModel, settingsModel } from '../models';
 
 /**
@@ -29,7 +30,8 @@ export async function initializeAllModels(): Promise<void> {
         commentModel,
         settingsModel,
         fileModel,
-        deploymentModel
+        deploymentModel,
+        deploymentEmbeddingModel
     ];
 
     // Register each model explicitly

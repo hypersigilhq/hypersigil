@@ -3,7 +3,7 @@
         <!-- Header with search and create button -->
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2">
-                <Input v-model="searchQuery" placeholder="Search deployments..." class="w-64"
+                <Input v-model="searchQuery" placeholder="Search deployment embeddings..." class="w-64"
                     @input="debouncedSearch" />
                 <Select v-model="orderBy">
                     <SelectTrigger class="w-40">
@@ -13,7 +13,6 @@
                         <SelectItem value="created_at">Created Date</SelectItem>
                         <SelectItem value="updated_at">Updated Date</SelectItem>
                         <SelectItem value="name">Name</SelectItem>
-                        <SelectItem value="provider">Provider</SelectItem>
                         <SelectItem value="model">Model</SelectItem>
                     </SelectContent>
                 </Select>
@@ -29,7 +28,7 @@
             </div>
             <Button @click="openCreateDialog">
                 <Plus class="w-4 h-4 mr-2" />
-                Create Deployment
+                Create Deployment Embedding
             </Button>
         </div>
 
@@ -41,7 +40,7 @@
         <!-- Error state -->
         <div v-else-if="error" class="text-center py-8 text-destructive">
             {{ error }}
-            <Button @click="loadDeployments" variant="outline" class="ml-2">
+            <Button @click="loadDeploymentEmbeddings" variant="outline" class="ml-2">
                 Retry
             </Button>
         </div>
@@ -52,11 +51,8 @@
                 <TableHeader>
                     <TableRow>
                         <TableHead>Name</TableHead>
-                        <TableHead>Prompt</TableHead>
-                        <TableHead>Version</TableHead>
-                        <TableHead>Provider</TableHead>
                         <TableHead>Model</TableHead>
-                        <TableHead>Options</TableHead>
+                        <TableHead>Input Type</TableHead>
                         <TableHead>Webhook</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead>Updated</TableHead>
@@ -64,41 +60,26 @@
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow v-if="deployments.length === 0">
-                        <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
-                            No deployments found
+                    <TableRow v-if="deploymentEmbeddings.length === 0">
+                        <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
+                            No deployment embeddings found
                         </TableCell>
                     </TableRow>
-                    <TableRow v-for="deployment in deployments" :key="deployment.id">
-                        <TableCell class="font-medium">{{ deployment.name }}</TableCell>
-                        <TableCell class="max-w-xs">
-                            <div class="truncate" :title="promptNames[deployment.promptId] || deployment.promptId">
-                                {{ promptNames[deployment.promptId] || deployment.promptId }}
-                            </div>
-                        </TableCell>
-                        <TableCell>{{ deployment.promptVersion }}</TableCell>
+                    <TableRow v-for="deploymentEmbedding in deploymentEmbeddings" :key="deploymentEmbedding.id">
+                        <TableCell class="font-medium">{{ deploymentEmbedding.name }}</TableCell>
                         <TableCell>
-                            <Badge variant="outline">{{ deployment.provider }}</Badge>
+                            <Badge variant="outline">{{ deploymentEmbedding.model }}</Badge>
                         </TableCell>
-                        <TableCell>{{ deployment.model }}</TableCell>
                         <TableCell>
-                            <div v-if="deployment.options" class="text-sm text-muted-foreground">
-                                <div v-if="deployment.options.temperature !== undefined">
-                                    Temp: {{ deployment.options.temperature }}
-                                </div>
-                                <div v-if="deployment.options.topP !== undefined">
-                                    Top-P: {{ deployment.options.topP }}
-                                </div>
-                                <div v-if="deployment.options.topK !== undefined">
-                                    Top-K: {{ deployment.options.topK }}
-                                </div>
-                            </div>
+                            <Badge v-if="deploymentEmbedding.inputType" variant="secondary">
+                                {{ deploymentEmbedding.inputType }}
+                            </Badge>
                             <span v-else class="text-muted-foreground">Default</span>
                         </TableCell>
                         <TableCell>
-                            <div v-if="deployment.webhookDestinationIds && deployment.webhookDestinationIds.length > 0"
+                            <div v-if="deploymentEmbedding.webhookDestinationIds && deploymentEmbedding.webhookDestinationIds.length > 0"
                                 class="space-y-1">
-                                <div v-for="webhookId in deployment.webhookDestinationIds" :key="webhookId"
+                                <div v-for="webhookId in deploymentEmbedding.webhookDestinationIds" :key="webhookId"
                                     class="text-sm">
                                     <Badge variant="secondary" class="text-xs">
                                         {{ webhookNames[webhookId] || webhookId }}
@@ -107,8 +88,8 @@
                             </div>
                             <span v-else class="text-muted-foreground text-sm">None</span>
                         </TableCell>
-                        <TableCell>{{ formatDate(deployment.created_at) }}</TableCell>
-                        <TableCell>{{ formatDate(deployment.updated_at) }}</TableCell>
+                        <TableCell>{{ formatDate(deploymentEmbedding.created_at) }}</TableCell>
+                        <TableCell>{{ formatDate(deploymentEmbedding.updated_at) }}</TableCell>
                         <TableCell class="text-right">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -117,14 +98,14 @@
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem @click="editDeployment(deployment)">
+                                    <DropdownMenuItem @click="editDeploymentEmbedding(deploymentEmbedding)">
                                         <Edit class="w-4 h-4 mr-2" />
-                                        Edit deployment
+                                        Edit embedding
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem @click="deleteDeployment(deployment)"
+                                    <DropdownMenuItem @click="deleteDeploymentEmbedding(deploymentEmbedding)"
                                         class="text-destructive focus:text-destructive">
                                         <Trash2 class="w-4 h-4 mr-2" />
-                                        Delete deployment
+                                        Delete embedding
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -157,8 +138,8 @@
         </div>
 
         <!-- Create/Edit Dialog -->
-        <CreateEditDeploymentDialog v-model:open="showDialog" :deployment="editingDeployment"
-            @success="onDeploymentSuccess" />
+        <CreateEditDeploymentEmbeddingDialog v-model:open="showDialog"
+            :deployment-embedding="editingDeploymentEmbedding" @success="onDeploymentEmbeddingSuccess" />
     </div>
 </template>
 
@@ -188,20 +169,20 @@ import {
 import DropdownMenu from '../ui/dropdown-menu/DropdownMenu.vue'
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 
-import { deploymentsApi, promptsApi, settingsApi } from '@/services/api-client'
-import type { DeploymentResponse } from '../../services/definitions/deployment'
+import { deploymentEmbeddingsApi, settingsApi } from '@/services/api-client'
+import type { DeploymentEmbeddingResponse } from '../../services/definitions/deployment-embedding'
 import type { WebhookDestinationSettings } from '../../services/definitions/settings'
-import CreateEditDeploymentDialog from './CreateEditDeploymentDialog.vue'
+import CreateEditDeploymentEmbeddingDialog from './CreateEditDeploymentEmbeddingDialog.vue'
 import { useUI } from '@/services/ui'
 
 const { toast, confirm } = useUI()
 
 // Reactive state
-const deployments = ref<DeploymentResponse[]>([])
+const deploymentEmbeddings = ref<DeploymentEmbeddingResponse[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
-const orderBy = ref<'name' | 'provider' | 'model' | 'created_at' | 'updated_at'>('created_at')
+const orderBy = ref<'name' | 'model' | 'created_at' | 'updated_at'>('created_at')
 const orderDirection = ref<'ASC' | 'DESC'>('DESC')
 const currentPage = ref(1)
 const pageLimit = ref(25)
@@ -217,10 +198,7 @@ const pagination = ref<{
 
 // Dialog state
 const showDialog = ref(false)
-const editingDeployment = ref<DeploymentResponse | null>(null)
-
-// Prompt names cache
-const promptNames = ref<Record<string, string>>({})
+const editingDeploymentEmbedding = ref<DeploymentEmbeddingResponse | null>(null)
 
 // Webhook names cache
 const webhookNames = ref<Record<string, string>>({})
@@ -228,16 +206,16 @@ const webhookNames = ref<Record<string, string>>({})
 // Debounced search
 const debouncedSearch = debounce(() => {
     currentPage.value = 1
-    loadDeployments()
+    loadDeploymentEmbeddings()
 }, 300)
 
-// Load deployments
-const loadDeployments = async () => {
+// Load deployment embeddings
+const loadDeploymentEmbeddings = async () => {
     loading.value = true
     error.value = null
 
     try {
-        const response = await deploymentsApi.list({
+        const response = await deploymentEmbeddingsApi.list({
             query: {
                 page: currentPage.value.toString(),
                 limit: pageLimit.value.toString(),
@@ -247,7 +225,7 @@ const loadDeployments = async () => {
             }
         })
 
-        deployments.value = response.data
+        deploymentEmbeddings.value = response.data
         pagination.value = {
             total: response.total,
             page: response.page,
@@ -258,27 +236,11 @@ const loadDeployments = async () => {
         }
 
         // Load prompt names and webhook names for display
-        await loadPromptNames()
         await loadWebhookNames()
     } catch (err) {
-        error.value = err instanceof Error ? err.message : 'Failed to load deployments'
+        error.value = err instanceof Error ? err.message : 'Failed to load deployment embeddings'
     } finally {
         loading.value = false
-    }
-}
-
-// Load prompt names for display
-const loadPromptNames = async () => {
-    try {
-        const promptsResponse = await promptsApi.selectList()
-
-        const names: Record<string, string> = {}
-        promptsResponse.items.forEach(prompt => {
-            names[prompt.id] = prompt.name
-        })
-        promptNames.value = names
-    } catch (err) {
-        console.error('Failed to load prompt names:', err)
     }
 }
 
@@ -303,32 +265,32 @@ const loadWebhookNames = async () => {
 // Pagination
 const goToPage = (page: number) => {
     currentPage.value = page
-    loadDeployments()
+    loadDeploymentEmbeddings()
 }
 
 // Dialog management
 const openCreateDialog = () => {
-    editingDeployment.value = null
+    editingDeploymentEmbedding.value = null
     showDialog.value = true
 }
 
-const editDeployment = (deployment: DeploymentResponse) => {
-    editingDeployment.value = deployment
+const editDeploymentEmbedding = (deploymentEmbedding: DeploymentEmbeddingResponse) => {
+    editingDeploymentEmbedding.value = deploymentEmbedding
     showDialog.value = true
 }
 
-// Handle deployment success from dialog
-const onDeploymentSuccess = () => {
+// Handle deployment embedding success from dialog
+const onDeploymentEmbeddingSuccess = () => {
     showDialog.value = false
-    editingDeployment.value = null
-    loadDeployments()
+    editingDeploymentEmbedding.value = null
+    loadDeploymentEmbeddings()
 }
 
-// Delete deployment
-const deleteDeployment = async (deployment: DeploymentResponse) => {
+// Delete deployment embedding
+const deleteDeploymentEmbedding = async (deploymentEmbedding: DeploymentEmbeddingResponse) => {
     const confirmed = await confirm({
-        title: 'Delete Deployment',
-        message: `Are you sure you want to delete "${deployment.name}"? This action cannot be undone.`,
+        title: 'Delete Deployment Embedding',
+        message: `Are you sure you want to delete "${deploymentEmbedding.name}"? This action cannot be undone.`,
         confirmText: 'Delete',
         variant: 'destructive'
     })
@@ -336,15 +298,15 @@ const deleteDeployment = async (deployment: DeploymentResponse) => {
     if (!confirmed) return
 
     try {
-        await deploymentsApi.delete(deployment.id)
+        await deploymentEmbeddingsApi.delete(deploymentEmbedding.id)
         toast({
             title: 'Success',
             variant: 'success',
-            description: 'Deployment deleted successfully'
+            description: 'Deployment embedding deleted successfully'
         })
-        loadDeployments()
+        loadDeploymentEmbeddings()
     } catch (err) {
-        error.value = err instanceof Error ? err.message : 'Failed to delete deployment'
+        error.value = err instanceof Error ? err.message : 'Failed to delete deployment embedding'
         toast({
             title: 'Error',
             description: error.value,
@@ -364,14 +326,16 @@ const formatDate = (dateString: string) => {
     })
 }
 
+
+
 // Watchers
 watch([orderBy, orderDirection], () => {
     currentPage.value = 1
-    loadDeployments()
+    loadDeploymentEmbeddings()
 })
 
 // Initialize
 onMounted(() => {
-    loadDeployments()
+    loadDeploymentEmbeddings()
 })
 </script>

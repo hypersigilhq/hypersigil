@@ -15,6 +15,7 @@ export { jobModel } from './models/job';
 
 // Job export for invocating registration
 import "./workers/webhook-delivery"
+import "./workers/generate-embedding"
 
 // Export startup functions
 export { startWorkerSystem, stopWorkerSystem, getWorkerSystemStatus } from './startup';
