@@ -282,16 +282,13 @@ export class WorkerEngine {
             // Execute the worker
             const result = await workerFunction(job.data, context);
 
-            // If worker returns a result, mark as completed
-            if (result !== undefined) {
-                const completeResult = await jobModel.markAsCompleted(jobId, result);
-                if (completeResult.success) {
-                    context.logger.info('Job completed successfully');
-                } else {
-                    console.error(`Failed to mark job as completed: ${completeResult.error}`);
-                }
+            // No error was raised so mark the job as completed and save the result if returned any
+            const completeResult = await jobModel.markAsCompleted(jobId, result);
+            if (completeResult.success) {
+                context.logger.info('Job completed successfully');
+            } else {
+                console.error(`Failed to mark job as completed: ${completeResult.error}`);
             }
-            // If result is undefined, worker used control methods (retry/terminate/reschedule)
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

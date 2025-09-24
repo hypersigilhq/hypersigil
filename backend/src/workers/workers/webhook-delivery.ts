@@ -233,7 +233,7 @@ WorkerRegistry.register('webhook-delivery', async (
                 webhookId: data.webhookId,
                 status: response.status,
             });
-            return true;
+            return;
         } else {
             throw new Error(`Webhook delivery failed with status ${response.status}`);
         }

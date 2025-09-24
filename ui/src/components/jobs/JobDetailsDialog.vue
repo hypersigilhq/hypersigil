@@ -132,17 +132,17 @@
                 </Card>
 
                 <!-- Job Error -->
-                <Card v-if="job?.error && ['failed', 'terminated'].includes(job.status)">
+                <Card v-if="(job?.error || job?.terminationReason) && ['failed', 'terminated'].includes(job.status)">
                     <CardHeader>
                         <CardTitle class="text-lg text-red-600">Error Details</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div class="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                            <p class="text-sm text-destructive">{{ job.error }}</p>
-                        </div>
-                        <div v-if="job.terminationReason" class="mt-3">
-                            <span class="text-sm font-medium text-muted-foreground">Termination Reason:</span>
-                            <p class="text-sm mt-1">{{ job.terminationReason }}</p>
+                            <p v-if="job.error" class="text-sm text-destructive">{{ job.error }}</p>
+                            <div v-if="job.terminationReason">
+                                <span class="text-sm font-medium text-muted-foreground">Termination Reason:</span>
+                                <p class="text-sm mt-1">{{ job.terminationReason }}</p>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -158,7 +158,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import {
     Dialog,
     DialogContent,
@@ -183,11 +182,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-
-const emit = defineEmits<{
-    'update:modelValue': [value: boolean]
-    close: []
-}>()
 
 // Get status badge variant
 const getStatusVariant = (status: JobStatus) => {
@@ -250,7 +244,10 @@ const formatDuration = () => {
 }
 
 // Format JSON
-const formatJson = (obj: any) => {
+const formatJson = (obj: string | object) => {
+    if (typeof obj !== 'object') {
+        return obj
+    }
     try {
         return JSON.stringify(obj, null, 2)
     } catch {
