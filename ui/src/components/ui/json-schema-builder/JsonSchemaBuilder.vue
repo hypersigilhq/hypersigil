@@ -8,7 +8,6 @@ import {
     updateNodeById,
     removeNodeById,
     flattenNodes,
-    generateId,
     findNodeById
 } from './utils'
 import SchemaNode from './SchemaNode.vue'
@@ -132,14 +131,6 @@ function handleDragEnd() {
 
 function handleDragOver(event: DragEvent) {
     event.preventDefault()
-}
-
-function handleDrop(event: DragEvent, targetNode?: SchemaBuilderNode) {
-    event.preventDefault()
-    if (!draggedNode.value || !targetNode) return
-
-    // Simple drag and drop logic - would need more sophisticated implementation
-    console.log('Drop:', draggedNode.value.name, 'onto', targetNode.name)
 }
 
 function exportSchema() {

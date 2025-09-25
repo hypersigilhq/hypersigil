@@ -30,6 +30,7 @@ export interface SchemaBuilderNode {
     name: string
     type: JsonSchemaType
     required: boolean
+    nullable?: boolean
     description?: string
     expanded: boolean
     showDetails: boolean

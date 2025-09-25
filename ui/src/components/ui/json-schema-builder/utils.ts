@@ -15,6 +15,7 @@ export function createNode(
         name,
         type,
         required: false,
+        nullable: false,
         expanded: true,
         showDetails: false,
         level,
@@ -47,7 +48,7 @@ export function convertToJsonSchema(nodes: SchemaBuilderNode[]): JsonSchema {
 
 function convertNodeToSchemaProperty(node: SchemaBuilderNode): any {
     const base: any = {
-        type: node.type
+        type: node.nullable ? [node.type, 'null'] : node.type
     }
 
     if (node.description) {
@@ -256,11 +257,30 @@ function convertSchemaPropertyToNode(
     required: boolean = false,
     parentId?: string
 ): SchemaBuilderNode {
+    // Handle nullable types (type: ["string", "null"])
+    let type: JsonSchemaType
+    let nullable = false
+
+    if (Array.isArray(property.type)) {
+        // Check if it's a nullable type (contains the actual type and "null")
+        const nonNullTypes = property.type.filter((t: string) => t !== 'null')
+        if (nonNullTypes.length === 1 && property.type.includes('null')) {
+            type = nonNullTypes[0] as JsonSchemaType
+            nullable = true
+        } else {
+            // Fallback to first type if not a standard nullable pattern
+            type = property.type[0] as JsonSchemaType
+        }
+    } else {
+        type = property.type as JsonSchemaType
+    }
+
     const node: SchemaBuilderNode = {
         id: generateId(),
         name,
-        type: property.type as JsonSchemaType,
+        type,
         required,
+        nullable,
         expanded: true,
         showDetails: false,
         level,

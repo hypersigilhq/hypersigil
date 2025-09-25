@@ -86,6 +86,7 @@ function handleTypeChange(newType: JsonSchemaType) {
             name: 'items',
             type: 'string',
             required: false,
+            nullable: false,
             expanded: true,
             showDetails: false,
             level: props.node.level + 1,
@@ -187,11 +188,18 @@ function removeEnumValue(index: number) {
                 </SelectContent>
             </Select>
 
-            <!-- Required Checkbox (not shown for items as they are schema definitions) -->
-            <div v-if="node.name !== 'items'" class="flex items-center gap-2">
-                <Checkbox :model-value="node.required"
-                    @update:model-value="(checked: boolean | 'indeterminate') => updateNode({ required: checked === true })" />
-                <label class="text-sm text-gray-600">Required</label>
+            <!-- Required and Nullable Checkboxes (not shown for items as they are schema definitions) -->
+            <div v-if="node.name !== 'items'" class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <Checkbox :model-value="node.required"
+                        @update:model-value="(checked: boolean | 'indeterminate') => updateNode({ required: checked === true })" />
+                    <label class="text-sm text-gray-600">Required</label>
+                </div>
+                <div class="flex items-center gap-2">
+                    <Checkbox :model-value="node.nullable || false"
+                        @update:model-value="(checked: boolean | 'indeterminate') => updateNode({ nullable: checked === true })" />
+                    <label class="text-sm text-gray-600">Nullable</label>
+                </div>
             </div>
 
             <!-- Actions -->
