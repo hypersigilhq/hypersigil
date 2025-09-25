@@ -151,7 +151,7 @@ export class AnthropicProvider extends GenericProvider implements AIProvider {
         } else {
             userMessage = userInput;
         }
-        console.log("WEBSEARCH", options)
+
         const requestBody: AnthropicRequest = {
             model,
             max_tokens: options?.maxTokens || 4096,

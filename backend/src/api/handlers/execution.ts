@@ -54,6 +54,7 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                     }
                 }
 
+                let executionIds: string[] = []
                 for (let i in req.body.providerModel) {
                     let providerModel = req.body.providerModel[i]!
 
@@ -76,13 +77,11 @@ RegisterHandlers(app, ExecutionApiDefinition, {
                             details: result.error
                         });
                         return;
+                    } else {
+                        executionIds.push(result.data.id!)
                     }
-
-                    res.respond(201, { executionIds: [result.data.id!] });
-                    return;
-
                 }
-
+                res.respond(201, { executionIds });
             }
 
         },

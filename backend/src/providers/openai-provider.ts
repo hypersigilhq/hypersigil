@@ -123,7 +123,7 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
                     format: {
                         type: 'json_schema',
                         name: "schema-name",
-                        schema: options.schema,
+                        schema: this.sanitizeSchemaForOpenAI(options.schema),
                         strict: true
                     }
                 }
@@ -331,5 +331,69 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
             clearTimeout(timeoutId);
             throw error;
         }
+    }
+
+    /**
+     * Sanitize JSON schema for OpenAI Responses API compatibility
+     * OpenAI requires all properties to be listed in the 'required' array for json_schema format
+     */
+    private sanitizeSchemaForOpenAI(schema: JSONSchema): any {
+        if (!schema || typeof schema !== 'object') {
+            return schema;
+        }
+
+        const sanitized: any = {};
+
+        // Copy supported fields
+        if (schema.type) sanitized.type = schema.type;
+        if (schema.description) sanitized.description = schema.description;
+        if (schema.enum) sanitized.enum = schema.enum;
+
+        // Handle properties and ensure all are required
+        if (schema.properties) {
+            sanitized.properties = {};
+            const requiredKeys: string[] = [];
+
+            for (const [key, value] of Object.entries(schema.properties)) {
+                sanitized.properties[key] = this.sanitizeSchemaForOpenAI(value as JSONSchema);
+                requiredKeys.push(key);
+            }
+
+            // Ensure all properties are in the required array
+            sanitized.required = requiredKeys;
+        }
+
+        // Handle existing required field if present (merge with auto-generated)
+        if (schema.required && Array.isArray(schema.required)) {
+            if (!sanitized.required) {
+                sanitized.required = [];
+            }
+            // Add any additional required fields that weren't in properties
+            for (const req of schema.required) {
+                if (!sanitized.required.includes(req)) {
+                    sanitized.required.push(req);
+                }
+            }
+        }
+
+        // Handle array items
+        if (schema.items) {
+            sanitized.items = this.sanitizeSchemaForOpenAI(schema.items as JSONSchema);
+        }
+
+        // Basic validation fields
+        if (typeof schema.minimum === 'number') sanitized.minimum = schema.minimum;
+        if (typeof schema.maximum === 'number') sanitized.maximum = schema.maximum;
+        if (typeof schema.minLength === 'number') sanitized.minLength = schema.minLength;
+        if (typeof schema.maxLength === 'number') sanitized.maxLength = schema.maxLength;
+        if (schema.pattern) sanitized.pattern = schema.pattern;
+        if (schema.format) sanitized.format = schema.format;
+
+        // Handle additional properties
+        if (schema.additionalProperties !== undefined) {
+            sanitized.additionalProperties = schema.additionalProperties;
+        }
+
+        return sanitized;
     }
 }

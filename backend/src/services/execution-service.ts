@@ -62,14 +62,13 @@ export class ExecutionService {
                     return Err(`Input data is not valid: ` + vr.validation_message)
                 }
             }
-            console.log("----------", promptVersion)
+
             if (promptVersion.options?.webSearch) {
                 if (!request.options) {
                     request.options = {}
                 }
                 request.options.webSearch = true
             }
-            console.log("----------", request)
         }
 
         // Parse and validate provider:model format
