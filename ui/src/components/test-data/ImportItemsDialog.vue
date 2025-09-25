@@ -10,29 +10,69 @@
             </DialogHeader>
 
             <div class="space-y-6">
-                <!-- File Selection -->
-                <div v-if="!processing && !completed" class="space-y-4">
-                    <div>
-                        <Label for="file-input">Select Files</Label>
-                        <div class="mt-2">
-                            <input id="file-input" ref="fileInput" type="file" multiple :accept="supportedFileTypes"
-                                @change="onFilesSelected"
-                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
-                        </div>
-                        <p class="text-sm text-muted-foreground mt-1">
-                            Supported formats: {{ parserDisplayNames.join(', ') }}
-                        </p>
-                    </div>
+                <!-- Import Options -->
+                <div v-if="!processing && !completed">
+                    <Tabs v-model="activeTab" class="w-full">
+                        <TabsList class="grid w-full grid-cols-2">
+                            <TabsTrigger value="upload">Upload Files</TabsTrigger>
+                            <TabsTrigger value="paste">Paste Content</TabsTrigger>
+                        </TabsList>
 
-                    <!-- Selected Files Preview -->
-                    <div v-if="selectedFiles.length > 0" class="space-y-2">
-                        <Label>Selected Files ({{ selectedFiles.length }})</Label>
-                        <div class="border rounded-lg p-3 max-h-32 overflow-y-auto">
-                            <div v-for="file in selectedFiles" :key="file.name" class="text-sm py-1">
-                                {{ file.name }} ({{ formatFileSize(file.size) }})
+                        <!-- Upload Files Tab -->
+                        <TabsContent value="upload" class="space-y-4 mt-4">
+                            <div>
+                                <Label for="file-input">Select Files</Label>
+                                <div class="mt-2">
+                                    <input id="file-input" ref="fileInput" type="file" multiple
+                                        :accept="supportedFileTypes" @change="onFilesSelected"
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
+                                </div>
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    Supported formats: {{ parserDisplayNames.join(', ') }}
+                                </p>
                             </div>
-                        </div>
-                    </div>
+
+                            <!-- Selected Files Preview -->
+                            <div v-if="selectedFiles.length > 0" class="space-y-2">
+                                <Label>Selected Files ({{ selectedFiles.length }})</Label>
+                                <div class="border rounded-lg p-3 max-h-32 overflow-y-auto">
+                                    <div v-for="file in selectedFiles" :key="file.name" class="text-sm py-1">
+                                        {{ file.name }} ({{ formatFileSize(file.size) }})
+                                    </div>
+                                </div>
+                            </div>
+                        </TabsContent>
+
+                        <!-- Paste Content Tab -->
+                        <TabsContent value="paste" class="space-y-4 mt-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label for="paste-filename">File Name</Label>
+                                    <Input id="paste-filename" v-model="pasteFileName"
+                                        placeholder="Enter file name (e.g., data.md)" class="mt-1" />
+                                </div>
+                                <div>
+                                    <Label for="paste-filetype">File Type</Label>
+                                    <Select v-model="pasteFileType">
+                                        <SelectTrigger class="mt-1">
+                                            <SelectValue placeholder="Select file type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="md">Markdown (.md)</SelectItem>
+                                            <SelectItem value="csv">CSV (.csv)</SelectItem>
+                                            <SelectItem value="json">JSON (.json)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <Label for="paste-content">Content</Label>
+                                <Textarea id="paste-content" v-model="pasteContent"
+                                    placeholder="Paste your content here..." class="mt-1 min-h-32" />
+                            </div>
+                        </TabsContent>
+                    </Tabs>
                 </div>
 
                 <!-- Processing Progress -->
@@ -118,8 +158,8 @@
                 <Button v-if="!processing && !completed" variant="outline" @click="closeDialog">
                     Cancel
                 </Button>
-                <Button v-if="!processing && !completed" @click="startImport" :disabled="selectedFiles.length === 0">
-                    Import {{ selectedFiles.length }} File{{ selectedFiles.length !== 1 ? 's' : '' }}
+                <Button v-if="!processing && !completed" @click="startImport" :disabled="!canImport">
+                    {{ importButtonText }}
                 </Button>
                 <Button v-if="completed" @click="closeDialog">
                     Close
@@ -149,6 +189,21 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/ui/tabs'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 
 import { fileImportService } from '@/services/file-import/FileImportService'
 import { testDataApi } from '@/services/api-client'
@@ -176,6 +231,12 @@ const completed = ref(false)
 const progress = ref<ImportProgress | null>(null)
 const error = ref<string | null>(null)
 
+// Paste content state
+const activeTab = ref('upload')
+const pasteContent = ref('')
+const pasteFileName = ref('')
+const pasteFileType = ref('')
+
 // Computed
 const isOpen = computed({
     get: () => props.open,
@@ -197,6 +258,24 @@ const totalItemsCreated = computed(() => {
     }, 0)
 })
 
+const canImport = computed(() => {
+    if (activeTab.value === 'upload') {
+        return selectedFiles.value.length > 0
+    } else if (activeTab.value === 'paste') {
+        return pasteContent.value.trim() !== '' && pasteFileName.value.trim() !== '' && pasteFileType.value !== ''
+    }
+    return false
+})
+
+const importButtonText = computed(() => {
+    if (activeTab.value === 'upload') {
+        return `Import ${selectedFiles.value.length} File${selectedFiles.value.length !== 1 ? 's' : ''}`
+    } else if (activeTab.value === 'paste') {
+        return 'Import Content'
+    }
+    return 'Import'
+})
+
 // File selection
 const onFilesSelected = (event: Event) => {
     const target = event.target as HTMLInputElement
@@ -205,9 +284,39 @@ const onFilesSelected = (event: Event) => {
     }
 }
 
+// Helper function to create virtual file from pasted content
+const createVirtualFile = (content: string, fileName: string, fileType: string): File => {
+    const mimeTypes: Record<string, string> = {
+        'md': 'text/markdown',
+        'csv': 'text/csv',
+        'json': 'application/json'
+    }
+
+    const mimeType = mimeTypes[fileType] || 'text/plain'
+    const fullFileName = fileName.includes('.') ? fileName : `${fileName}.${fileType}`
+
+    return new File([content], fullFileName, { type: mimeType })
+}
+
 // Import process
 const startImport = async () => {
-    if (selectedFiles.value.length === 0) return
+    let filesToProcess: File[] = []
+
+    if (activeTab.value === 'upload') {
+        filesToProcess = selectedFiles.value
+    } else if (activeTab.value === 'paste') {
+        if (!pasteContent.value.trim() || !pasteFileName.value.trim() || !pasteFileType.value) {
+            return
+        }
+        const virtualFile = createVirtualFile(
+            pasteContent.value.trim(),
+            pasteFileName.value.trim(),
+            pasteFileType.value
+        )
+        filesToProcess = [virtualFile]
+    }
+
+    if (filesToProcess.length === 0) return
 
     processing.value = true
     completed.value = false
@@ -216,7 +325,7 @@ const startImport = async () => {
     try {
         // Process files
         const importProgress = await fileImportService.processFiles(
-            selectedFiles.value,
+            filesToProcess,
             (updatedProgress) => {
                 // Force reactivity by creating a new object
                 progress.value = { ...updatedProgress }
@@ -260,6 +369,10 @@ watch(() => props.open, (open) => {
         completed.value = false
         progress.value = null
         error.value = null
+        activeTab.value = 'upload'
+        pasteContent.value = ''
+        pasteFileName.value = ''
+        pasteFileType.value = ''
 
         // Reset file input
         if (fileInput.value) {
