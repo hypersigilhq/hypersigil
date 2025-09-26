@@ -113,6 +113,7 @@
 - [todo] add edit button in view prompt dialog
 - [todo] in execution view details add a button/toggle to show compiled prompt
 - [done] Add enum support for string types with descriptions in JSON schema builder
+- [done] 26-09-25 23:12 Add JSON schema form generator component to playground that generates forms from JSON schemas
 - [todo] e2e contract/functional testing with hurl https://github.com/Orange-OpenSource/hurl?tab=readme-ov-file
 
 # Big features

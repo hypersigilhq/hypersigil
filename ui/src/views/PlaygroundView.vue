@@ -38,6 +38,17 @@
                 <JsonSchemaBuilderDemo />
             </CardContent>
         </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle class="flex items-center gap-2">
+                    <FileText class="h-5 w-5" />
+                    JSON Schema Form Generator Component
+                </CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-6">
+                <JsonSchemaFormDemo />
+            </CardContent>
+        </Card>
 
         <div class="grid gap-8 md:grid-cols-2">
             <!-- PromptSelector Section -->
@@ -147,7 +158,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { FileText, Cpu, Zap } from 'lucide-vue-next'
+import { FileText, Cpu } from 'lucide-vue-next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -157,6 +168,7 @@ import { useUI } from '@/services/ui'
 import Separator from '@/components/ui/separator/Separator.vue'
 import TemplateSuggestionDemo from '@/components/ui/template-suggestion/TemplateSuggestionDemo.vue'
 import JsonSchemaBuilderDemo from '@/components/ui/json-schema-builder/JsonSchemaBuilderDemo.vue'
+import JsonSchemaFormDemo from '@/components/ui/json-schema-form/JsonSchemaFormDemo.vue'
 
 const { success } = useUI()
 
@@ -173,11 +185,6 @@ const selectedFileUploadModels = ref<string[]>([])
 // Combined usage states
 const combinedPromptId = ref<string>('')
 const combinedModels = ref<string[]>([])
-
-// Methods
-const simulateExecution = () => {
-    success(`Would execute prompt "${combinedPromptId.value}" with models: ${combinedModels.value.join(', ')}`)
-}
 
 const resetAllSelections = () => {
     // Reset all PromptSelector states
