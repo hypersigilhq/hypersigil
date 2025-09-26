@@ -71,9 +71,52 @@
                             </div>
                         </template>
                         <template v-else>
-                            <Label for="userInput">User Input</Label>
-                            <Textarea id="userInput" v-model="formData.userInput"
-                                placeholder="Enter the input text to process with this prompt" rows="4" />
+                            <!-- Input mode toggle when JSON schema is available -->
+                            <div v-if="hasJsonSchemaInput" class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <Label for="userInput">User Input</Label>
+                                    <div class="flex items-center space-x-2">
+                                        <Label for="inputMode" class="text-sm text-gray-600">Input Mode:</Label>
+                                        <Select v-model="inputMode">
+                                            <SelectTrigger class="w-40">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="schema">Structured Form</SelectItem>
+                                                <SelectItem value="raw">Raw Text/JSON</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <!-- JSON Schema Form Mode -->
+                                <div v-if="inputMode === 'schema'">
+                                    <JsonSchemaForm :schema="promptData.json_schema_input" :hide-submit="true"
+                                        v-model="formData.schemaFormData" @submit="handleSchemaFormSubmit"
+                                        @error="handleSchemaFormError" class="border rounded-md p-4" />
+                                    <div v-if="schemaFormErrors && Object.keys(schemaFormErrors).length > 0"
+                                        class="mt-2">
+                                        <p class="text-sm text-red-600">Please fix the form errors above before
+                                            submitting.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Raw Text Input Mode -->
+                                <div v-else>
+                                    <Textarea id="userInput" v-model="formData.userInput"
+                                        placeholder="Enter JSON or text input to process with this prompt" rows="4" />
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        When using raw mode, ensure your input matches the expected schema format.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Fallback to textarea when no JSON schema -->
+                            <div v-else>
+                                <Label for="userInput">User Input</Label>
+                                <Textarea id="userInput" v-model="formData.userInput"
+                                    placeholder="Enter the input text to process with this prompt" rows="4" />
+                            </div>
                         </template>
                     </div>
 
@@ -200,6 +243,8 @@ import { executionsApi, testDataApi, promptsApi } from '@/services/api-client'
 import PromptSelector from '@/components/prompts/PromptSelector.vue'
 import FileSelector from '@/components/files/FileSelector.vue'
 import { ModelSelector } from '@/components/ui/model-selector'
+import JsonSchemaForm from '@/components/ui/json-schema-form/JsonSchemaForm.vue'
+import type { FormData as JsonFormData, FormErrors } from '@/components/ui/json-schema-form/types'
 
 const router = useRouter()
 
@@ -247,6 +292,10 @@ const errorMessage = ref<string | null>(null)
 const promptData = ref<any>(null)
 const isInitializing = ref(false)
 
+// JSON Schema Form state
+const inputMode = ref<'schema' | 'raw'>('schema')
+const schemaFormErrors = ref<FormErrors>({})
+
 // Preview state
 const showPreviewDialog = ref(false)
 const previewLoading = ref(false)
@@ -259,6 +308,7 @@ const formData = reactive({
     promptText: '',
     userInput: '',
     userInputs: [] as string[],
+    schemaFormData: {} as JsonFormData,
     providerModel: <string[]>[],
     testDataGroupId: '',
     fileId: '',
@@ -287,7 +337,13 @@ const previewDisabled = computed(() => {
     if (previewLoading.value) return true
 
     // Check if we have user input
-    if (!formData.userInput.trim()) return true
+    const effectiveInput = getEffectiveUserInput()
+    if (!effectiveInput.trim()) return true
+
+    // Check for schema form validation errors
+    if (hasJsonSchemaInput.value && inputMode.value === 'schema' && Object.keys(schemaFormErrors.value).length > 0) {
+        return true
+    }
 
     // Check if we have a prompt (either text or ID)
     if (props.mode === 'text') {
@@ -327,6 +383,7 @@ const loadTestDataGroups = async () => {
 const resetForm = () => {
     formData.promptText = ''
     formData.userInput = ''
+    formData.schemaFormData = {}
     formData.providerModel = []
     formData.testDataGroupId = ''
     formData.fileId = ''
@@ -336,6 +393,28 @@ const resetForm = () => {
     formData.options.topK = 50
     successMessage.value = null
     errorMessage.value = null
+    schemaFormErrors.value = {}
+}
+
+const hasJsonSchemaInput = computed(() => {
+    return promptData.value?.json_schema_input && typeof promptData.value.json_schema_input === 'object'
+})
+
+const handleSchemaFormSubmit = (data: JsonFormData) => {
+    // Convert form data to JSON string for userInput
+    formData.userInput = JSON.stringify(data, null, 2)
+}
+
+const handleSchemaFormError = (errors: FormErrors) => {
+    schemaFormErrors.value = errors
+}
+
+const getEffectiveUserInput = (): string => {
+    if (hasJsonSchemaInput.value && inputMode.value === 'schema') {
+        // Convert schema form data to JSON string
+        return JSON.stringify(formData.schemaFormData, null, 2)
+    }
+    return formData.userInput
 }
 
 const multipleUserInputs = computed(() => {
@@ -406,7 +485,7 @@ const showPreview = async () => {
 
     try {
         const previewData: any = {
-            userInput: formData.userInput
+            userInput: getEffectiveUserInput()
         }
 
         // Handle different modes
@@ -447,6 +526,12 @@ const submitScheduleExecution = async () => {
 
     if (formData.providerModel.length === 0) {
         console.error('No provider/model selected')
+        return
+    }
+
+    // Check for schema form validation errors
+    if (hasJsonSchemaInput.value && inputMode.value === 'schema' && Object.keys(schemaFormErrors.value).length > 0) {
+        errorMessage.value = 'Please fix the form validation errors before submitting.'
         return
     }
 
@@ -509,7 +594,7 @@ const submitScheduleExecution = async () => {
         } else {
             // Single execution with user input
             if (props.mode !== 'text') {
-                executionData.userInput = formData.userInput
+                executionData.userInput = getEffectiveUserInput()
             }
             const execution = await executionsApi.create(executionData)
             successMessage.value = `Execution ${isCloning.value ? 'cloned' : 'scheduled'} successfully! Execution IDs: ${execution.executionIds.join(', ')}`
@@ -554,6 +639,39 @@ watch(() => formData.promptId, async (newPromptId) => {
     if (newPromptId && props.mode === 'item') {
         await loadPromptData(newPromptId)
         // Models are now loaded by the ModelSelector component
+    }
+})
+
+// Watch for prompt data changes to set default input mode
+watch(() => promptData.value, (newPromptData) => {
+    if (newPromptData?.json_schema_input) {
+        // Default to schema mode when JSON schema input is available
+        inputMode.value = 'schema'
+        formData.schemaFormData = {}
+    } else {
+        inputMode.value = 'raw'
+    }
+})
+
+// Watch for input mode changes to sync data
+watch(inputMode, (newMode) => {
+    if (newMode === 'schema' && hasJsonSchemaInput.value) {
+        // Clear raw input when switching to schema mode
+        if (formData.userInput.trim()) {
+            try {
+                // Try to parse existing input as JSON to populate form
+                const parsed = JSON.parse(formData.userInput)
+                formData.schemaFormData = parsed
+            } catch {
+                // If parsing fails, start with empty form data
+                formData.schemaFormData = {}
+            }
+        }
+    } else if (newMode === 'raw') {
+        // Convert schema form data to JSON string when switching to raw mode
+        if (Object.keys(formData.schemaFormData).length > 0) {
+            formData.userInput = JSON.stringify(formData.schemaFormData, null, 2)
+        }
     }
 })
 </script>

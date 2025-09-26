@@ -11,7 +11,7 @@
         </div>
 
         <!-- Submit button -->
-        <div v-if="!readonly" class="flex justify-end">
+        <div v-if="!readonly && !hideSubmit" class="flex justify-end">
             <Button type="submit" :disabled="hasErrors">
                 Submit
             </Button>
@@ -33,7 +33,8 @@ import type { JsonSchemaFormProps, JsonSchemaFormEmits, FormField, FormData, For
 import { parseJsonSchema, validateFormData, initializeFormData } from './utils'
 
 const props = withDefaults(defineProps<JsonSchemaFormProps>(), {
-    readonly: false
+    readonly: false,
+    hideSubmit: false
 })
 
 const emit = defineEmits<JsonSchemaFormEmits>()

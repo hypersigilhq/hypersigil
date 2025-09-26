@@ -34,6 +34,7 @@ export interface JsonSchemaFormProps {
     modelValue?: FormData
     readonly?: boolean
     class?: string
+    hideSubmit?: boolean
 }
 
 export interface JsonSchemaFormEmits {
