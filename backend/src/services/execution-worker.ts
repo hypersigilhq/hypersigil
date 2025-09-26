@@ -260,6 +260,7 @@ export class ExecutionWorker {
             // Determine prompt text and schema to use
             let promptText: string;
             let jsonSchemaResponse: any = undefined;
+            let userInput = execution.user_input
 
             if (execution.prompt_text) {
                 // Use direct prompt text
@@ -286,6 +287,19 @@ export class ExecutionWorker {
 
                 promptText = promptVersion.prompt;
                 jsonSchemaResponse = promptVersion.json_schema_response;
+
+                if (promptVersion.json_schema_input) {
+                    let compilationResult = promptService.compilePrompt(execution.user_input, promptText, promptVersion.json_schema_input as JSONSchema)
+                    if (compilationResult.err) {
+                        await executionModel.updateStatus(executionId, 'failed', {
+                            error_message: 'Prompt compilation failed: ' + compilationResult.error
+                        });
+                        return;
+                    } else {
+                        promptText = compilationResult.data
+                        userInput = ""
+                    }
+                }
             } else {
                 await executionModel.updateStatus(executionId, 'failed', {
                     error_message: 'Either prompt_text or both prompt_id and prompt_version must be provided'
@@ -344,7 +358,7 @@ export class ExecutionWorker {
             // Execute the prompt using the extracted prompt text
             const result = await provider.execute(
                 promptText,
-                execution.user_input,
+                userInput,
                 execution.model,
                 options
             );

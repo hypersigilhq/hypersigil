@@ -158,10 +158,10 @@ export class AnthropicProvider extends GenericProvider implements AIProvider {
             messages: [
                 {
                     role: 'user',
-                    content: userMessage
+                    content: userInput.length === 0 ? systemPrompt : userMessage
                 }
             ],
-            system: systemPrompt,
+            system: userInput.length === 0 ? "" : systemPrompt,
             temperature: options?.temperature ?? 0.7,
             top_p: options?.topP ?? 0.9,
             ...(options?.webSearch && {

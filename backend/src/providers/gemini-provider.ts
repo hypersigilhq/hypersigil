@@ -93,21 +93,11 @@ export class GeminiProvider extends GenericProvider implements AIProvider {
         // Build contents array
         const contents: GeminiMessage[] = [];
 
-        // Add system prompt as user message (Gemini doesn't have system role)
-        if (prompt) {
-            contents.push({
-                role: 'user',
-                parts: [{ text: options?.schema ? this.buildPromptWithSchema(prompt, options.schema) : prompt }]
-            });
-        }
-
         // Build user message with potential file attachments
         const userParts: Array<{ text?: string; inline_data?: { mime_type: string; data: string } }> = [];
 
         // Add user input text
-        if (userInput) {
-            userParts.push({ text: userInput });
-        }
+        userParts.push({ text: userInput.length === 0 ? prompt : userInput });
 
         // Add file attachments if provided
         if (options?.files && options.files.length > 0) {
@@ -363,7 +353,13 @@ export class GeminiProvider extends GenericProvider implements AIProvider {
         const sanitized: any = {};
 
         // Copy supported fields
-        if (schema.type) sanitized.type = schema.type;
+        if (schema.type) {
+            if (Array.isArray(schema.type)) {
+                sanitized.type = schema.type[0];
+            } else {
+                sanitized.type = schema.type;
+            }
+        }
         if (schema.properties) {
             sanitized.properties = {};
             for (const [key, value] of Object.entries(schema.properties)) {

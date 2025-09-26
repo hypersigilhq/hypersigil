@@ -103,12 +103,17 @@ export class OpenAIProvider extends GenericProvider implements AIProvider {
             throw new ModelNotSupportedError(this.name, model);
         }
 
-        // Build input for Responses API
-        const systemPrompt = options?.schema ? this.buildPromptWithSchema(prompt, options.schema) : prompt;
+        let systemPrompt = prompt
+        let input = userInput
+
+        if (input.length === 0) {
+            input = prompt
+            systemPrompt = ""
+        }
 
         const requestBody: OpenAIRequest = {
             model,
-            input: userInput,
+            input: input,
             instructions: systemPrompt,
             // reasoning: {
             //     effort: options?.temperature && options.temperature < 0.3 ? 'low' :
