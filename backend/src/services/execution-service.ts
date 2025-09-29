@@ -57,7 +57,13 @@ export class ExecutionService {
             }
 
             if (request.promptId && promptVersion && promptVersion.json_schema_input) {
-                let vr = promptService.validateData(JSON.parse(request.userInput), <JSONSchema>promptVersion.json_schema_input)
+                let data
+                try {
+                    data = JSON.parse(request.userInput)
+                } catch (e) {
+                    return Err('Error while parsing JSON: ' + (e as Error).message)
+                }
+                let vr = promptService.validateData(data, <JSONSchema>promptVersion.json_schema_input)
                 if (!vr.valid) {
                     return Err(`Input data is not valid: ` + vr.validation_message)
                 }
