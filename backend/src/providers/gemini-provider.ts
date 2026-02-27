@@ -42,6 +42,7 @@ interface GeminiResponse {
     usageMetadata: {
         promptTokenCount: number;
         candidatesTokenCount: number;
+        thoughtsTokenCount: number;
         totalTokenCount: number;
     };
 }
@@ -210,7 +211,7 @@ export class GeminiProvider extends GenericProvider implements AIProvider {
             return {
                 output: textContent.text,
                 inputTokensUsed: result.usageMetadata.promptTokenCount,
-                outputTokensUsed: result.usageMetadata.candidatesTokenCount
+                outputTokensUsed: result.usageMetadata.candidatesTokenCount + (result.usageMetadata.thoughtsTokenCount || 0),
             };
         } catch (error) {
             if (error instanceof ProviderError) {
