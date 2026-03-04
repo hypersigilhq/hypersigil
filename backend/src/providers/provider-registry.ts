@@ -4,6 +4,7 @@ import { AnthropicProvider } from './anthropic-provider';
 import { OpenAIProvider } from './openai-provider';
 import { GeminiProvider } from './gemini-provider';
 import { DeepSeekProvider } from './deepseek-provider';
+import { DeepInfraProvider } from './deepinfra-provider';
 import { settingsModel, LlmApiKeySettingsDocument } from '../models/settings';
 import { decryptString } from '../util/encryption';
 
@@ -441,6 +442,8 @@ export class ProviderRegistry {
                 return Ok(new GeminiProvider({ apiKey }))
             case 'deepseek':
                 return Ok(new DeepSeekProvider({ apiKey }))
+            case 'deepinfra':
+                return Ok(new DeepInfraProvider({ apiKey }))
             default:
                 return Err(`Unknown provider: ${providerName}`);
         }
