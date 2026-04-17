@@ -162,8 +162,9 @@ export class AnthropicProvider extends GenericProvider implements AIProvider {
                 }
             ],
             system: userInput.length === 0 ? "" : systemPrompt,
-            temperature: options?.temperature ?? 0.7,
-            top_p: options?.topP ?? 0.9,
+            ...(options?.temperature !== undefined ? { temperature: options.temperature } :
+                options?.topP !== undefined ? { top_p: options.topP } :
+                    { temperature: 0.9 }),
             ...(options?.webSearch && {
                 tools: [{ name: "web_search", type: "web_search_20250305" }],
             })
